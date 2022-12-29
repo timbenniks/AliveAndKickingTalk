@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "devDependencies": {
+    "@nuxtjs/google-fonts": "v3.0.0-1",
+    "@nuxtjs/supabase": "^0.3.0",
+    "@nuxtjs/tailwindcss": "^6.2.0",
+    "nuxt": "3.0.0"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.4.6",
+    "@uniformdev/canvas": "^17.7.0",
+    "@uniformdev/canvas-vue": "^17.7.0",
+    "@uniformdev/context-vue": "^17.7.0",
+    "@uniformdev/uniform-nuxt": "^17.7.0",
+    "pinia": "^2.0.28",
+    "vue3-carousel": "^0.2.9"
+  }
+}

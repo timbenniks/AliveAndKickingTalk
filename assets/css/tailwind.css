@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-black text-white font-[Lato];
+  }
+
+  html,
+  body {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  img,
+  video {
+    width: 100%;
+    height: auto;
+  }
+
+  a,
+  button {
+    @apply bg-none underline underline-offset-2 hover:opacity-70;
+  }
+
+  .fancy-image {
+    @apply border-2;
+    border-image-slice: 1;
+    border-image-source: linear-gradient(
+      89.87deg,
+      #256ad1 7.57%,
+      #d1258c 95.58%
+    );
+  }
+
+  .fancy-bg {
+    background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
+  }
+
+  .flowing-title {
+    background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    white-space: initial;
+  }
+
+  .cta {
+    @apply py-2 px-3 border-2 text-white bg-black font-black no-underline uppercase text-sm;
+    border-image-slice: 1;
+    border-image-source: linear-gradient(
+      89.87deg,
+      #256ad1 7.57%,
+      #d1258c 95.58%
+    );
+  }
+}
