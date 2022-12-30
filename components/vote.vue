@@ -90,6 +90,8 @@ watch(votedAmount, () => {
               :src="song.cover"
               loading="lazy"
               :alt="`${song.artist} ${song.song}`"
+              width="384"
+              height="384"
             />
           </figure>
 

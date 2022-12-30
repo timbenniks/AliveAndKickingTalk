@@ -1,0 +1,220 @@
+[
+  {
+    "songId": "hotel_california",
+    "artist": "Eagles",
+    "song": "Hotel California",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/Hotel%20California/hotel_california_backing.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Hotel%20California/hotel_california.jpg",
+    "artwork": [
+      {
+        "bgX": "68%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30,w_1920/Alive%20and%20Kicking/Hotel%20California/1.webp"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/3.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/5.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "still_got_the_blues",
+    "artist": "Gary Moore",
+    "song": "Still Got The Blues",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/Still%20Got%20The%20Blues/still_got_the_blues_backing.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Still%20Got%20The%20Blues/still_got_the_blues.jpg",
+    "artwork": [
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/1.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/3.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/5.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "thunderstruck",
+    "artist": "AC/DC",
+    "song": "Thunderstruck",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/Thunderstruck/thunderstruck_backing.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Thunderstruck/thunderstruck.jpg",
+    "artwork": [
+      {
+        "bgX": "82%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/1.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/3.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/5.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/6.jpg"
+      },
+      {
+        "bgX": "34%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/7.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "sweet_child_o_mine",
+    "artist": "Guns N' Roses",
+    "song": "Sweet Child 'O Mine",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/sweet_child_o_mine_backing.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/sweet_child_o_mine.jpg",
+    "artwork": [
+      {
+        "bgX": "34%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/1.webp"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/3.webp"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/5.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "johnny_b_goode",
+    "artist": "Chuck Berry",
+    "song": "Johnny B Boode",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/Johnny%20Be%20Goode/johnny_b_goode.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Johnny%20Be%20Goode/johnny_be_goode.jpg",
+    "artwork": [
+      {
+        "bgX": "34%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/1.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/3.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/5.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "i_dont_need_no_doctor",
+    "artist": "John Mayer",
+    "song": "I Don't Need No Doctor",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/I_dont_need_no_doctor.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/I_don_t_need_no_doctor.jpg",
+    "artwork": [
+      {
+        "bgX": "49%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/1.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/3.webp"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/5.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "master_of_puppets",
+    "artist": "Metallica",
+    "song": "Master Of Puppets",
+    "voted": false,
+    "mp3": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,f_auto/Alive%20and%20Kicking/Master%20Of%20Puppets/master_of_puppets.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Master%20Of%20Puppets/master_of_puppets_cover.jpg",
+    "artwork": [
+      {
+        "bgX": "58%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/1.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/3.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/5.jpg"
+      }
+    ]
+  }
+]

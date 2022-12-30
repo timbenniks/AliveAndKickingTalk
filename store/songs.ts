@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import songs from '../assets/songs.json'
 
 async function checkVoted(songId: string) {
   const client = useSupabaseClient()
@@ -20,58 +21,38 @@ async function checkVoted(songId: string) {
   return voted
 }
 
+async function getVotesForSongId(songId: string) {
+  const client = useSupabaseClient()
+
+  const { count } = await client
+    .from('votes')
+    .select('songid', { count: 'exact', head: true })
+    .eq('songid', songId)
+
+  return count
+}
+
 export const useSongStore = defineStore({
   id: 'song-store',
   state: () => {
     return {
-      voteMax: 2,
-      songs: [
-        {
-          songId: "eagles_hotel_california",
-          artist: "Eagles",
-          song: "Hotel California",
-          voted: false,
-          cover:
-            "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/eagles-hotel-california-cover.png",
-          artwork: [
-            {
-              bgX: "34%",
-              bg: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_25/Alive%20and%20Kicking/eagles-hotel-california-art1.png",
-            },
-          ],
-        },
-        {
-          songId: "eagles_hotel_california1",
-          artist: "Eagles",
-          song: "Hotel California",
-          voted: false,
-          cover:
-            "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/eagles-hotel-california-cover.png",
-          artwork: [
-            {
-              bgX: "34%",
-              bg: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_25/Alive%20and%20Kicking/tim1.png",
-            },
-          ],
-        },
-        {
-          songId: "eagles_hotel_california2",
-          artist: "Eagles",
-          song: "Hotel California",
-          voted: false,
-          cover:
-            "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/eagles-hotel-california-cover.png",
-          artwork: [
-            {
-              bgX: "34%",
-              bg: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_25/Alive%20and%20Kicking/tim2.png",
-            },
-          ],
-        },
-      ],
+      voteMax: 4,
+      songs,
+      songsAndVotes: songs.map(song => {
+        return { ...song, votes: 0 }
+      })
     }
   },
   actions: {
+    async getVotesForSongs() {
+      const songsAndVotes = await Promise.all(this.songsAndVotes.map(async (song) => {
+        song.votes = await getVotesForSongId(song.songId)
+        return song;
+      }));
+
+      this.songsAndVotes = songsAndVotes;
+    },
+
     async checkAllSongsVoted() {
       const songs = await Promise.all(this.songs.map(async (song) => {
         song.voted = await checkVoted(song.songId)
@@ -106,7 +87,7 @@ export const useSongStore = defineStore({
         })
 
       if (error) {
-        console.error(error)
+        console.warn(error)
       }
 
       await this.checkAllSongsVoted();
@@ -122,7 +103,7 @@ export const useSongStore = defineStore({
         .eq('songid', songId)
 
       if (error) {
-        console.error(error)
+        console.warn(error)
       }
 
       await this.checkAllSongsVoted();
@@ -130,6 +111,7 @@ export const useSongStore = defineStore({
   },
   getters: {
     allSongs: state => state.songs,
+    allSongsAndVotes: state => state.songsAndVotes,
     votedAmount: state => state.songs.filter(song => song.voted).length,
     maxVotes: state => state.voteMax
   },
