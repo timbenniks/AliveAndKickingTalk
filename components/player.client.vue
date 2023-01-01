@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+// https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
+
 const time = ref(0);
 
 type eventReturn = {
@@ -84,7 +86,9 @@ function playerStateChanged({ event }: eventReturn) {
         convertTimeToDuration,
       }"
     >
-      <div class="audioplayer-controls flex space-x-8 w-screen">
+      <div
+        class="audioplayer-controls bg-black fixed justify-between h-20 bottom-0 left-0 flex w-screen space-x-8"
+      >
         <button @click="togglePlay()" class="audioplayer-controls-toggleplay">
           {{ playing ? "pause" : "play" }}
         </button>
