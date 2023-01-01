@@ -1,5 +1,7 @@
-<script setup>
-const viz = ref(null);
+<script lang="ts" setup>
+import type { Ref } from "vue";
+
+const viz: Ref<HTMLCanvasElement | null> = ref(null);
 const instance = getCurrentInstance();
 
 onMounted(async () => {
@@ -8,11 +10,13 @@ onMounted(async () => {
 });
 
 function init() {
-  const player = instance?.parent?.refs["player"];
-  const ctx = viz.value?.getContext("2d");
+  const player = instance?.parent?.refs["player"] as HTMLAudioElement;
+  const ctx = viz.value?.getContext("2d") as CanvasRenderingContext2D;
 
-  viz.value.width = window.innerWidth;
-  viz.value.height = window.innerHeight;
+  if (viz.value) {
+    viz.value.width = window.innerWidth;
+    viz.value.height = window.innerHeight;
+  }
 
   const audioCtx = new window.AudioContext();
   const audioSource = audioCtx.createMediaElementSource(player);
@@ -24,10 +28,11 @@ function init() {
 
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
-  const WIDTH = viz.value.width;
-  const HEIGHT = viz.value.height;
+  const vizWidth = viz.value?.width || 0;
+  const vizHeight = viz.value?.height || 0;
   const barWidth = 12;
   let barHeight = 0;
+
   const img = document.createElement("img");
   img.src = "/bar.png";
 
@@ -38,16 +43,16 @@ function init() {
 
     analyser.getByteFrequencyData(dataArray);
 
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    ctx.clearRect(0, 0, vizWidth, vizHeight);
 
     for (let i = 0; i < bufferLength; i++) {
       barHeight = dataArray[i];
 
-      const pattern = ctx.createPattern(img, "repeat");
+      const pattern = ctx.createPattern(img, "repeat") as CanvasPattern;
       ctx.fillStyle = pattern;
       ctx.fillRect(
         x,
-        Math.ceil((HEIGHT - barHeight) / 12) * 12,
+        Math.ceil((vizHeight - barHeight) / 12) * 12,
         barWidth,
         barHeight
       );
