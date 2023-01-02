@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 // https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
+import type { Ref, VueElement } from "vue";
 
 const time = ref(0);
+const vizualizer: Ref<VueElement | null> = ref(null);
 
 type eventReturn = {
   event: Event;
@@ -12,6 +14,10 @@ type eventReturn = {
 function onPlayerPlay({ event, setPlaying }: eventReturn) {
   console.log(event.type);
   setPlaying(true);
+
+  if (vizualizer.value) {
+    vizualizer.value.init();
+  }
 }
 
 function onPlayerPause({ event, setPlaying }: eventReturn) {
@@ -63,7 +69,7 @@ function playerStateChanged({ event }: eventReturn) {
     src="/johnny_b_goode.mp3"
     :muted="false"
     :autoplay="false"
-    :controls="true"
+    :controls="false"
     :loop="false"
     @play="onPlayerPlay"
     @pause="onPlayerPause"
@@ -86,23 +92,51 @@ function playerStateChanged({ event }: eventReturn) {
         convertTimeToDuration,
       }"
     >
+      <audioplayer-visualizer
+        ref="vizualizer"
+        class="absolute bottom-20 w-full"
+      />
+
       <div
-        class="audioplayer-controls bg-black fixed justify-between h-20 bottom-0 left-0 flex w-screen space-x-8"
+        class="bg-black p-6 absolute bottom-0 justify-between h-20 flex w-full space-x-6"
       >
-        <button @click="togglePlay()" class="audioplayer-controls-toggleplay">
-          {{ playing ? "pause" : "play" }}
-        </button>
+        <button
+          @click="togglePlay()"
+          class="audioplayer-controls-toggleplay"
+          :class="{ pause: playing, play: !playing }"
+        ></button>
         <audioplayer-track
           :percentage="percentagePlayed"
           @seek="seekToPercentage"
-          class="audioplayer-controls-track"
+          class="w-full"
         />
         <div class="audioplayer-controls-time">
-          {{ convertTimeToDuration(time) }} /
-          {{ convertTimeToDuration(duration) }}
+          {{ convertTimeToDuration(time) }}
+          <!-- {{ convertTimeToDuration(duration) }} -->
         </div>
       </div>
-      <audioplayer-visualizer />
     </template>
   </audioplayer>
 </template>
+
+<style lang="postcss">
+.audioplayer-controls-toggleplay {
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  border-style: solid;
+  cursor: pointer;
+}
+
+.audioplayer-controls-toggleplay.play {
+  border-width: 15px 0 15px 30px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.audioplayer-controls-toggleplay.pause {
+  border-width: 15px;
+  border-color: #fff;
+  border-style: double;
+  border-width: 0 0 0 15px;
+}
+</style>

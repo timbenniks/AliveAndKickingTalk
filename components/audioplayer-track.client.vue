@@ -1,13 +1,28 @@
 <script lang="ts" setup>
+import type { Ref } from "vue";
+
 defineProps({
   percentage: { type: Number, required: true },
 });
 
+const track: Ref<HTMLInputElement | null> = ref(null);
 const emit = defineEmits(["seek"]);
 
 function onInput(e: Event) {
   emit("seek", (e.target as HTMLInputElement).value);
 }
+
+const trackWidth = ref(0);
+
+onMounted(async () => {
+  await nextTick();
+
+  trackWidth.value = (
+    track.value?.parentNode as HTMLElement
+  ).getBoundingClientRect().width;
+
+  track.value?.style.setProperty("--sliderSize", `${trackWidth.value}px`);
+});
 </script>
 
 <template>
@@ -19,18 +34,20 @@ function onInput(e: Event) {
       step="1"
       :value="percentage.toFixed(1)"
       @input="onInput"
+      ref="track"
     />
   </div>
 </template>
 
 <style>
 input[type="range"] {
+  --sliderSize: 245px;
   position: relative;
   top: -1px;
   overflow: hidden;
-  width: 245px;
+  width: var(--sliderSize);
   -webkit-appearance: none;
-  background-color: #ccc;
+  background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
   border-radius: 5px;
 }
 
@@ -41,7 +58,7 @@ input[type="range"]:focus {
 input[type="range"]::-webkit-slider-runnable-track {
   height: 8px;
   -webkit-appearance: none;
-  color: #333;
+  color: #fff;
   margin-top: -1px;
 }
 
@@ -50,7 +67,7 @@ input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 8px;
   cursor: ew-resize;
-  background: #333;
-  box-shadow: -245px 0 0 245px #333;
+  background: #fff;
+  box-shadow: var(--sliderSize) 0 0 var(--sliderSize) #fff;
 }
 </style>

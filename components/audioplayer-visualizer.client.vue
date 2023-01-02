@@ -4,9 +4,8 @@ import type { Ref } from "vue";
 const viz: Ref<HTMLCanvasElement | null> = ref(null);
 const instance = getCurrentInstance();
 
-onMounted(async () => {
-  await nextTick();
-  init();
+defineExpose({
+  init,
 });
 
 function init() {
@@ -66,7 +65,5 @@ function init() {
 </script>
 
 <template>
-  <div class="audioplayer-visualizer">
-    <canvas class="w-screen h-screen" ref="viz"></canvas>
-  </div>
+  <canvas ref="viz"></canvas>
 </template>
