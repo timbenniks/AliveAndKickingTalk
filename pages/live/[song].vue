@@ -8,7 +8,7 @@ const selectedSong = songStore.getSongById(song as string);
 <template>
   <main>
     <backgrond-slider :song="selectedSong" class="z-0" />
-    <live-votes class="z-10 absolute w-screen h-screen" />
+    <live-votes class="z-10 absolute w-screen" />
 
     <div class="grid grid-cols-7 h-screen w-screen relative z-20">
       <div class="col-span-5 relative">
