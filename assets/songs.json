@@ -4,6 +4,11 @@
     "artist": "Eagles",
     "song": "Hotel California",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "70s classic tone"
+    },
     "mp3": "/hotel_california.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Hotel%20California/hotel_california.jpg",
     "artwork": [
@@ -34,6 +39,11 @@
     "artist": "Gary Moore",
     "song": "Still Got The Blues",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "Rock 'n Roll baby"
+    },
     "mp3": "/still_got_the_blues.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Still%20Got%20The%20Blues/still_got_the_blues.jpg",
     "artwork": [
@@ -64,6 +74,11 @@
     "artist": "AC/DC",
     "song": "Thunderstruck",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "Rock 'n Roll baby"
+    },
     "mp3": "/thunderstruck.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Thunderstruck/thunderstruck.jpg",
     "artwork": [
@@ -102,6 +117,11 @@
     "artist": "Guns N' Roses",
     "song": "Sweet Child 'O Mine",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "Rock 'n Roll baby"
+    },
     "mp3": "/sweet_child_o_mine.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/sweet_child_o_mine.jpg",
     "artwork": [
@@ -132,6 +152,11 @@
     "artist": "Chuck Berry",
     "song": "Johnny B Boode",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "Rock 'n Roll baby"
+    },
     "mp3": "/johnny_b_goode.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Johnny%20Be%20Goode/johnny_be_goode.jpg",
     "artwork": [
@@ -162,6 +187,11 @@
     "artist": "John Mayer",
     "song": "I Don't Need No Doctor",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "Rock 'n Roll baby"
+    },
     "mp3": "/i_dont_need_no_doctor.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/I_don_t_need_no_doctor.jpg",
     "artwork": [
@@ -192,6 +222,11 @@
     "artist": "Metallica",
     "song": "Master Of Puppets",
     "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "Rock 'n Roll baby"
+    },
     "mp3": "/master_of_puppets.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Master%20Of%20Puppets/master_of_puppets_cover.jpg",
     "artwork": [

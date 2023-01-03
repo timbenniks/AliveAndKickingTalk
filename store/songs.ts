@@ -44,6 +44,14 @@ export const useSongStore = defineStore({
     }
   },
   actions: {
+    setPlayed(songId: string) {
+      const song = this.songs.find((song) => song.songId === songId);
+
+      if (song) {
+        song.played = true
+      }
+    },
+
     async getVotesForSongs() {
       const songsAndVotes = await Promise.all(this.songsAndVotes.map(async (song) => {
         song.votes = await getVotesForSongId(song.songId)
@@ -113,7 +121,10 @@ export const useSongStore = defineStore({
     allSongs: state => state.songs,
     allSongsAndVotes: state => state.songsAndVotes,
     votedAmount: state => state.songs.filter(song => song.voted).length,
-    maxVotes: state => state.voteMax
+    maxVotes: state => state.voteMax,
+    getSongById: (state) => {
+      return (songId: string) => state.songs.find((song) => song.songId === songId)
+    },
   },
 })
 

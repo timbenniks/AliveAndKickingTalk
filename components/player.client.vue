@@ -2,6 +2,7 @@
 // https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
 import type { Ref, VueElement } from "vue";
 
+const props = defineProps(["song"]);
 const time = ref(0);
 const vizualizer: Ref<VueElement | null> = ref(null);
 
@@ -21,52 +22,22 @@ function onPlayerPlay({ event, setPlaying }: eventReturn) {
 }
 
 function onPlayerPause({ event, setPlaying }: eventReturn) {
-  console.log(event.type);
   setPlaying(false);
 }
 
 function onPlayerEnded({ event, setPlaying }: eventReturn) {
-  console.log(event.type);
   setPlaying(false);
-}
-
-function onPlayerLoadeddata({ event }: eventReturn) {
-  console.log(event.type);
-}
-
-function onPlayerWaiting({ event }: eventReturn) {
-  console.log(event.type);
-}
-
-function onPlayerPlaying({ event }: eventReturn) {
-  console.log(event.type);
 }
 
 function onPlayerTimeupdate({ event }: eventReturn) {
   time.value = (event.target as HTMLAudioElement).currentTime;
-  // console.log({
-  //   event: event.type,
-  //   time: (event.target as HTMLAudioElement).currentTime,
-  // });
-}
-
-function onPlayerCanplay({ event }: eventReturn) {
-  console.log(event.type);
-}
-
-function onPlayerCanplaythrough({ event }: eventReturn) {
-  console.log(event.type);
-}
-
-function playerStateChanged({ event }: eventReturn) {
-  console.log(event.type);
 }
 </script>
 
 <template>
   <audioplayer
     class="audioplayer"
-    src="/johnny_b_goode.mp3"
+    :src="props.song.mp3"
     :muted="false"
     :autoplay="false"
     :controls="false"
@@ -74,13 +45,7 @@ function playerStateChanged({ event }: eventReturn) {
     @play="onPlayerPlay"
     @pause="onPlayerPause"
     @ended="onPlayerEnded"
-    @loadeddata="onPlayerLoadeddata"
-    @waiting="onPlayerWaiting"
-    @playing="onPlayerPlaying"
     @timeupdate="onPlayerTimeupdate"
-    @canplay="onPlayerCanplay"
-    @canplaythrough="onPlayerCanplaythrough"
-    @statechanged="playerStateChanged"
   >
     <template
       v-slot:controls="{

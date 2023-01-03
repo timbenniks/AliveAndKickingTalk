@@ -1,5 +1,9 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  routeRules: {
+    '/': { ssr: false },
+    '/live': { ssr: false },
+    '/live/**': { ssr: false },
+  },
   modules: [
     '@nuxtjs/supabase',
     '@uniformdev/uniform-nuxt',
