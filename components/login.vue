@@ -75,7 +75,7 @@ const background = computed(() => {
           /></span>
           <span class="mt-[6px]">Login with GitHub</span>
         </button>
-        <button
+        <!-- <button
           class="cta flex space-x-2 justify-center"
           @click="login('twitter')"
         >
@@ -88,7 +88,7 @@ const background = computed(() => {
               class="w-8 block"
               alt="Login with Twitter" /></span
           ><span class="mt-[6px]">Login with Twitter</span>
-        </button>
+        </button> -->
       </div>
     </article>
     <img
