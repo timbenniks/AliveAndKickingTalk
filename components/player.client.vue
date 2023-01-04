@@ -12,8 +12,7 @@ type eventReturn = {
   setMuted: Function;
 };
 
-function onPlayerPlay({ event, setPlaying }: eventReturn) {
-  console.log(event.type);
+function onPlayerPlay({ setPlaying }: eventReturn) {
   setPlaying(true);
 
   if (vizualizer.value) {
@@ -21,11 +20,11 @@ function onPlayerPlay({ event, setPlaying }: eventReturn) {
   }
 }
 
-function onPlayerPause({ event, setPlaying }: eventReturn) {
+function onPlayerPause({ setPlaying }: eventReturn) {
   setPlaying(false);
 }
 
-function onPlayerEnded({ event, setPlaying }: eventReturn) {
+function onPlayerEnded({ setPlaying }: eventReturn) {
   setPlaying(false);
 }
 
@@ -53,7 +52,6 @@ function onPlayerTimeupdate({ event }: eventReturn) {
         playing,
         percentagePlayed,
         seekToPercentage,
-        duration,
         convertTimeToDuration,
       }"
     >
@@ -61,6 +59,8 @@ function onPlayerTimeupdate({ event }: eventReturn) {
         ref="vizualizer"
         class="absolute bottom-20 w-full"
       />
+
+      <audioplayer-play @bigplay="togglePlay" :playing="playing" />
 
       <div
         class="bg-black p-6 absolute bottom-0 justify-between h-20 flex w-full space-x-6"

@@ -115,7 +115,7 @@ onMounted(async () => {
 
   setInterval(function () {
     balls.splice(0, 1);
-  }, 2000);
+  }, 1000);
 });
 
 onUnmounted(() => {

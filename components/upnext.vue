@@ -24,7 +24,7 @@ const songs = computed(() => {
 <template>
   <ul>
     <li v-for="song in songs" class="mb-4">
-      <nuxt-link :to="`/live/${song.songId}`" class="block no-underline">
+      <a :href="`/live/${song.songId}`" class="block no-underline">
         <figure class="flex">
           <img
             :src="song.cover"
@@ -51,7 +51,7 @@ const songs = computed(() => {
             </p>
           </figcaption>
         </figure>
-      </nuxt-link>
+      </a>
     </li>
   </ul>
 </template>

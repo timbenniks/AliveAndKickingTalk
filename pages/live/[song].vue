@@ -21,4 +21,21 @@ const selectedSong = songStore.getSongById(song as string);
       </div>
     </div>
   </main>
+  <img
+    src="/logo.png"
+    alt="Alive & Kicking"
+    class="absolute bottom-8 right-8 md:w-48 w-36 z-20"
+  />
 </template>
+
+<style lang="postcss">
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 1s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+}
+</style>

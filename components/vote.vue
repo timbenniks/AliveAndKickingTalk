@@ -272,7 +272,7 @@ watch(votedAmount, () => {
   border: 0;
   margin: 0;
   cursor: pointer;
-  padding: 0 0.5rem;
+  padding: 0 0.7rem;
   background: transparent;
 }
 

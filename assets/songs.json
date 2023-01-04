@@ -1,114 +1,44 @@
 [
   {
-    "songId": "hotel_california",
-    "artist": "Eagles",
-    "song": "Hotel California",
-    "voted": false,
-    "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "70s classic tone"
-    },
-    "mp3": "/hotel_california.mp3",
-    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Hotel%20California/hotel_california.jpg",
-    "artwork": [
-      {
-        "bgX": "68%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30,w_1920/Alive%20and%20Kicking/Hotel%20California/1.webp"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/2.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/3.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/4.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hotel%20California/5.jpg"
-      }
-    ]
-  },
-  {
-    "songId": "still_got_the_blues",
-    "artist": "Gary Moore",
-    "song": "Still Got The Blues",
-    "voted": false,
-    "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "Rock 'n Roll baby"
-    },
-    "mp3": "/still_got_the_blues.mp3",
-    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Still%20Got%20The%20Blues/still_got_the_blues.jpg",
-    "artwork": [
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/1.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/2.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/3.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/4.jpg"
-      },
-      {
-        "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Still%20Got%20The%20Blues/5.jpg"
-      }
-    ]
-  },
-  {
-    "songId": "thunderstruck",
+    "songId": "back_in_black",
     "artist": "AC/DC",
-    "song": "Thunderstruck",
+    "song": "Back in Black",
     "voted": false,
     "played": false,
     "preset": {
       "channel": 0,
       "name": "Rock 'n Roll baby"
     },
-    "mp3": "/thunderstruck.mp3",
-    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Thunderstruck/thunderstruck.jpg",
+    "mp3": "/back_in_black.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Back%20in%20Black/back_in_black.jpg",
     "artwork": [
       {
         "bgX": "82%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/1.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/1.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/2.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/2.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/3.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/3.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/4.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/4.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/5.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/5.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/6.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/6.jpg"
       },
       {
         "bgX": "34%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Thunderstruck/7.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/7.jpg"
       }
     ]
   },
@@ -183,42 +113,46 @@
     ]
   },
   {
-    "songId": "i_dont_need_no_doctor",
-    "artist": "John Mayer",
-    "song": "I Don't Need No Doctor",
+    "songId": "beat_it",
+    "artist": "Michael Jackson",
+    "song": "Beat It",
     "voted": false,
     "played": false,
     "preset": {
       "channel": 0,
-      "name": "Rock 'n Roll baby"
+      "name": "80s rock"
     },
-    "mp3": "/i_dont_need_no_doctor.mp3",
-    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/I_don_t_need_no_doctor.jpg",
+    "mp3": "/beat_it.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Beat%20It/Beat_It.jpg",
     "artwork": [
       {
         "bgX": "49%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/1.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/1.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/2.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/2.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/3.webp"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/3.webp"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/4.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/4.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/I%20Don%27t%20Need%20No%20Doctor/5.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/5.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/6.jpg"
       }
     ]
   },
   {
-    "songId": "master_of_puppets",
+    "songId": "enter_sandman",
     "artist": "Metallica",
     "song": "Master Of Puppets",
     "voted": false,
@@ -227,28 +161,63 @@
       "channel": 0,
       "name": "Rock 'n Roll baby"
     },
-    "mp3": "/master_of_puppets.mp3",
-    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Master%20Of%20Puppets/master_of_puppets_cover.jpg",
+    "mp3": "/enter_sandman.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Enter%20Sandman/enter_sandman.jpg",
     "artwork": [
       {
         "bgX": "58%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/1.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/1.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/2.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/2.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/3.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/3.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/4.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/4.jpg"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Master%20Of%20Puppets/5.jpg"
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/5.jpg"
+      }
+    ]
+  },
+  {
+    "songId": "hot_for_teacher",
+    "artist": "Van Halen",
+    "song": "Hot For teacher",
+    "voted": false,
+    "played": false,
+    "preset": {
+      "channel": 0,
+      "name": "80s rock"
+    },
+    "mp3": "/hot_for_teacher.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Hot%20For%20Teacher/hot_for_teacher.jpg",
+    "artwork": [
+      {
+        "bgX": "13%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/1.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/2.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/3.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/4.jpg"
+      },
+      {
+        "bgX": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/5.jpg"
       }
     ]
   }
