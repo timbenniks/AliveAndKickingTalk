@@ -48,8 +48,9 @@ watch(votedAmount, () => {
     <article
       class="w-11/12 md:w-[600px] m-auto text-center relative z-10 mt-4 md:mt-8"
     >
-      <h1 class="text-4xl md:text-6xl font-black uppercase md:mb-2">
+      <h1 class="text-3xl md:text-5xl font-black uppercase md:mb-2">
         UPVOTE SONGS
+        <span class="text-sm">({{ votedAmount }}/{{ maxVotes }})</span>
       </h1>
       <p class="text-grey text-md md:text-xl mb-4">
         One vote per song, with a max of four votes!
