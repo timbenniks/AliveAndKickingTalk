@@ -107,7 +107,7 @@ onMounted(async () => {
     added.forEach((vote: any) => {
       balls.push(
         new Ball(
-          `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto/${vote.user_avatar}`
+          `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar}`
         )
       );
     });
