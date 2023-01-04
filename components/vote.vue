@@ -53,7 +53,8 @@ watch(votedAmount, () => {
         <span class="text-sm">({{ votedAmount }}/{{ maxVotes }})</span>
       </h1>
       <p class="text-grey text-md md:text-xl mb-4">
-        One vote per song, with a max of four votes!
+        <strong class="font-black">1</strong> vote per song, with a max of
+        <strong class="font-black">{{ maxVotes }}</strong> votes!
       </p>
     </article>
     <Carousel
