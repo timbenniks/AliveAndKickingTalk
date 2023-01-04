@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxtjs/supabase',
-    '@uniformdev/uniform-nuxt',
+    // '@uniformdev/uniform-nuxt',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/google-fonts',
     [
@@ -19,11 +19,11 @@ export default defineNuxtConfig({
   imports: {
     dirs: ['store'],
   },
-  uniform: {
-    projectId: process.env.UNIFORM_PROJECT_ID,
-    readOnlyApiKey: process.env.UNIFORM_API_KEY,
-    outputType: "standard"
-  },
+  // uniform: {
+  //   projectId: process.env.UNIFORM_PROJECT_ID,
+  //   readOnlyApiKey: process.env.UNIFORM_API_KEY,
+  //   outputType: "standard"
+  // },
   googleFonts: {
     families: {
       Lato: [100, 400, 900],
