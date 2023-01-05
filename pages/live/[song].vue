@@ -24,7 +24,12 @@ const selectedSong = songStore.getSongById(song as string);
   <img
     src="/logo.png"
     alt="Alive & Kicking"
-    class="absolute bottom-8 right-8 md:w-48 w-36 z-20"
+    class="absolute bottom-8 right-8 w-48 z-20"
+  />
+  <img
+    src="/vueamsterdam.png"
+    alt="Vue Amsterdam"
+    class="absolute bottom-8 right-72 w-48 z-20"
   />
 </template>
 

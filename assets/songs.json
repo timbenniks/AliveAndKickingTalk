@@ -5,10 +5,23 @@
     "song": "Back in Black",
     "voted": false,
     "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "Rock 'n Roll baby"
-    },
+    "presets": [
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 0
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie rhythm",
+        "at": 3
+      },
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 5
+      }
+    ],
     "mp3": "/back_in_black.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Back%20in%20Black/back_in_black.jpg",
     "artwork": [
@@ -48,10 +61,23 @@
     "song": "Sweet Child 'O Mine",
     "voted": false,
     "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "Rock 'n Roll baby"
-    },
+    "presets": [
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 0
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie rhythm",
+        "at": 3
+      },
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 5
+      }
+    ],
     "mp3": "/sweet_child_o_mine.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/sweet_child_o_mine.jpg",
     "artwork": [
@@ -83,10 +109,6 @@
     "song": "Johnny B Boode",
     "voted": false,
     "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "Boogie Woogie"
-    },
     "presets": [
       {
         "pc": 0,
@@ -135,10 +157,23 @@
     "song": "Beat It",
     "voted": false,
     "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "80s rock"
-    },
+    "presets": [
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 0
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie rhythm",
+        "at": 3
+      },
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 5
+      }
+    ],
     "mp3": "/beat_it.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Beat%20It/Beat_It.jpg",
     "artwork": [
@@ -174,10 +209,23 @@
     "song": "Master Of Puppets",
     "voted": false,
     "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "Rock 'n Roll baby"
-    },
+    "presets": [
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 0
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie rhythm",
+        "at": 3
+      },
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 5
+      }
+    ],
     "mp3": "/enter_sandman.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Enter%20Sandman/enter_sandman.jpg",
     "artwork": [
@@ -209,10 +257,23 @@
     "song": "Hot For teacher",
     "voted": false,
     "played": false,
-    "preset": {
-      "channel": 0,
-      "name": "80s rock"
-    },
+    "presets": [
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 0
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie rhythm",
+        "at": 3
+      },
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 5
+      }
+    ],
     "mp3": "/hot_for_teacher.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Hot%20For%20Teacher/hot_for_teacher.jpg",
     "artwork": [

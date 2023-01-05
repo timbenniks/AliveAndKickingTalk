@@ -8,13 +8,14 @@ type AmpPreset = {
 };
 
 const props = defineProps(["song", "time"]);
+const selectedPreset = ref(0);
+
 const presets = computed(() => {
   return props.song.presets;
 });
 
-const selectedPreset = ref(0);
 const selectedPresetName = computed(() => {
-  return props.song.presets[selectedPreset.value].name;
+  return presets.value[selectedPreset.value].name;
 });
 
 function findPresetForTime(time: number) {
