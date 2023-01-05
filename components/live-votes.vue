@@ -2,8 +2,24 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Ref } from "vue";
 
-const votez: Ref<HTMLCanvasElement | null> = ref(null);
+type Vote = {
+  userid: string;
+  user_avatar: string;
+  songid: string;
+};
 
+type Ball = {
+  image: HTMLImageElement;
+  radius: number;
+  x: number;
+  y: number;
+  dy: number;
+  dx: number;
+  vel: number;
+  update: Function;
+};
+
+const votez: Ref<HTMLCanvasElement | null> = ref(null);
 const client = useSupabaseClient();
 let realtimeChannel: RealtimeChannel;
 
@@ -45,17 +61,6 @@ onMounted(async () => {
     votez.value.width = tx;
     votez.value.height = ty;
   }
-
-  type Ball = {
-    image: HTMLImageElement;
-    radius: number;
-    x: number;
-    y: number;
-    dy: number;
-    dx: number;
-    vel: number;
-    update: any;
-  };
 
   const balls: Ball[] = [];
 
@@ -107,7 +112,7 @@ onMounted(async () => {
   watch(votes, (newVotes) => {
     const added = JSON.parse(JSON.stringify(newVotes));
 
-    added.forEach((vote: any) => {
+    added.forEach((vote: Vote) => {
       balls.push(
         new (Ball as any)(
           `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar}`

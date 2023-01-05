@@ -2,6 +2,26 @@
 import { Carousel, Navigation, Pagination, Slide } from "vue3-carousel";
 import { storeToRefs } from "pinia";
 
+type Song = {
+  songId: string;
+  artist: string;
+  song: string;
+  voted: boolean;
+  played: boolean;
+  preset: {
+    channel: number;
+    name: string;
+  };
+  mp3: string;
+  cover: string;
+  artwork: [
+    {
+      bgX: string;
+      bg: string;
+    }
+  ];
+};
+
 const songStore = useSongStore();
 songStore.checkAllSongsVoted();
 
