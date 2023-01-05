@@ -11,7 +11,8 @@ type events =
   | "timeupdate"
   | "canplay"
   | "canplaythrough"
-  | "statechanged";
+  | "statechanged"
+  | "volumechange";
 
 const EVENTS = [
   "play",
@@ -24,6 +25,7 @@ const EVENTS = [
   "canplay",
   "canplaythrough",
   "statechanged",
+  "volumechange",
 ];
 
 const emit = defineEmits([
@@ -37,6 +39,7 @@ const emit = defineEmits([
   "canplay",
   "canplaythrough",
   "statechanged",
+  "volumechange",
 ]);
 
 defineProps({
@@ -51,6 +54,7 @@ defineProps({
 const player: Ref<HTMLAudioElement | null> = ref(null);
 const playing = ref(false);
 const duration = ref(0);
+const volume = ref(0);
 const percentagePlayed = ref(0);
 const audioMuted = ref(false);
 
@@ -61,15 +65,19 @@ onMounted(async () => {
   if (player.value?.muted) {
     setMuted(true);
   }
+
+  if (player.value) {
+    volume.value = player.value.volume;
+  }
 });
 
 function bindEvents() {
   EVENTS.forEach((event) => {
-    bindaudioEvent(event as events);
+    bindSudioEvents(event as events);
   });
 }
 
-function bindaudioEvent(which: events) {
+function bindSudioEvents(which: events) {
   player.value?.addEventListener(
     which,
     (event: Event) => {
@@ -78,13 +86,19 @@ function bindaudioEvent(which: events) {
       }
 
       if (which === "timeupdate") {
-        if (player.value !== null) {
+        if (player.value) {
           percentagePlayed.value =
             (player.value.currentTime / player.value.duration) * 100;
         }
       }
 
-      emit(which, { event, ...{ setPlaying, setMuted } });
+      if (which === "volumechange") {
+        if (player.value) {
+          volume.value = player.value.volume;
+        }
+      }
+
+      emit(which, { event, ...{ setPlaying, setMuted, setVolume } });
     },
     true
   );
@@ -113,7 +127,7 @@ function togglePlay() {
 }
 
 function seekToPercentage(percentage: number) {
-  if (player.value !== null) {
+  if (player.value) {
     player.value.currentTime = (percentage / 100) * duration.value;
   }
 }
@@ -126,14 +140,14 @@ function convertTimeToDuration(seconds: number) {
 }
 
 function mute() {
-  if (player.value !== null) {
+  if (player.value) {
     player.value.muted = true;
   }
   setMuted(true);
 }
 
 function unmute() {
-  if (player.value !== null) {
+  if (player.value) {
     player.value.muted = false;
   }
   setMuted(false);
@@ -149,6 +163,14 @@ function toggleMute() {
 
 function setMuted(state: boolean) {
   audioMuted.value = state;
+}
+
+function setVolume(vol: number) {
+  if (player.value) {
+    player.value.volume = vol;
+  }
+
+  volume.value = vol;
 }
 </script>
 
@@ -168,14 +190,16 @@ function setMuted(state: boolean) {
       name="controls"
       :play="play"
       :pause="pause"
-      :toggle-play="togglePlay"
+      :togglePlay="togglePlay"
       :playing="playing"
-      :percentage-played="percentagePlayed"
-      :seek-to-percentage="seekToPercentage"
+      :percentagePlayed="percentagePlayed"
+      :seekToPercentage="seekToPercentage"
       :duration="duration"
-      :convert-time-to-duration="convertTimeToDuration"
-      :audio-muted="audioMuted"
-      :toggle-mute="toggleMute"
+      :convertTimeToDuration="convertTimeToDuration"
+      :audioMuted="audioMuted"
+      :toggleMute="toggleMute"
+      :volume="volume"
+      :setVolume="setVolume"
     ></slot>
   </div>
 </template>

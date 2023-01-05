@@ -8,6 +8,10 @@ defineExpose({
   init,
 });
 
+let audioCtx: AudioContext;
+let audioSource: MediaElementAudioSourceNode;
+let analyser: AnalyserNode;
+
 function init() {
   const player = instance?.parent?.refs["player"] as HTMLAudioElement;
   const ctx = viz.value?.getContext("2d") as CanvasRenderingContext2D;
@@ -17,13 +21,14 @@ function init() {
     viz.value.height = window.innerHeight;
   }
 
-  const audioCtx = new window.AudioContext();
-  const audioSource = audioCtx.createMediaElementSource(player);
-  const analyser = audioCtx.createAnalyser();
-
-  audioSource.connect(analyser);
-  analyser.connect(audioCtx.destination);
-  analyser.fftSize = 256;
+  if (!audioCtx) {
+    audioCtx = new window.AudioContext();
+    audioSource = audioCtx.createMediaElementSource(player);
+    analyser = audioCtx.createAnalyser();
+    audioSource.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    analyser.fftSize = 256;
+  }
 
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);

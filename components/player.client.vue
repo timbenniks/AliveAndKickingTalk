@@ -1,15 +1,16 @@
 <script lang="ts" setup>
 // https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
-import type { Ref, VueElement } from "vue";
+import audioplayerVisualizer from "./audioplayer-visualizer.client.vue";
 
 const props = defineProps(["song"]);
 const time = ref(0);
-const vizualizer: Ref<VueElement | null> = ref(null);
+const vizualizer = ref<InstanceType<typeof audioplayerVisualizer>>();
 
 type eventReturn = {
   event: Event;
   setPlaying: Function;
   setMuted: Function;
+  setVolume: Function;
 };
 
 function onPlayerPlay({ setPlaying }: eventReturn) {
@@ -31,6 +32,10 @@ function onPlayerEnded({ setPlaying }: eventReturn) {
 function onPlayerTimeupdate({ event }: eventReturn) {
   time.value = (event.target as HTMLAudioElement).currentTime;
 }
+
+function onVolumeChange({ event, setVolume }: eventReturn) {
+  setVolume((event.target as HTMLAudioElement).volume);
+}
 </script>
 
 <template>
@@ -45,6 +50,7 @@ function onPlayerTimeupdate({ event }: eventReturn) {
     @pause="onPlayerPause"
     @ended="onPlayerEnded"
     @timeupdate="onPlayerTimeupdate"
+    @volumechange="onVolumeChange"
   >
     <template
       v-slot:controls="{
@@ -53,6 +59,8 @@ function onPlayerTimeupdate({ event }: eventReturn) {
         percentagePlayed,
         seekToPercentage,
         convertTimeToDuration,
+        volume,
+        setVolume,
       }"
     >
       <audioplayer-visualizer
@@ -61,6 +69,7 @@ function onPlayerTimeupdate({ event }: eventReturn) {
       />
 
       <audioplayer-play @bigplay="togglePlay" :playing="playing" />
+      <audioplayer-volume :vol="volume" @setvol="setVolume" />
 
       <div
         class="bg-black p-6 absolute bottom-0 justify-between h-20 flex w-full space-x-6"

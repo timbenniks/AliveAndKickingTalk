@@ -12,7 +12,10 @@ const { data: votes, refresh: refreshVotes } = await useAsyncData(
   async () => {
     const { data } = await client
       .from("votes")
-      .select("userid, user_avatar, songid");
+      .select("userid, user_avatar, songid")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
     return data;
   }
 );
@@ -43,7 +46,7 @@ onMounted(async () => {
     votez.value.height = ty;
   }
 
-  interface Ball {
+  type Ball = {
     image: HTMLImageElement;
     radius: number;
     x: number;
@@ -52,7 +55,9 @@ onMounted(async () => {
     dx: number;
     vel: number;
     update: any;
-  }
+  };
+
+  const balls: Ball[] = [];
 
   function Ball(this: Ball, src: string) {
     this.image = new Image();
@@ -71,8 +76,6 @@ onMounted(async () => {
       ctx.fill();
     };
   }
-
-  const balls: any = [];
 
   function animate() {
     requestAnimationFrame(animate);
@@ -106,16 +109,16 @@ onMounted(async () => {
 
     added.forEach((vote: any) => {
       balls.push(
-        new Ball(
+        new (Ball as any)(
           `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar}`
-        )
+        ) as Ball
       );
     });
   });
 
   setInterval(function () {
     balls.splice(0, 1);
-  }, 1000);
+  }, 5000);
 });
 
 onUnmounted(() => {

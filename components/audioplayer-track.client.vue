@@ -39,8 +39,8 @@ onMounted(async () => {
   </div>
 </template>
 
-<style>
-input[type="range"] {
+<style scoped>
+.audio-track input[type="range"] {
   --sliderSize: 245px;
   position: relative;
   top: -1px;
@@ -51,18 +51,18 @@ input[type="range"] {
   border-radius: 5px;
 }
 
-input[type="range"]:focus {
+.audio-track input[type="range"]:focus {
   outline: none;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
+.audio-track input[type="range"]::-webkit-slider-runnable-track {
   height: 8px;
   -webkit-appearance: none;
   color: #fff;
   margin-top: -1px;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+.audio-track input[type="range"]::-webkit-slider-thumb {
   width: 8px;
   -webkit-appearance: none;
   height: 8px;

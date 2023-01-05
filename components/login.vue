@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const client = useSupabaseAuthClient();
 
-const login = async (provider: "github" | "twitter") => {
-  const { error } = await client.auth.signInWithOAuth({ provider });
+const login = async () => {
+  const { error } = await client.auth.signInWithOAuth({ provider: "github" });
 
   if (error) {
     console.error(error);
@@ -60,10 +60,7 @@ const background = computed(() => {
       <div
         class="flex flex-col space-y-4 m-auto md:mx-0 w-60 md:w-auto md:space-y-0 md:flex-row md:space-x-4 justify-center mb-12"
       >
-        <button
-          class="cta flex space-x-2 justify-center"
-          @click="login('github')"
-        >
+        <button class="cta flex space-x-2 justify-center" @click="login()">
           <span
             ><img
               src="/github.png"
@@ -75,20 +72,6 @@ const background = computed(() => {
           /></span>
           <span class="mt-[6px]">Login with GitHub</span>
         </button>
-        <!-- <button
-          class="cta flex space-x-2 justify-center"
-          @click="login('twitter')"
-        >
-          <span
-            ><img
-              src="/twitter.png"
-              loading="lazy"
-              width="240"
-              height="240"
-              class="w-8 block"
-              alt="Login with Twitter" /></span
-          ><span class="mt-[6px]">Login with Twitter</span>
-        </button> -->
       </div>
     </article>
     <img
