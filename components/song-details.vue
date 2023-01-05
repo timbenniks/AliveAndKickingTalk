@@ -19,5 +19,4 @@ defineProps(["song"]);
       <span class="block uppercase font-light text-4xl">{{ song.artist }}</span>
     </figcaption>
   </figure>
-  <midi :song="song" />
 </template>

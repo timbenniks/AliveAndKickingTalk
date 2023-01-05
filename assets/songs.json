@@ -87,6 +87,23 @@
       "channel": 0,
       "name": "Boogie Woogie"
     },
+    "presets": [
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 0
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie rhythm",
+        "at": 3
+      },
+      {
+        "pc": 0,
+        "name": "Boogie Woogie Solo",
+        "at": 5
+      }
+    ],
     "mp3": "/johnny_b_goode.mp3",
     "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Johnny%20Be%20Goode/johnny_be_goode.jpg",
     "artwork": [

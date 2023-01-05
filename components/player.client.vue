@@ -63,6 +63,8 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
         setVolume,
       }"
     >
+      <midi :song="song" :time="time" />
+
       <audioplayer-visualizer
         ref="vizualizer"
         class="absolute bottom-20 w-full"
@@ -86,7 +88,6 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
         />
         <div class="audioplayer-controls-time">
           {{ convertTimeToDuration(time) }}
-          <!-- {{ convertTimeToDuration(duration) }} -->
         </div>
       </div>
     </template>
