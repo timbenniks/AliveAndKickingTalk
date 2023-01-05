@@ -12,6 +12,11 @@ const presets = computed(() => {
   return props.song.presets;
 });
 
+const selectedPreset = ref(0);
+const selectedPresetName = computed(() => {
+  return props.song.presets[selectedPreset.value].name;
+});
+
 function findPresetForTime(time: number) {
   let presetIndex = 0;
   presets.value.forEach((preset: AmpPreset, index: number) => {
@@ -34,8 +39,13 @@ watch(
 await WebMidi.enable().catch((err) => console.log(err));
 const output: Output = WebMidi.getOutputByName("IAC Driver Alive and Kicking");
 
-function setPreset(preset: number) {
-  output.channels[1].sendProgramChange(preset);
+function setPreset(pc: number) {
+  if (selectedPreset.value === pc) {
+    return false;
+  }
+
+  selectedPreset.value = pc;
+  output.channels[1].sendProgramChange(pc);
 }
 
 // set first preset as default guitar sound
@@ -45,7 +55,8 @@ setPreset(presets.value[0].pc);
 <template>
   <div class="pl-12">
     <p class="text-grey uppercase font-light text-xl">Amp preset:</p>
-    <p class="font-black uppercase text-2xl">{{ song.preset.name }}</p>
-    <p>{{ time }}</p>
+    <p class="font-black uppercase text-2xl">
+      {{ selectedPresetName }}
+    </p>
   </div>
 </template>
