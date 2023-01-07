@@ -16,6 +16,8 @@ const songs = computed(() => {
 </script>
 
 <template>
+  <live-votes class="z-10 absolute w-screen" />
+
   <ul class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 p-4">
     <li v-for="song in songs" class="fancy-image p-4">
       <nuxt-link :to="`/live/${song.songId}`" class="block no-underline">
