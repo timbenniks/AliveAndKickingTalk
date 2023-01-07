@@ -27,31 +27,51 @@
     "artwork": [
       {
         "bgX": "82%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/1.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/1.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/2.jpg"
+        "bgY": "15%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/video/upload/q_auto,e_loop/fl_animated,fl_awebp/Alive%20and%20Kicking/Back%20in%20Black/bibpan.webp",
+        "opacity": "0.3"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/3.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/2.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/4.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/3.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/5.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/4.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/6.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/5.jpg",
+        "opacity": "1"
+      },
+      {
+        "bgX": "0%",
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/6.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "34%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/7.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Back%20in%20Black/7.jpg",
+        "opacity": "1"
       }
     ]
   },
@@ -83,23 +103,33 @@
     "artwork": [
       {
         "bgX": "34%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/1.webp"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/1.webp",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/2.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/2.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/3.webp"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/3.webp",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/4.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/4.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/5.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Sweet%20Child%20O%20Mine/5.jpg",
+        "opacity": "1"
       }
     ]
   },
@@ -131,23 +161,33 @@
     "artwork": [
       {
         "bgX": "34%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/1.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/1.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/2.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/2.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/3.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/3.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/4.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/4.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/5.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Johnny%20Be%20Goode/5.jpg",
+        "opacity": "1"
       }
     ]
   },
@@ -179,27 +219,39 @@
     "artwork": [
       {
         "bgX": "49%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/1.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/1.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/2.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/2.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/3.webp"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/3.webp",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/4.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/4.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/5.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/5.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/6.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Beat%20It/6.jpg",
+        "opacity": "1"
       }
     ]
   },
@@ -231,23 +283,33 @@
     "artwork": [
       {
         "bgX": "58%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/1.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/1.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/2.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/2.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/3.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/3.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/4.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/4.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/5.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Enter%20Sandman/5.jpg",
+        "opacity": "1"
       }
     ]
   },
@@ -279,23 +341,33 @@
     "artwork": [
       {
         "bgX": "13%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/1.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/1.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/2.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/2.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/3.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/3.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/4.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/4.jpg",
+        "opacity": "1"
       },
       {
         "bgX": "0%",
-        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/5.jpg"
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Hot%20For%20Teacher/5.jpg",
+        "opacity": "1"
       }
     ]
   }

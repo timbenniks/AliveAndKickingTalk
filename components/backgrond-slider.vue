@@ -7,20 +7,15 @@ function randomIntFromInterval(min: number, max: number) {
 
 type artwork = {
   bgX: string;
+  bgY: string;
   bg: string;
 };
 
-const backgrounds = props.song.artwork.map((art: artwork) => {
-  return art.bg;
-});
-
-const background = ref(
-  backgrounds[randomIntFromInterval(0, backgrounds.length - 1)]
-);
+const background = ref(props.song.artwork[0]);
 
 setInterval(() => {
   background.value =
-    backgrounds[randomIntFromInterval(0, backgrounds.length - 1)];
+    props.song.artwork[randomIntFromInterval(0, props.song.artwork.length - 1)];
 }, 10000);
 </script>
 
@@ -30,7 +25,9 @@ setInterval(() => {
       class="bg-cover w-screen h-screen absolute left-0 top-0"
       :key="background"
       :style="{
-        backgroundImage: `url(${background})`,
+        backgroundImage: `url(${background.bg})`,
+        backgroundPositionY: background.bgY,
+        opacity: background.opacity,
       }"
     ></div>
   </Transition>
