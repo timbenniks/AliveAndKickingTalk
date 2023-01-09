@@ -1,7 +1,7 @@
 import { H3Event } from 'h3';
 import songs from '../../assets/songs.json'
 
-export default defineEventHandler(async (event: H3Event) => {
+export default defineEventHandler((event: H3Event) => {
   const { id } = getQuery(event)
 
   const result = songs.find(song => song.songId === id)
