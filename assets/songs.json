@@ -10,6 +10,16 @@
         "pc": 2,
         "name": "Stadium Rock",
         "at": 0
+      },
+      {
+        "pc": 3,
+        "name": "Face Bleeding Solo",
+        "at": 65
+      },
+      {
+        "pc": 2,
+        "name": "Stadium Rock",
+        "at": 106
       }
     ],
     "mp3": "/back_in_black.mp3",
