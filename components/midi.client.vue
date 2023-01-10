@@ -14,9 +14,7 @@ const presets = computed(() => {
   return props.song.presets;
 });
 
-const selectedPresetName = computed(() => {
-  return presets.value[selectedPreset.value].name;
-});
+const selectedPresetName = ref(presets.value[0].name);
 
 function findPresetForTime(time: number) {
   let presetIndex = 0;
@@ -26,6 +24,7 @@ function findPresetForTime(time: number) {
     }
   });
 
+  selectedPresetName.value = presets.value[presetIndex].name;
   return presetIndex;
 }
 
@@ -50,7 +49,9 @@ function setPreset(pc: number) {
 }
 
 // set first preset as default guitar sound
-setPreset(presets.value[0].pc);
+onMounted(() => {
+  setPreset(presets.value[0].pc);
+});
 </script>
 
 <template>

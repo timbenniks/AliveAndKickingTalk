@@ -27,7 +27,6 @@ setInterval(() => {
       :style="{
         backgroundImage: `url(${background.bg})`,
         backgroundPositionY: background.bgY,
-        opacity: background.opacity,
       }"
     ></div>
   </Transition>

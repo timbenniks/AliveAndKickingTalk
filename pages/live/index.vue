@@ -16,7 +16,7 @@ const songs = computed(() => {
 </script>
 
 <template>
-  <live-votes class="z-10 absolute w-screen" />
+  <live-votes class="z-10 absolute w-screen pointer-events-none" />
 
   <ul class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 p-4">
     <li v-for="song in songs" class="fancy-image p-4">
