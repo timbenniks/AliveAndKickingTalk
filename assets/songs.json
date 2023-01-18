@@ -85,9 +85,24 @@
     "length": "2:02",
     "presets": [
       {
+        "pc": 3,
+        "name": "Face Bleeding Solo",
+        "at": 0
+      },
+      {
         "pc": 2,
         "name": "Stadium Rock",
-        "at": 0
+        "at": 31.5
+      },
+      {
+        "pc": 3,
+        "name": "Face Bleeding Solo",
+        "at": 66
+      },
+      {
+        "pc": 2,
+        "name": "Stadium Rock",
+        "at": 83
       }
     ],
     "mp3": "/welcome_to_the_jungle.mp3",
