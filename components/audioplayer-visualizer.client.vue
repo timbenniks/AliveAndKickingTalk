@@ -27,7 +27,8 @@ function init() {
     analyser = audioCtx.createAnalyser();
     audioSource.connect(analyser);
     analyser.connect(audioCtx.destination);
-    analyser.fftSize = 256;
+    //analyser.fftSize = 256;
+    analyser.fftSize = 512;
   }
 
   const bufferLength = analyser.frequencyBinCount;

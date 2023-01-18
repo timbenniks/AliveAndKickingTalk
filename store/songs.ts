@@ -36,7 +36,7 @@ export const useSongStore = defineStore({
   id: 'song-store',
   state: () => {
     return {
-      voteMax: 4,
+      voteMax: 3,
       songs,
       songsAndVotes: songs.map(song => {
         return { ...song, votes: 0 }
