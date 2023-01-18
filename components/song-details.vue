@@ -13,9 +13,12 @@ defineProps(["song"]);
       class="fancy-image w-56 block h-56 mr-4"
     />
     <figcaption class="block text-left mb-4">
-      <span class="block uppercase font-black text-6xl break-all">{{
-        song.song
-      }}</span>
+      <span class="block uppercase font-black text-6xl break-all"
+        >{{ song.song }}
+        <span class="uppercase font-light text-4xl"
+          >({{ song.length }})</span
+        ></span
+      >
       <span class="block uppercase font-light text-4xl">{{ song.artist }}</span>
     </figcaption>
   </figure>
