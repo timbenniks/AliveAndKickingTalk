@@ -149,9 +149,24 @@
     "length": "1:50",
     "presets": [
       {
+        "pc": 6,
+        "name": "Chuck 2.0",
+        "at": 0
+      },
+      {
         "pc": 1,
         "name": "Boogie Woogie",
-        "at": 0
+        "at": 19.5
+      },
+      {
+        "pc": 6,
+        "name": "Chuck 2.0",
+        "at": 53
+      },
+      {
+        "pc": 1,
+        "name": "Boogie Woogie",
+        "at": 71
       }
     ],
     "mp3": "/johnny_b_goode.mp3",
@@ -198,19 +213,14 @@
     "length": "2:37",
     "presets": [
       {
-        "pc": 0,
-        "name": "Boogie Woogie Solo",
+        "pc": 2,
+        "name": "Stadium Rock",
         "at": 0
       },
       {
-        "pc": 1,
-        "name": "Boogie Woogie rhythm",
-        "at": 3
-      },
-      {
-        "pc": 0,
-        "name": "Boogie Woogie Solo",
-        "at": 5
+        "pc": 5,
+        "name": "Eddie's Tone",
+        "at": 93
       }
     ],
     "mp3": "/beat_it.mp3",
@@ -270,7 +280,7 @@
       {
         "pc": 5,
         "name": "Soaring Lead",
-        "at": 112
+        "at": 110
       }
     ],
     "mp3": "/enter_sandman.mp3",
