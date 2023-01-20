@@ -86,7 +86,7 @@
     "presets": [
       {
         "pc": 3,
-        "name": "Face Bleeding Solo",
+        "name": "Top Hat Solo",
         "at": 0
       },
       {
@@ -96,7 +96,7 @@
       },
       {
         "pc": 3,
-        "name": "Face Bleeding Solo",
+        "name": "Top Hat Solo",
         "at": 66
       },
       {
@@ -263,19 +263,14 @@
     "length": "2:47",
     "presets": [
       {
-        "pc": 0,
-        "name": "Boogie Woogie Solo",
+        "pc": 4,
+        "name": "Metal",
         "at": 0
       },
       {
-        "pc": 1,
-        "name": "Boogie Woogie rhythm",
-        "at": 3
-      },
-      {
-        "pc": 0,
-        "name": "Boogie Woogie Solo",
-        "at": 5
+        "pc": 5,
+        "name": "Soaring Lead",
+        "at": 112
       }
     ],
     "mp3": "/enter_sandman.mp3",
