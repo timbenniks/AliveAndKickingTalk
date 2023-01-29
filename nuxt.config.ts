@@ -2,6 +2,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { ssr: false },
     '/live': { ssr: false },
+    '/slides': { ssr: false },
     '/live/**': { ssr: false },
   },
   modules: [
