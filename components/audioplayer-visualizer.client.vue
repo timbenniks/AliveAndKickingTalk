@@ -27,7 +27,6 @@ function init() {
     analyser = audioCtx.createAnalyser();
     audioSource.connect(analyser);
     analyser.connect(audioCtx.destination);
-    //analyser.fftSize = 256;
     analyser.fftSize = 512;
   }
 
@@ -55,6 +54,7 @@ function init() {
 
       const pattern = ctx.createPattern(img, "repeat") as CanvasPattern;
       ctx.fillStyle = pattern;
+
       ctx.fillRect(
         x,
         Math.ceil((vizHeight - barHeight) / 12) * 12,
