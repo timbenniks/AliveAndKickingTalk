@@ -1,3 +1,0 @@
-<template>
-  <slide-slider />
-</template>

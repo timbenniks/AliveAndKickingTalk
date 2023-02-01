@@ -32,18 +32,18 @@ const songs = computed(() => {
             :alt="`${song.artist} ${song.song}`"
             width="200"
             height="200"
-            class="w-24 h-24 block mr-4 fancy-image"
+            class="w-36 h-36 block mr-4 fancy-image"
           />
           <figcaption class="block text-left mb-4">
-            <span class="block uppercase font-black text-lg break-all">{{
+            <span class="block uppercase font-black text-2xl break-all">{{
               song.song
             }}</span>
-            <span class="block uppercase font-light text-lg">
+            <span class="block uppercase font-light text-2xl">
               {{ song.artist }}
             </span>
 
-            <p>
-              <span class="text-2xl font-black flowing-title mr-2">{{
+            <p class="mt-9">
+              <span class="text-5xl font-black flowing-title mr-2">{{
                 song.votes
               }}</span>
               <span v-if="song.votes === 1"> VOTE </span>

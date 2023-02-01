@@ -55,9 +55,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="pl-12">
-    <p class="text-grey uppercase font-light text-xl">Amp preset:</p>
-    <p class="font-black uppercase text-2xl">
+  <div class="relative left-12 bg-black p-4 inline-block bg-opacity-50">
+    <p class="text-grey uppercase font-light text-3xl">Amp preset:</p>
+    <p class="font-black uppercase text-5xl">
       {{ selectedPresetName }}
     </p>
   </div>

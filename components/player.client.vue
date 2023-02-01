@@ -71,7 +71,7 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
       />
 
       <audioplayer-play @bigplay="togglePlay" :playing="playing" />
-      <audioplayer-volume :vol="volume" @setvol="setVolume" />
+      <!-- <audioplayer-volume :vol="volume" @setvol="setVolume" /> -->
 
       <div
         class="bg-black p-6 absolute bottom-0 justify-between h-20 flex w-full space-x-6"
