@@ -4,5 +4,5 @@ const user = useSupabaseUser();
 
 <template>
   <login v-if="!user" />
-  <vote v-else />
+  <vote v-if="user" />
 </template>

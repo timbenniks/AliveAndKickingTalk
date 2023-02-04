@@ -113,11 +113,10 @@ onMounted(async () => {
     const added = JSON.parse(JSON.stringify(newVotes));
 
     added.forEach((vote: Vote) => {
-      balls.push(
-        new (Ball as any)(
-          `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar}`
-        ) as Ball
-      );
+      const avatar = `https://res.cloudinary.com/dwfcofnrd/image/upload/w_40,r_100,q_auto,f_png/github/${vote.user_avatar
+        .split("/u/")[1]
+        .replace("?v=4", "")}`;
+      balls.push(new (Ball as any)(avatar) as Ball);
     });
   });
 
