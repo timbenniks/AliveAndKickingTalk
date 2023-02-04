@@ -45,6 +45,18 @@ export default defineNuxtConfig({
           charset: "utf-8"
         }
       ],
+      script: [
+        {
+          defer: "true",
+          dataDomain: "aliveandkicking.vercel.app",
+          src: "https://plausible.io/js/script.js"
+        },
+        {
+          hid: "plausible",
+          children: "window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }",
+          type: "text/javascript",
+        }
+      ],
     }
   }
 })
