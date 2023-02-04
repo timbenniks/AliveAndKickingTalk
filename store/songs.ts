@@ -78,7 +78,7 @@ export const useSongStore = defineStore({
         .from('votes')
         .select('userid, songid')
         .eq('songid', songId)
-        .eq('userid', user.value.id)
+        .eq('userid', user.value?.id)
         .single()
 
       if (data) {
@@ -90,6 +90,7 @@ export const useSongStore = defineStore({
         .from('votes')
         .insert({
           userid: user.value?.id,
+          email: user.value?.email,
           user_avatar: user.value?.user_metadata.avatar_url,
           songid: songId
         })
