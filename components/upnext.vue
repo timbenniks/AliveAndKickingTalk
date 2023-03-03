@@ -12,12 +12,9 @@ setInterval(async () => {
 await songStore.getVotesForSongs();
 
 const songs = computed(() => {
-  return (
-    allSongsAndVotes.value
-      .filter((song) => song.songId !== props.song.songId)
-      //.slice(0, maxVotes.value)
-      .sort((a, b) => b.votes - a.votes)
-  );
+  return allSongsAndVotes.value
+    .filter((song) => song.songId !== props.song.songId)
+    .sort((a, b) => b.votes - a.votes);
 });
 </script>
 
@@ -35,10 +32,10 @@ const songs = computed(() => {
             class="w-36 h-36 block mr-4 fancy-image"
           />
           <figcaption class="block text-left mb-4">
-            <span class="block uppercase font-black text-2xl break-all">{{
+            <span class="block uppercase font-black text-xl break-all">{{
               song.song
             }}</span>
-            <span class="block uppercase font-light text-2xl">
+            <span class="block uppercase font-light text-xl">
               {{ song.artist }}
             </span>
 

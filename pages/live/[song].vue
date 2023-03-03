@@ -16,7 +16,7 @@ const selectedSong = songStore.getSongById(song as string);
         <player :song="selectedSong" />
       </div>
       <div class="bg-black bg-opacity-60 col-span-2 p-4">
-        <h2 class="font-black text-5xl uppercase mb-8">Up Next</h2>
+        <h2 class="font-black text-4xl uppercase mb-8">Up Next</h2>
         <upnext :song="selectedSong" />
       </div>
     </div>
