@@ -119,7 +119,10 @@ async function share() {
 </script>
 
 <template>
-  <button @click="share()" class="underline font-black uppercase block">
+  <button
+    @click="share()"
+    class="md:hidden underline font-black uppercase block"
+  >
     SHARE MY VOTE
   </button>
 </template>
