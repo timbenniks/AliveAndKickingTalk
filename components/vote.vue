@@ -132,7 +132,7 @@ watch(votedAmount, () => {
                 alt="Login with Github"
               />
               <span class="mt-[3px] text-md md:text-xl">
-                UPVOTE THIS SONG
+                UPVOTE
                 <span class="text-xs">({{ votedAmount }}/{{ maxVotes }})</span>
               </span>
             </button>
@@ -144,7 +144,7 @@ watch(votedAmount, () => {
               @click="songStore.upvote(song.songId)"
             >
               <span class="mt-[3px] text-md md:text-xl">
-                NO MORE VOTES LEFT
+                NO MORE VOTES
                 <span class="text-xs">({{ votedAmount }}/{{ maxVotes }})</span>
               </span>
             </button>
@@ -163,17 +163,12 @@ watch(votedAmount, () => {
                 alt="Login with Github"
               />
               <span class="mt-[3px] text-md md:text-xl">
-                REMOVE VOTE
+                DOWNVOTE
                 <span class="text-xs">({{ votedAmount }}/{{ maxVotes }})</span>
               </span>
             </button>
 
-            <button
-              class="underline font-black uppercase"
-              @click="songsCarousel.next()"
-            >
-              SKIP
-            </button>
+            <SongShare :song="song" />
           </div>
         </div>
       </Slide>
