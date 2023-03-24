@@ -108,7 +108,7 @@ async function share() {
   };
 
   try {
-    if (!navigator.canShare(shareData)) {
+    if (!navigator.share(shareData)) {
       window.open(url, "_blank")?.focus();
     }
     await navigator.share(shareData);

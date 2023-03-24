@@ -149,26 +149,29 @@ watch(votedAmount, () => {
               </span>
             </button>
 
-            <button
-              v-if="song.voted"
-              class="cta flex space-x-2 justify-center fancy-bg"
-              @click="songStore.downvote(song.songId)"
-            >
-              <img
-                src="/upicon.png"
-                loading="lazy"
-                width="19"
-                height="15"
-                class="w-5 block relative top-[5px] md:top-[9px] mr-1 rotate-180"
-                alt="Login with Github"
-              />
-              <span class="mt-[3px] text-md md:text-xl">
-                DOWNVOTE
-                <span class="text-xs">({{ votedAmount }}/{{ maxVotes }})</span>
-              </span>
-            </button>
+            <div v-if="song.voted" class="flex space-x-4 mb-4">
+              <button
+                class="cta flex space-x-2 justify-center fancy-bg"
+                @click="songStore.downvote(song.songId)"
+              >
+                <img
+                  src="/upicon.png"
+                  loading="lazy"
+                  width="19"
+                  height="15"
+                  class="w-5 block relative top-[5px] md:top-[9px] mr-1 rotate-180"
+                  alt="Login with Github"
+                />
+                <span class="mt-[3px] text-md md:text-xl">
+                  DOWNVOTE
+                  <span class="text-xs"
+                    >({{ votedAmount }}/{{ maxVotes }})</span
+                  >
+                </span>
+              </button>
 
-            <SongShare :song="song" />
+              <SongShare :song="song" />
+            </div>
           </div>
         </div>
       </Slide>
