@@ -32,6 +32,17 @@ async function getVotesForSongId(songId: string) {
   return count
 }
 
+async function getVotes() {
+  const client = useSupabaseClient()
+
+  const { data } = await client
+    .from('votes')
+    .select('created_at, userid, songid, email, user_avatar')
+
+  return data
+}
+
+
 export const useSongStore = defineStore({
   id: 'song-store',
   state: () => {
@@ -40,18 +51,11 @@ export const useSongStore = defineStore({
       songs,
       songsAndVotes: songs.map(song => {
         return { ...song, votes: 0 }
-      })
+      }),
+      votes: []
     }
   },
   actions: {
-    setPlayed(songId: string) {
-      const song = this.songs.find((song) => song.songId === songId);
-
-      if (song) {
-        song.played = true
-      }
-    },
-
     async getVotesForSongs() {
       const songsAndVotes = await Promise.all(this.songsAndVotes.map(async (song) => {
         song.votes = await getVotesForSongId(song.songId)
@@ -59,6 +63,11 @@ export const useSongStore = defineStore({
       }));
 
       this.songsAndVotes = songsAndVotes;
+    },
+
+    async getVotes() {
+      const votes = await getVotes()
+      this.votes = votes;
     },
 
     async checkAllSongsVoted() {
@@ -89,6 +98,7 @@ export const useSongStore = defineStore({
       const { error } = await client
         .from('votes')
         .insert({
+          // @ts-ignore
           userid: user.value?.id,
           email: user.value?.email || "",
           user_avatar: user.value?.user_metadata.avatar_url,
@@ -123,6 +133,7 @@ export const useSongStore = defineStore({
     allSongsAndVotes: state => state.songsAndVotes,
     votedAmount: state => state.songs.filter(song => song.voted).length,
     maxVotes: state => state.voteMax,
+    allVotes: state => state.votes,
     getSongById: (state) => {
       return (songId: string) => state.songs.find((song) => song.songId === songId)
     },
