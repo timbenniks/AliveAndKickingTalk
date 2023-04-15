@@ -16,10 +16,6 @@
   "dependencies": {
     "@cloudinary-util/url-loader": "^3.2.0",
     "@pinia/nuxt": "^0.4.6",
-    "@uniformdev/canvas": "^17.7.0",
-    "@uniformdev/canvas-vue": "^17.7.0",
-    "@uniformdev/context-vue": "^17.7.0",
-    "@uniformdev/uniform-nuxt": "^17.7.0",
     "pinia": "^2.0.28",
     "vue3-carousel": "^0.2.9",
     "webmidi": "^3.0.25"
