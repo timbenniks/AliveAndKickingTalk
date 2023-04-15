@@ -2,7 +2,7 @@
   {
     "songId": "back_in_black",
     "artist": "AC/DC",
-    "song": "Back in Black",
+    "song": "BACK IN BLACK",
     "voted": false,
     "played": false,
     "length": "2:15",
@@ -78,8 +78,8 @@
   },
   {
     "songId": "welcome_to_the_jungle",
-    "artist": "Guns N' Roses",
-    "song": "Welcome To The Jungle",
+    "artist": "GUNS N' ROSES",
+    "song": "WELCOME TO THE JUNGLE",
     "voted": false,
     "played": false,
     "length": "2:02",
@@ -142,8 +142,8 @@
   },
   {
     "songId": "johnny_b_goode",
-    "artist": "Chuck Berry",
-    "song": "Johnny B Goode",
+    "artist": "CHUCK BERRY",
+    "song": "JOHNNY B GOODE",
     "voted": false,
     "played": false,
     "length": "1:50",
@@ -206,8 +206,8 @@
   },
   {
     "songId": "beat_it",
-    "artist": "Michael Jackson",
-    "song": "Beat It",
+    "artist": "MICHAEL JACKSON",
+    "song": "BEAT IT",
     "voted": false,
     "played": false,
     "length": "2:37",
@@ -266,8 +266,8 @@
   },
   {
     "songId": "enter_sandman",
-    "artist": "Metallica",
-    "song": "Enter Sandman",
+    "artist": "METALLICA",
+    "song": "ENTER SANDMAN",
     "voted": false,
     "played": false,
     "length": "2:47",

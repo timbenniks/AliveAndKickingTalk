@@ -14,7 +14,7 @@
     "nuxt": "3.0.0"
   },
   "dependencies": {
-    "@cloudinary-util/url-loader": "^3.0.0",
+    "@cloudinary-util/url-loader": "^3.2.0",
     "@pinia/nuxt": "^0.4.6",
     "@uniformdev/canvas": "^17.7.0",
     "@uniformdev/canvas-vue": "^17.7.0",

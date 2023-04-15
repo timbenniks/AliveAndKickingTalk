@@ -8,96 +8,107 @@ const art = ref(
   props.song.artwork[0].bg.split("o_30/")[1].replace(/%20/g, " ")
 );
 
-const publicId = ref("");
-
-if (user.value?.user_metadata.avatar_url.includes("/u/")) {
-  publicId.value = `github/${user.value?.user_metadata.avatar_url
-    .split("/u/")[1]
-    .replace("?v=4", "")
-    .replace(".png", "")
-    .replace(".jpg", "")}`;
-} else {
-  publicId.value = `twitter/${user.value?.user_metadata.avatar_url
-    .split("/profile_images/")[1]
-    .replace("_normal", "")
-    .replace(".png", "")
-    .replace(".jpg", "")}`;
-}
-
+const isGithub = !!user.value?.user_metadata.avatar_url.includes("/u/");
 const artist = ref(props.song?.artist.replace("/", "%2F"));
 const song = ref(props.song?.song);
 
-const url = constructCloudinaryUrl({
-  options: {
-    src: art.value || "",
-    width: 1920,
-    height: 1080,
-    crop: "fill",
-    format: "jpg",
-    rawTransformations: ["b_black,o_20"],
+const cldOptions = {
+  src: art.value || "",
+  width: 1920,
+  height: 1080,
+  crop: "fill",
+  format: "jpg",
+  rawTransformations: ["b_black,o_20"],
 
-    overlays: [
-      {
-        publicId: `Alive and Kicking/overlays.png`,
-        position: {
-          x: 0,
-          y: 0,
-        },
-        effects: [
-          {
-            width: 1920,
-            height: 1080,
-          },
-        ],
+  overlays: [
+    {
+      publicId: `Alive and Kicking/overlays.png`,
+      position: {
+        x: 0,
+        y: 0,
       },
-      {
-        width: 1400,
-        crop: "fit",
-        text: {
-          color: "white",
-          fontFamily: "lato",
-          fontSize: 70,
-          fontWeight: "black",
-          text: artist.value,
+      effects: [
+        {
+          width: 1920,
+          height: 1080,
         },
-        position: {
-          y: 120,
-          gravity: "center",
-        },
+      ],
+    },
+    {
+      width: 1400,
+      crop: "fit",
+      text: {
+        color: "white",
+        fontFamily: "lato",
+        fontSize: 70,
+        fontWeight: "black",
+        text: artist.value,
       },
-      {
-        width: 1400,
-        crop: "fit",
-        text: {
-          color: "white",
-          fontFamily: "lato",
-          fontSize: 70,
-          fontWeight: "light",
-          text: song.value,
-        },
-        position: {
-          y: 190,
-          gravity: "center",
-        },
+      position: {
+        y: 120,
+        gravity: "center",
       },
+    },
+    {
+      width: 1400,
+      crop: "fit",
+      text: {
+        color: "white",
+        fontFamily: "lato",
+        fontSize: 70,
+        fontWeight: "light",
+        text: song.value,
+      },
+      position: {
+        y: 195,
+        gravity: "center",
+      },
+    },
+  ],
+};
+
+if (isGithub) {
+  cldOptions.overlays.push({
+    publicId: `github/${user.value?.user_metadata.avatar_url
+      .split("/u/")[1]
+      .replace("?v=4", "")
+      .replace(".png", "")
+      .replace(".jpg", "")}`,
+    position: {
+      y: -250,
+      gravity: "center",
+    },
+    effects: [
       {
-        publicId: publicId.value,
-        position: {
-          y: -250,
-          gravity: "center",
-        },
-        effects: [
-          {
-            crop: "fill",
-            gravity: "auto",
-            width: 250,
-            height: 250,
-          },
-        ],
+        crop: "fill",
+        gravity: "auto",
+        width: 250,
+        height: 250,
+        radius: 1000,
       },
     ],
-  },
+  });
+} else {
+  cldOptions.overlays.push({
+    url: user.value?.user_metadata.avatar_url.replace("_normal", ""),
+    position: {
+      y: -250,
+      gravity: "center",
+    },
+    effects: [
+      {
+        crop: "fill",
+        gravity: "auto",
+        width: 250,
+        height: 250,
+        radius: 1000,
+      },
+    ],
+  });
+}
 
+const url = constructCloudinaryUrl({
+  options: cldOptions,
   config: {
     cloud: {
       cloudName: "dwfcofnrd",
@@ -137,9 +148,9 @@ async function share() {
   </button>
   <a
     target="_blank"
-    class="hidden md:block underline font-black uppercase"
+    class="hidden md:block underline font-black uppercase mt-3"
     :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `I voted for ${song} by ${artist} during @timbenniks talk: Alive and Kicking.`
+      `I voted for ${song} by ${props.song?.artist} during @timbenniks talk: Alive and Kicking.`
     )}&url=${encodeURI(url)}`"
     >TWEET MY VOTE</a
   >
