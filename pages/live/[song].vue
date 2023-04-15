@@ -26,11 +26,11 @@ const selectedSong = songStore.getSongById(song as string);
     alt="Alive & Kicking"
     class="absolute bottom-8 right-8 w-48 z-20"
   />
-  <img
+  <!-- <img
     src="/vueamsterdam.png"
     alt="Vue Amsterdam"
     class="absolute bottom-8 right-72 w-48 z-20"
-  />
+  /> -->
 </template>
 
 <style lang="postcss">

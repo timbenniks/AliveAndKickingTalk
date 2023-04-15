@@ -108,10 +108,10 @@ const background = computed(() => {
       alt="Alive & Kicking"
       class="absolute bottom-8 right-8 md:w-48 w-36"
     />
-    <img
+    <!-- <img
       src="/vueamsterdam.png"
       alt="Vue Amsterdam"
       class="absolute w-48 md:left-8 md:bottom-8 md:top-auto left-2/4 -translate-x-2/4 md:-translate-x-0 top-4"
-    />
+    /> -->
   </main>
 </template>
