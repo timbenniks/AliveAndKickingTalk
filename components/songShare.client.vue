@@ -124,7 +124,7 @@ async function share() {
     text: `I voted for ${song.value} by ${artist.value.replace(
       "%2F",
       "/"
-    )} during Tim Benniks' talk: Alive and Kicking.`,
+    )} during Tim Benniks' talk: Alive and Kicking. @supabase @cloudinary @nuxt_js`,
     url: "https://aliveandkicking.vercel.app",
     files: [
       new File([blob], "file.jpg", {
