@@ -52,7 +52,7 @@ export default defineNuxtConfig({
       script: [
         {
           defer: "true",
-          dataDomain: "aliveandkicking.vercel.app",
+          dataDomain: "aliveandkicking.dev/",
           src: "https://plausible.io/js/script.js"
         },
         {

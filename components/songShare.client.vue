@@ -22,7 +22,7 @@ const cldOptions = {
 
   overlays: [
     {
-      publicId: `Alive and Kicking/overlays.png`,
+      publicId: `Alive and Kicking/overlays_new.png`,
       position: {
         x: 0,
         y: 0,
@@ -125,7 +125,7 @@ async function share() {
       "%2F",
       "/"
     )} during Tim Benniks' talk: Alive and Kicking. @supabase @cloudinary @nuxt_js`,
-    url: "https://aliveandkicking.vercel.app",
+    url: "https://www.aliveandkicking.dev/",
     files: [
       new File([blob], "file.jpg", {
         type: blob.type,
