@@ -317,5 +317,74 @@
         "opacity": "1"
       }
     ]
+  },
+  {
+    "songId": "friends_with_benefits",
+    "artist": "STEAL PANTHER",
+    "song": "FRIENDS WITH BENEFITS",
+    "voted": false,
+    "played": false,
+    "length": "2:58",
+    "presets": [
+      {
+        "pc": 5,
+        "name": "Satchel's tone",
+        "at": 0
+      },
+      {
+        "pc": 9,
+        "name": "Glam metal",
+        "at": 25
+      },
+      {
+        "pc": 5,
+        "name": "Satchel's tone",
+        "at": 89
+      },
+      {
+        "pc": 9,
+        "name": "Glam metal",
+        "at": 115
+      },
+      {
+        "pc": 5,
+        "name": "Satchel's tone",
+        "at": 138
+      }
+    ],
+    "mp3": "/friends_with_benefits.mp3",
+    "cover": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto/Alive%20and%20Kicking/Friends%20With%20benefits/cover.webp",
+    "artwork": [
+      {
+        "bgX": "58%",
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Friends%20With%20benefits/1.webp",
+        "opacity": "1"
+      },
+      {
+        "bgX": "0%",
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Friends%20With%20benefits/2.jpg",
+        "opacity": "1"
+      },
+      {
+        "bgX": "0%",
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Friends%20With%20benefits/3.jpg",
+        "opacity": "1"
+      },
+      {
+        "bgX": "0%",
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Friends%20With%20benefits/4.jpg",
+        "opacity": "1"
+      },
+      {
+        "bgX": "0%",
+        "bgY": "0%",
+        "bg": "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_30/Alive%20and%20Kicking/Friends%20With%20benefits/5.jpg",
+        "opacity": "1"
+      }
+    ]
   }
 ]
