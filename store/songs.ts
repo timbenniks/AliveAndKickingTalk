@@ -52,7 +52,7 @@ export const useSongStore = defineStore({
       songsAndVotes: songs.map(song => {
         return { ...song, votes: 0 }
       }),
-      votes: []
+      votes: [],
     }
   },
   actions: {
@@ -136,7 +136,7 @@ export const useSongStore = defineStore({
     allVotes: state => state.votes,
     getSongById: (state) => {
       return (songId: string) => state.songs.find((song) => song.songId === songId)
-    },
+    }
   },
 })
 

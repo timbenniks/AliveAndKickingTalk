@@ -4,6 +4,7 @@ export default defineNuxtConfig({
     '/live': { ssr: false },
     '/slides': { ssr: false },
     '/live/**': { ssr: false },
+    '/share/*': { ssr: true }
   },
   modules: [
     '@nuxtjs/supabase',

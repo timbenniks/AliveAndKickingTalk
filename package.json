@@ -8,16 +8,16 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
-    "@nuxtjs/google-fonts": "v3.0.0-1",
-    "@nuxtjs/supabase": "^0.3.0",
-    "@nuxtjs/tailwindcss": "^6.2.0",
-    "nuxt": "3.0.0"
+    "@nuxtjs/google-fonts": "3.0.0",
+    "@nuxtjs/supabase": "^0.3.5",
+    "@nuxtjs/tailwindcss": "^6.6.7",
+    "nuxt": "3.4.3"
   },
   "dependencies": {
-    "@cloudinary-util/url-loader": "^3.2.0",
-    "@pinia/nuxt": "^0.4.6",
-    "pinia": "^2.0.28",
-    "vue3-carousel": "^0.2.9",
-    "webmidi": "^3.0.25"
+    "@cloudinary-util/url-loader": "^3.4.0",
+    "@pinia/nuxt": "^0.4.9",
+    "pinia": "^2.0.35",
+    "vue3-carousel": "^0.3.1",
+    "webmidi": "^3.1.5"
   }
 }
