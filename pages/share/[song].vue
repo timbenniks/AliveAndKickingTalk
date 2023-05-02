@@ -132,8 +132,8 @@ const url = constructCloudinaryUrl({
 useSeoMeta({
   description: "Alive and Kicking, a Vue into Rock & Roll",
   ogDescription: "Alive and Kicking, a Vue into Rock & Roll",
-  title: `I just voted for ${songTitle?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
-  ogTitle: `I just voted for ${songTitle?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
+  title: `I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
+  ogTitle: `I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
   ogImage: url,
   ogImageWidth: 1920,
   ogImageHeight: 1080,
