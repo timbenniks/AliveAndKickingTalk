@@ -8,6 +8,7 @@ const client = useSupabaseClient();
 
 const songStore = useSongStore();
 const selectedSong = songStore.getSongById(song as string);
+const conference = songStore.conference;
 
 const { data: vote } = await client
   .from("votes")
@@ -131,8 +132,8 @@ const url = constructCloudinaryUrl({
 useSeoMeta({
   description: "Alive and Kicking, a Vue into Rock & Roll",
   ogDescription: "Alive and Kicking, a Vue into Rock & Roll",
-  title: `I just voted for ${songTitle?.toLowerCase()}!`,
-  ogTitle: `I just voted for ${songTitle?.toLowerCase()}!`,
+  title: `I just voted for ${songTitle?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
+  ogTitle: `I just voted for ${songTitle?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
   ogImage: url,
   ogImageWidth: 1920,
   ogImageHeight: 1080,
