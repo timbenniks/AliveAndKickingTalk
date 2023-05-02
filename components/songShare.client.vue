@@ -14,10 +14,7 @@ const artist = ref(props.song?.artist);
     target="_blank"
     class="block underline font-black uppercase mt-3"
     :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `I just voted for ${song} at by ${artist.replace(
-        '/',
-        '%2F'
-      )} @timbenniks talk at ${conference}`
+      `I just voted for ${song} at by ${artist} @timbenniks talk at ${conference}`
     )}&url=${encodeURI(
       `https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
     )}`"
