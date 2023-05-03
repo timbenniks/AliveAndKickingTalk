@@ -144,7 +144,55 @@ useSeoMeta({
 </script>
 
 <template>
-  <main>
-    <img :src="url" width="400" />
+  <main class="max-w-7xl mx-auto p-12">
+    <h1
+      class="uppercase font-black text-4xl md:text-5xl mb-2 flowing-title inline-block"
+    >
+      I just voted!
+    </h1>
+    <h2 class="block uppercase font-light text-2xl md:text-3xl mb-4">
+      Alive and Kicking, a Vue into Rock & Roll
+    </h2>
+
+    <img
+      :src="url"
+      :alt="`I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} at Tim Benniks' talk at ${conference}`"
+      class="w-full block fancy-image mb-4"
+    />
+
+    <a
+      :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        `I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} @timbenniks talk at ${conference}`
+      )}&url=${encodeURI(`https://aliveandkicking.dev${route.fullPath}`)}`"
+      class="inline-block cta mb-12 justify-center fancy-bg"
+      target="_blank"
+    >
+      <span class="mt-[3px] text-md md:text-xl">Share on Twitter</span>
+    </a>
+
+    <article class="max-w-3xl text-xl">
+      <h3 class="uppercase font-black text-3xl mb-4 flowing-title inline-block">
+        Rock & Roll in the browser
+      </h3>
+      <p class="mb-4">
+        Get ready to rock out at your next tech conference! I've created an
+        electrifying browser-based karaoke experience tailored explicitly for
+        rock & roll guitar. Using the innovative power of Vue, Nuxt, and
+        webmidi, everything from the backing tracks to the guitar amp presets is
+        dynamically controlled.
+      </p>
+      <p class="mb-4">
+        And the best part? You, the audience, get to participate too! By logging
+        in with Twitter or Github, you can live-vote what songs I should play
+        next, making this a fully interactive and unforgettable experience.
+      </p>
+
+      <p>
+        Learn more about
+        <a href="https://timbenniks.dev/alive-and-kicking" target="_blank"
+          >this talk</a
+        >.
+      </p>
+    </article>
   </main>
 </template>
