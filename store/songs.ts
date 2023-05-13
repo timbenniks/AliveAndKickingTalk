@@ -53,7 +53,8 @@ export const useSongStore = defineStore({
         return { ...song, votes: 0 }
       }),
       votes: [],
-      conference: "@VueJSLive"
+      conference: "@VueJSLive",
+      voting: false
     }
   },
   actions: {
@@ -81,38 +82,35 @@ export const useSongStore = defineStore({
     },
 
     async upvote(songId: string) {
+      this.voting = true;
       const client = useSupabaseClient()
       const user = useSupabaseUser();
 
-      const { data } = await client
+      const { data: alreadyVoted } = await client
         .from('votes')
         .select('userid, songid')
         .eq('songid', songId)
         .eq('userid', user.value?.id)
         .single()
 
-      if (data) {
-        console.log('already voted')
-        return false;
-      }
-
-      const { error } = await client
-        .from('votes')
-        .insert({
-          // @ts-ignore
-          userid: user.value?.id,
-          email: user.value?.email || "",
-          user_avatar: user.value?.user_metadata.avatar_url,
-          songid: songId
-        })
-
-      if (error) {
-        console.warn(error)
+      if (!alreadyVoted) {
+        await client
+          .from('votes')
+          .insert({
+            // @ts-ignore
+            userid: user.value?.id,
+            email: user.value?.email || "",
+            user_avatar: user.value?.user_metadata.avatar_url,
+            songid: songId
+          })
       }
 
       await this.checkAllSongsVoted();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      this.voting = false;
     },
     async downvote(songId: string) {
+      this.voting = true;
       const client = useSupabaseClient()
       const user = useSupabaseUser();
 
@@ -127,6 +125,9 @@ export const useSongStore = defineStore({
       }
 
       await this.checkAllSongsVoted();
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      this.voting = false;
     }
   },
   getters: {

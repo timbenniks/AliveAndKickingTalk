@@ -25,7 +25,7 @@ type Song = {
 const songStore = useSongStore();
 songStore.checkAllSongsVoted();
 
-const { allSongs, votedAmount, maxVotes } = storeToRefs(songStore);
+const { allSongs, votedAmount, maxVotes, voting } = storeToRefs(songStore);
 const songsCarousel = ref();
 const background = ref(allSongs.value[0].artwork[0]);
 const handleSlideStart = (data: any) => {
@@ -122,6 +122,10 @@ watch(votedAmount, () => {
               v-if="!song.voted && votedAmount < maxVotes"
               class="cta flex space-x-2 justify-center"
               @click="songStore.upvote(song.songId)"
+              :disabled="voting"
+              :class="{
+                '!pointer-events-none !cursor-wait !opacity-50': voting,
+              }"
             >
               <img
                 src="/upicon.png"
@@ -129,11 +133,14 @@ watch(votedAmount, () => {
                 width="19"
                 height="15"
                 class="w-5 block relative top-[5px] md:top-[9px] mr-1"
-                alt="Login with Github"
+                alt="Upvote"
               />
               <span class="mt-[3px] text-md md:text-xl">
-                UPVOTE
-                <span class="text-xs">({{ votedAmount }}/{{ maxVotes }})</span>
+                <template v-if="voting">VOTING</template>
+                <template v-else>UPVOTE</template>
+                <span class="text-xs pl-2"
+                  >({{ votedAmount }}/{{ maxVotes }})</span
+                >
               </span>
             </button>
 
@@ -153,6 +160,10 @@ watch(votedAmount, () => {
               <button
                 class="cta flex space-x-2 justify-center fancy-bg"
                 @click="songStore.downvote(song.songId)"
+                :disabled="voting"
+                :class="{
+                  '!pointer-events-none !cursor-wait !opacity-50': voting,
+                }"
               >
                 <img
                   src="/upicon.png"
@@ -160,17 +171,18 @@ watch(votedAmount, () => {
                   width="19"
                   height="15"
                   class="w-5 block relative top-[5px] md:top-[9px] mr-1 rotate-180"
-                  alt="Login with Github"
+                  alt="Downvote"
                 />
                 <span class="mt-[3px] text-md md:text-xl">
-                  DOWNVOTE
-                  <span class="text-xs"
+                  <template v-if="voting">VOTING</template>
+                  <template v-else>DOWNVOTE</template>
+                  <span class="text-xs pl-2"
                     >({{ votedAmount }}/{{ maxVotes }})</span
                   >
                 </span>
               </button>
 
-              <SongShare :song="song" />
+              <SongShare v-if="!voting" :song="song" />
             </div>
           </div>
         </div>
