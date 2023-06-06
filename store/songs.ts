@@ -53,7 +53,7 @@ export const useSongStore = defineStore({
         return { ...song, votes: 0 }
       }),
       votes: [],
-      conference: "@VueJSLive",
+      conference: "Vue.js Global Summit '23",
       voting: false
     }
   },
