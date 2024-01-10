@@ -1,0 +1,22 @@
+query Songs {
+  songs {
+    songId
+    song
+    artist
+    cover
+    length
+    mp3
+    presets {
+      name
+      at
+      pc
+    }
+    artwork {
+      bg
+      cloudinaryTransform
+      opacity
+      x
+      y
+    }
+  }
+}

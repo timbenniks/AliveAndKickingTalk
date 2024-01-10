@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import songs from '../assets/songs.json'
 
 async function checkVoted(songId: string) {
   const client = useSupabaseClient()
@@ -12,7 +11,7 @@ async function checkVoted(songId: string) {
     .select('userid, songid')
     .eq('songid', songId)
     .eq('userid', user.value?.id)
-    .single()
+    .maybeSingle()
 
   if (data) {
     voted = true
@@ -42,22 +41,49 @@ async function getVotes() {
   return data
 }
 
+async function getSongs() {
+  const { songs } = await GqlSongs();
+  return songs.map(song => {
+    return {
+      songId: song.songId,
+      song: song.song,
+      artist: song.artist,
+      cover: song.cover.secure_url.replace(`v${song.cover.version}`, 'q_auto,f_auto'),
+      length: song.length,
+      mp3: song.mp3,
+      presets: song.presets,
+      artwork: song.artwork.map(art => {
+        return {
+          bg: art.bg.secure_url.replace(`v${art.bg.version}`, art.cloudinaryTransform),
+          bgX: art.x,
+          bgY: art.y,
+          opacity: art.opacity
+        }
+      }),
+      votes: 0
+    }
+  })
+}
 
 export const useSongStore = defineStore({
   id: 'song-store',
   state: () => {
     return {
       voteMax: 3,
-      songs,
-      songsAndVotes: songs.map(song => {
-        return { ...song, votes: 0 }
-      }),
+      songs: [],
+      songsAndVotes: [],
       votes: [],
-      conference: "Vue.js Global Summit 23",
+      conference: "Vue.js Amsterdam 2024",
       voting: false
     }
   },
   actions: {
+
+    async getSongs() {
+      this.songs = await getSongs();
+      this.songsAndVotes = await getSongs();
+    },
+
     async getVotesForSongs() {
       const songsAndVotes = await Promise.all(this.songsAndVotes.map(async (song) => {
         song.votes = await getVotesForSongId(song.songId)
@@ -91,7 +117,7 @@ export const useSongStore = defineStore({
         .select('userid, songid')
         .eq('songid', songId)
         .eq('userid', user.value?.id)
-        .single()
+        .maybeSingle()
 
       if (!alreadyVoted) {
         await client

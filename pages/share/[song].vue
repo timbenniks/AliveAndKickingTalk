@@ -7,6 +7,8 @@ const { userid } = route.query;
 const client = useSupabaseClient();
 
 const songStore = useSongStore();
+await songStore.getSongs();
+
 const selectedSong = songStore.getSongById(song as string);
 const conference = songStore.conference;
 
@@ -15,7 +17,7 @@ const { data: vote } = await client
   .select("*")
   .eq("songid", song)
   .eq("userid", userid)
-  .single();
+  .maybeSingle();
 
 const art = selectedSong?.artwork[0].bg.split("o_30/")[1].replace(/%20/g, " ");
 // @ts-ignore

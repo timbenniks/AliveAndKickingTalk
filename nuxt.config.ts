@@ -15,7 +15,8 @@ export default defineNuxtConfig({
       {
         autoImports: ['defineStore', 'acceptHMRUpdate'],
       },
-    ]
+    ],
+    'nuxt-graphql-client'
   ],
   imports: {
     dirs: ['store'],
