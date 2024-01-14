@@ -86,8 +86,9 @@ watch(votedAmount, () => {
             </figcaption>
 
             <img
-              :src="song.cover"
-              loading="lazy"
+              :src="
+                song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')
+              "
               :alt="`${song.artist} ${song.song}`"
               width="384"
               height="384"

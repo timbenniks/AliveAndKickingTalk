@@ -34,8 +34,9 @@ const songs = computed(() => {
       <nuxt-link :to="`/live/${song.songId}`" class="block no-underline">
         <figure class="xl:flex">
           <img
-            :src="song.cover"
-            loading="lazy"
+            :src="
+              song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_200,h_200')
+            "
             :alt="`${song.artist} ${song.song}`"
             width="200"
             height="200"

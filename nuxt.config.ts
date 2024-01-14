@@ -29,7 +29,8 @@ export default defineNuxtConfig({
       maxVotes: process.env.NUXT_MAX_VOTES,
       medleyMode: process.env.NUXT_MEDLEY_MODE,
       voteTimeout: process.env.NUXT_VOTE_TIMEOUT || "500",
-      conference: process.env.NUXT_CONFERENCE
+      conference: process.env.NUXT_CONFERENCE,
+      showVolume: process.env.NUXT_SHOW_VOLUME
     }
   },
 

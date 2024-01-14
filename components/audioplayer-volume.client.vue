@@ -12,8 +12,8 @@ function onInput(e: Event) {
 </script>
 
 <template>
-  <div class="absolute top-96 z-50 left-12">
-    <p class="uppercase font-light text-xl mb-2">Track volume:</p>
+  <div class="absolute top-[470px] z-50 left-12">
+    <p class="uppercase font-light text-2xl mb-2">Track volume:</p>
     <input
       type="range"
       min="0"

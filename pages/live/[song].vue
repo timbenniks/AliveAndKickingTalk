@@ -16,6 +16,11 @@ const selectedSong = songStore.getSongById(song as string);
       <div class="col-span-5 relative">
         <song-details :song="selectedSong" />
         <player :song="selectedSong" />
+        <img
+          src="/logo.png"
+          alt="Alive & Kicking"
+          class="absolute bottom-24 right-4 w-48 z-20"
+        />
       </div>
       <div class="bg-black bg-opacity-60 col-span-2 p-4">
         <h2 class="font-black text-4xl uppercase mb-8">Up Next</h2>
@@ -23,16 +28,6 @@ const selectedSong = songStore.getSongById(song as string);
       </div>
     </div>
   </main>
-  <img
-    src="/logo.png"
-    alt="Alive & Kicking"
-    class="absolute bottom-8 right-8 w-48 z-20"
-  />
-  <img
-    src="/vueamsterdam.png"
-    alt="Vue Amsterdam"
-    class="absolute bottom-8 right-72 w-48 z-20"
-  />
 </template>
 
 <style lang="postcss">

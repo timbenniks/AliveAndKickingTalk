@@ -5,8 +5,7 @@ defineProps(["song"]);
 <template>
   <figure class="flex p-12 pb-0 mb-4">
     <img
-      :src="song.cover"
-      loading="lazy"
+      :src="song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')"
       :alt="`${song.artist} ${song.song}`"
       width="200"
       height="200"
@@ -19,7 +18,14 @@ defineProps(["song"]);
           >({{ song.length }})</span
         ></span
       >
-      <span class="block uppercase font-light text-5xl">{{ song.artist }}</span>
+      <span class="block uppercase font-light text-5xl mb-4">{{
+        song.artist
+      }}</span>
+      <img
+        src="/vueamsterdam.png"
+        alt="Vue Amsterdam"
+        class="w-48 relative -left-1"
+      />
     </figcaption>
   </figure>
 </template>

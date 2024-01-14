@@ -24,8 +24,9 @@ const songs = computed(() => {
       <a :href="`/live/${song.songId}`" class="block no-underline">
         <figure class="flex">
           <img
-            :src="song.cover"
-            loading="lazy"
+            :src="
+              song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_140,h_140')
+            "
             :alt="`${song.artist} ${song.song}`"
             width="200"
             height="200"

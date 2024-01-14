@@ -12,14 +12,18 @@ function onInput(e: Event) {
 
 const trackWidth = ref(0);
 
-onMounted(async () => {
-  await nextTick();
-
+function setTrackWidth() {
   trackWidth.value = (
     track.value?.parentNode as HTMLElement
   ).getBoundingClientRect().width;
 
   track.value?.style.setProperty("--sliderSize", `${trackWidth.value}px`);
+}
+
+onMounted(async () => {
+  await nextTick();
+  window.addEventListener("resize", setTrackWidth);
+  setTrackWidth();
 });
 </script>
 

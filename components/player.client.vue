@@ -1,18 +1,13 @@
 <script lang="ts" setup>
 // https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
 import audioplayerVisualizer from "./audioplayer-visualizer.client.vue";
+import type { eventReturn } from "../types";
 
 const props = defineProps(["song"]);
 const time = ref(0);
 const vizualizer = ref<InstanceType<typeof audioplayerVisualizer>>();
 
-type eventReturn = {
-  event: Event;
-  setPlaying: Function;
-  setMuted: Function;
-  setVolume: Function;
-};
-
+const { showVolume } = useRuntimeConfig().public;
 function onPlayerPlay({ setPlaying }: eventReturn) {
   setPlaying(true);
 
@@ -71,8 +66,15 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
       />
 
       <audioplayer-play @bigplay="togglePlay" :playing="playing" />
-      <!-- <audioplayer-volume :vol="volume" @setvol="setVolume" /> -->
-
+      <audioplayer-volume
+        :vol="volume"
+        @setvol="setVolume"
+        v-if="showVolume === 'true'"
+      />
+      <div
+        @click="togglePlay()"
+        class="absolute top-0 left-0 w-full h-full z-90"
+      ></div>
       <div
         class="bg-black p-6 absolute bottom-0 justify-between h-20 flex w-full space-x-6"
       >

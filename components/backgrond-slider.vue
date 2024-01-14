@@ -19,7 +19,10 @@ setInterval(() => {
       class="bg-cover w-screen h-screen absolute left-0 top-0"
       :key="background"
       :style="{
-        backgroundImage: `url(${background.bg})`,
+        backgroundImage: `url(${background.bg.replace(
+          'q_auto,f_auto',
+          'q_auto,f_auto,w_1920,h_1080,c_crop'
+        )})`,
         backgroundPositionY: background.y,
       }"
     ></div>
