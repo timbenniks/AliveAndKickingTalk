@@ -24,7 +24,7 @@ onMounted(() => {
           share(
             `Alive and Kicking by Tim Benniks at ${conference}`,
             `I just voted for ${song} at by ${artist} at ${conference}`,
-            `https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
+            `https://aliveandkicking.dev/share/${songId}?userid=${user.id}`
           )
         "
       >
@@ -38,7 +38,7 @@ onMounted(() => {
           :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
             `I just voted for ${song} at by ${artist} at ${conference}`
           )}&url=${encodeURI(
-            `https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
+            `https://aliveandkicking.dev/share/${songId}?userid=${user.id}`
           )}`"
         >
           <twitter class="w-5" />
@@ -46,7 +46,7 @@ onMounted(() => {
         <a
           target="_blank"
           :href="`https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
-            `I just voted for ${song} by ${artist} at ${conference} https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
+            `I just voted for ${song} by ${artist} at ${conference} https://aliveandkicking.dev/share/${songId}?userid=${user.id}`
           )}`"
         >
           <img src="/linkedin.png" class="w-5 relative -top-0.5" />

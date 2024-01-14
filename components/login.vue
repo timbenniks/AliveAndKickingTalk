@@ -17,27 +17,27 @@ const background = computed(() => {
   const bgs = [
     {
       x: "29%",
-      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70/Alive%20and%20Kicking/tim1.png",
+      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70,w_1920,h_1080/Alive%20and%20Kicking/tim1.png",
     },
     {
       x: "69%",
-      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_50/Alive%20and%20Kicking/tim2.png",
+      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_50,w_1920,h_1080/Alive%20and%20Kicking/tim2.png",
     },
     {
       x: "34%",
-      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_50/Alive%20and%20Kicking/tim3.png",
+      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_50,w_1920,h_1080/Alive%20and%20Kicking/tim3.png",
     },
     {
       x: "21%",
-      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70/Alive%20and%20Kicking/tim4.png",
+      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70,w_1920,h_1080/Alive%20and%20Kicking/tim4.png",
     },
     {
       x: "10%",
-      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_50/Alive%20and%20Kicking/tim5.png",
+      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_50,w_1920,h_1080/Alive%20and%20Kicking/tim5.png",
     },
     {
       x: "10%",
-      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_80/Alive%20and%20Kicking/tim6.png",
+      src: "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_80,w_1920,h_1080/Alive%20and%20Kicking/tim6.png",
     },
     {
       x: "23%",
