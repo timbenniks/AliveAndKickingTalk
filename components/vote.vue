@@ -128,7 +128,7 @@ watch(votedAmount, () => {
 
             <loader class="relative top-2" v-show="voting" />
           </div>
-          <SongShare :canshare="song.voted" :song="song" />
+          <SongShare :song="song" />
         </div>
       </Slide>
     </Carousel>

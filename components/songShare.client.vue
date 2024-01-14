@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const user = useSupabaseUser();
-const props = defineProps(["song", "canshare"]);
+const props = defineProps(["song"]);
 const { conference } = useRuntimeConfig().public;
 const { song, songId, artist } = props.song;
 

@@ -163,25 +163,6 @@ useSeoMeta({
       class="w-full block fancy-image mb-4"
     />
 
-    <a
-      :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        `I just voted for ${songTitle} by ${artist} at ${conference}`
-      )}&url=${encodeURI(`https://aliveandkicking.dev${route.fullPath}`)}`"
-      class="inline-block cta mb-12 justify-center fancy-bg w-auto mr-4"
-      target="_blank"
-    >
-      <span class="mt-[3px] text-md md:text-xl">Share on Twitter</span>
-    </a>
-    <a
-      :href="`https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
-        `I just voted for ${songTitle} by ${artist} at ${conference} https://aliveandkicking.dev${route.fullPath}`
-      )}`"
-      class="inline-block cta mb-12 justify-center fancy-bg w-auto"
-      target="_blank"
-    >
-      <span class="mt-[3px] text-md md:text-xl">Share on LinkedIn</span>
-    </a>
-
     <article class="max-w-3xl text-xl">
       <h3 class="uppercase font-black text-3xl mb-4 flowing-title inline-block">
         Rock & Roll in the browser
