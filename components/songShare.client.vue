@@ -17,7 +17,7 @@ onMounted(() => {
 
 <template>
   <div class="share-vote text-left">
-    <div v-if="canshare && user" class="flex space-x-3">
+    <div v-if="user" class="flex space-x-3">
       <button
         v-if="canShare"
         @click="
