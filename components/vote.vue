@@ -4,7 +4,7 @@ import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
 await songStore.getSongs();
-songStore.checkAllSongsVoted();
+songStore.setVotedState();
 
 const { allSongs, votedAmount, maxVotes, voting } = storeToRefs(songStore);
 const songsCarousel = ref();
@@ -42,7 +42,7 @@ watch(votedAmount, () => {
         :key="background.bg"
         :style="{
           backgroundImage: `url(${background.bg})`,
-          backgroundPositionX: background.bgX,
+          backgroundPositionX: background.x,
         }"
       ></div>
     </Transition>

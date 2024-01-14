@@ -5,12 +5,6 @@ function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-type artwork = {
-  bgX: string;
-  bgY: string;
-  bg: string;
-};
-
 const background = ref(props.song.artwork[0]);
 
 setInterval(() => {
@@ -26,7 +20,7 @@ setInterval(() => {
       :key="background"
       :style="{
         backgroundImage: `url(${background.bg})`,
-        backgroundPositionY: background.bgY,
+        backgroundPositionY: background.y,
       }"
     ></div>
   </Transition>

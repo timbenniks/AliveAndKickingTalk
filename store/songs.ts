@@ -1,49 +1,11 @@
 import { defineStore } from 'pinia'
+import type { Song, Database } from '../types'
 
-async function checkVoted(songId: string) {
-  const client = useSupabaseClient()
-  const user = useSupabaseUser();
-
-  let voted = false;
-
-  const { data } = await client
-    .from('votes')
-    .select('userid, songid')
-    .eq('songid', songId)
-    .eq('userid', user.value?.id)
-    .maybeSingle()
-
-  if (data) {
-    voted = true
-  }
-
-  return voted
-}
-
-async function getVotesForSongId(songId: string) {
-  const client = useSupabaseClient()
-
-  const { count } = await client
-    .from('votes')
-    .select('songid', { count: 'exact', head: true })
-    .eq('songid', songId)
-
-  return count
-}
-
-async function getVotes() {
-  const client = useSupabaseClient()
-
-  const { data } = await client
-    .from('votes')
-    .select('created_at, userid, songid, email, user_avatar')
-
-  return data
-}
+const { maxVotes, voteTimeout } = useRuntimeConfig().public
 
 async function getSongs() {
   const { songs } = await GqlSongs();
-  return songs.map(song => {
+  const mappedSongs = songs.map(song => {
     return {
       songId: song.songId,
       song: song.song,
@@ -52,65 +14,82 @@ async function getSongs() {
       length: song.length,
       mp3: song.mp3,
       presets: song.presets,
-      artwork: song.artwork.map(art => {
+      artwork: song.artwork.map((art) => {
         return {
           bg: art.bg.secure_url.replace(`v${art.bg.version}`, art.cloudinaryTransform),
-          bgX: art.x,
-          bgY: art.y,
-          opacity: art.opacity
+          x: art.x,
+          y: art.y,
+          opacity: art.opacity,
+          cloudinaryTransform: art.cloudinaryTransform
         }
       }),
-      votes: 0
-    }
+      votes: 0,
+      voted: false
+    } as Song
   })
+
+  return mappedSongs
 }
 
 export const useSongStore = defineStore({
   id: 'song-store',
   state: () => {
     return {
-      voteMax: 3,
-      songs: [],
-      songsAndVotes: [],
-      votes: [],
+      voteMax: parseInt(maxVotes),
+      songs: [] as Song[],
       conference: "Vue.js Amsterdam 2024",
       voting: false
     }
   },
   actions: {
-
     async getSongs() {
       this.songs = await getSongs();
-      this.songsAndVotes = await getSongs();
     },
 
     async getVotesForSongs() {
-      const songsAndVotes = await Promise.all(this.songsAndVotes.map(async (song) => {
-        song.votes = await getVotesForSongId(song.songId)
-        return song;
-      }));
+      const client = useSupabaseClient<Database>()
 
-      this.songsAndVotes = songsAndVotes;
+      const { data: votesPerSong } = await client
+        .from('votes_per_song')
+        .select("*")
+
+      this.songs.map(song => {
+        const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId).votes
+        song.votes = votes
+      })
     },
 
-    async getVotes() {
-      const votes = await getVotes()
-      this.votes = votes;
-    },
+    async setVotedState() {
+      const client = useSupabaseClient<Database>()
+      const user = useSupabaseUser();
 
-    async checkAllSongsVoted() {
-      const songs = await Promise.all(this.songs.map(async (song) => {
-        song.voted = await checkVoted(song.songId)
-        return song;
-      }));
+      if (!user.value) {
+        return false
+      }
 
-      this.songs = songs;
+      const { data: userVotes } = await client
+        .from('votes')
+        .select('userid, songid')
+        .eq('userid', user.value?.id)
+
+      this.songs.forEach(song => {
+        if (userVotes && userVotes.find(vote => vote.songid === song.songId)) {
+          song.voted = true
+        }
+        else {
+          song.voted = false
+        }
+      })
     },
 
     async upvote(songId: string) {
       this.voting = true;
-      const client = useSupabaseClient()
+      const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();
+
+      if (!user.value) {
+        return false
+      }
 
       const { data: alreadyVoted } = await client
         .from('votes')
@@ -123,22 +102,26 @@ export const useSongStore = defineStore({
         await client
           .from('votes')
           .insert({
-            // @ts-ignore
             userid: user.value?.id,
-            email: user.value?.email || "",
+            email: user.value?.email || null,
             user_avatar: user.value?.user_metadata.avatar_url,
             songid: songId
           })
       }
 
-      await this.checkAllSongsVoted();
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await this.setVotedState();
+      await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
       this.voting = false;
     },
+
     async downvote(songId: string) {
       this.voting = true;
-      const client = useSupabaseClient()
+      const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();
+
+      if (!user.value) {
+        return false
+      }
 
       const { error } = await client
         .from('votes')
@@ -150,18 +133,16 @@ export const useSongStore = defineStore({
         console.warn(error)
       }
 
-      await this.checkAllSongsVoted();
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await this.setVotedState();
+      await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
 
       this.voting = false;
     }
   },
   getters: {
     allSongs: state => state.songs,
-    allSongsAndVotes: state => state.songsAndVotes,
     votedAmount: state => state.songs.filter(song => song.voted).length,
     maxVotes: state => state.voteMax,
-    allVotes: state => state.votes,
     getSongById: (state) => {
       return (songId: string) => state.songs.find((song) => song.songId === songId)
     }

@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { WebMidi, Output } from "webmidi";
-
-type AmpPreset = {
-  pc: number;
-  name: string;
-  at: number;
-};
+import type { AmpPreset } from "../types";
 
 const props = defineProps(["song", "time"]);
 const selectedPreset = ref(0);

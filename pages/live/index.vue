@@ -4,7 +4,7 @@ import { storeToRefs } from "pinia";
 const songStore = useSongStore();
 await songStore.getSongs();
 
-const { allSongsAndVotes } = storeToRefs(songStore);
+const { allSongs } = storeToRefs(songStore);
 
 setInterval(async () => {
   await songStore.getVotesForSongs();
@@ -13,7 +13,7 @@ setInterval(async () => {
 await songStore.getVotesForSongs();
 
 const songs = computed(() => {
-  return allSongsAndVotes.value.sort((a, b) => b.votes - a.votes);
+  return allSongs.value.sort((a, b) => b.votes - a.votes);
 });
 </script>
 

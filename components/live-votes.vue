@@ -1,23 +1,7 @@
 <script setup lang="ts">
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Ref } from "vue";
-
-type Vote = {
-  userid: string;
-  user_avatar: string;
-  songid: string;
-};
-
-type Ball = {
-  image: HTMLImageElement;
-  radius: number;
-  x: number;
-  y: number;
-  dy: number;
-  dx: number;
-  vel: number;
-  update: Function;
-};
+import type { Vote, Ball } from "../types";
 
 const votez: Ref<HTMLCanvasElement | null> = ref(null);
 const client = useSupabaseClient();

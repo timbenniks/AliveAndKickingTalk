@@ -22,6 +22,14 @@ export default defineNuxtConfig({
     dirs: ['store'],
   },
 
+  runtimeConfig: {
+    public: {
+      maxVotes: process.env.NUXT_MAX_VOTES,
+      medleyMode: process.env.NUXT_MEDLEY_MODE,
+      voteTimeout: process.env.NUXT_VOTE_TIMEOUT || "500"
+    }
+  },
+
   googleFonts: {
     families: {
       Lato: [100, 400, 900],
