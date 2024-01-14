@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import type { Ref } from "vue";
-
 defineProps({
   vol: { type: Number, required: true },
 });

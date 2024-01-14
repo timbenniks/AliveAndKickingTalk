@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import type { Ref } from "vue";
 import type { Vote, Ball } from "../types";
 
 const votez: Ref<HTMLCanvasElement | null> = ref(null);
@@ -60,15 +59,17 @@ onMounted(async () => {
     this.vel = Math.random() / 5;
 
     this.update = () => {
+      ctx.save();
       ctx.beginPath();
-      ctx.drawImage(this.image, this.x, this.y);
-      ctx.fill();
+      ctx.arc(this.x + 20, this.y + 20, 20, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(this.image, this.x, this.y, 40, 40);
+      ctx.restore();
     };
   }
 
   function animate() {
     requestAnimationFrame(animate);
-
     ctx.clearRect(0, 0, tx, ty);
 
     for (let i = 0; i < balls.length; i++) {
@@ -95,24 +96,8 @@ onMounted(async () => {
 
   watch(votes, (newVotes) => {
     const added = JSON.parse(JSON.stringify(newVotes));
-
     added.forEach((vote: Vote) => {
-      let avatar = "";
-
-      if (vote.user_avatar.includes("/u/")) {
-        avatar = `https://res.cloudinary.com/dwfcofnrd/image/upload/w_40,r_100,q_auto,f_png/github/${vote.user_avatar
-          .split("/u/")[1]
-          .replace("?v=4", "")}`;
-      } else if (vote.user_avatar.includes(".licdn.")) {
-        avatar = `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar}`;
-      } else {
-        avatar = `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar.replace(
-          "_normal",
-          ""
-        )}`;
-      }
-
-      balls.push(new (Ball as any)(avatar) as Ball);
+      balls.push(new (Ball as any)(vote.user_avatar) as Ball);
     });
   });
 
