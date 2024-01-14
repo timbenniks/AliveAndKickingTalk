@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { constructCloudinaryUrl } from "@cloudinary-util/url-loader";
+import type { Database } from "../../types";
+import { useSongStore } from "~/store/songs";
 
 const route = useRoute();
 const { song } = route.params;
 const { userid } = route.query;
-const client = useSupabaseClient();
+const client = useSupabaseClient<Database>();
 
 const songStore = useSongStore();
 await songStore.getSongs();
@@ -16,12 +18,11 @@ const { data: vote } = await client
   .from("votes")
   .select("*")
   .eq("songid", song)
-  .eq("userid", userid)
+  .eq("userid", userid as string)
   .maybeSingle();
 
 const art = selectedSong?.artwork[0].bg.split("o_30/")[1].replace(/%20/g, " ");
-// @ts-ignore
-const isGithub = !!vote.user_avatar.includes("/u/");
+const isGithub = !!vote?.user_avatar.includes("/u/");
 const artist = selectedSong?.artist.replace("/", "%2F");
 const songTitle = selectedSong?.song;
 
@@ -82,8 +83,7 @@ const cldOptions = {
 
 if (isGithub) {
   cldOptions.overlays.push({
-    // @ts-ignore
-    publicId: `github/${vote.user_avatar
+    publicId: `github/${vote?.user_avatar
       .split("/u/")[1]
       .replace("?v=4", "")
       .replace(".png", "")
@@ -94,6 +94,7 @@ if (isGithub) {
     },
     effects: [
       {
+        //@ts-ignore
         crop: "fill",
         gravity: "auto",
         width: 250,
@@ -104,14 +105,14 @@ if (isGithub) {
   });
 } else {
   cldOptions.overlays.push({
-    // @ts-ignore
-    url: vote.user_avatar.replace("_normal", ""),
+    url: vote?.user_avatar.replace("_normal", ""),
     position: {
       y: -250,
       gravity: "center",
     },
     effects: [
       {
+        //@ts-ignore
         crop: "fill",
         gravity: "auto",
         width: 250,
@@ -134,12 +135,12 @@ const url = constructCloudinaryUrl({
 useSeoMeta({
   description: "Alive and Kicking, a Vue into Rock & Roll",
   ogDescription: "Alive and Kicking, a Vue into Rock & Roll",
-  title: `I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
-  ogTitle: `I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} at Tim Benniks' talk at ${conference}`,
+  title: `I just voted for ${songTitle} by ${artist} at Tim Benniks' talk at ${conference}`,
+  ogTitle: `I just voted for ${songTitle} by ${artist} at Tim Benniks' talk at ${conference}`,
   ogImage: url,
   ogImageWidth: 1920,
   ogImageHeight: 1080,
-  twitterTitle: `I just voted for ${songTitle?.toLowerCase()}!`,
+  twitterTitle: `I just voted for ${songTitle}!`,
   twitterImage: url,
   twitterCard: "summary_large_image",
 });
@@ -158,18 +159,27 @@ useSeoMeta({
 
     <img
       :src="url"
-      :alt="`I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} at Tim Benniks' talk at ${conference}`"
+      :alt="`I just voted for ${songTitle} by ${artist} at Tim Benniks' talk at ${conference}`"
       class="w-full block fancy-image mb-4"
     />
 
     <a
       :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        `I just voted for ${songTitle?.toLowerCase()} by ${artist?.toLowerCase()} @timbenniks talk at ${conference}`
+        `I just voted for ${songTitle} by ${artist} at ${conference}`
       )}&url=${encodeURI(`https://aliveandkicking.dev${route.fullPath}`)}`"
-      class="inline-block cta mb-12 justify-center fancy-bg"
+      class="inline-block cta mb-12 justify-center fancy-bg w-auto mr-4"
       target="_blank"
     >
       <span class="mt-[3px] text-md md:text-xl">Share on Twitter</span>
+    </a>
+    <a
+      :href="`https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
+        `I just voted for ${songTitle} by ${artist} at ${conference} https://aliveandkicking.dev${route.fullPath}`
+      )}`"
+      class="inline-block cta mb-12 justify-center fancy-bg w-auto"
+      target="_blank"
+    >
+      <span class="mt-[3px] text-md md:text-xl">Share on LinkedIn</span>
     </a>
 
     <article class="max-w-3xl text-xl">

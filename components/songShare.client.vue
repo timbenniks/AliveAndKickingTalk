@@ -1,28 +1,32 @@
 <script lang="ts" setup>
 const user = useSupabaseUser();
 const props = defineProps(["song", "canshare"]);
-const songStore = useSongStore();
-const conference = songStore.conference;
-
-const song = ref(props.song?.song);
-const songId = ref(props.song?.songId);
-const artist = ref(props.song?.artist);
+const { conference } = useRuntimeConfig().public;
+const { song, songId, artist } = props.song;
 </script>
 
 <template>
   <div class="share-vote text-left">
-    <a
-      v-if="canshare"
-      target="_blank"
-      class="block underline mt-3"
-      :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        `I just voted for ${song} at by ${artist} @timbenniks talk at ${conference}`
-      )}&url=${encodeURI(
-        `https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
-      )}`"
-    >
-      Share this vote on Twitter</a
-    >
-    <span v-else> Vote first, share after </span>
+    <div v-if="canshare && user" class="flex space-x-3">
+      <span class="text-sm">SHARE ON</span>
+      <a
+        target="_blank"
+        :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          `I just voted for ${song} at by ${artist} at ${conference}`
+        )}&url=${encodeURI(
+          `https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
+        )}`"
+      >
+        <twitter class="w-5" />
+      </a>
+      <a
+        target="_blank"
+        :href="`https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
+          `I just voted for ${song} by ${artist} at ${conference} https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
+        )}`"
+      >
+        <img src="/linkedin.png" class="w-5 relative -top-0.5" />
+      </a>
+    </div>
   </div>
 </template>

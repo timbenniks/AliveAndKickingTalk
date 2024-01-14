@@ -71,7 +71,7 @@ const background = computed(() => {
         class="flex flex-col space-y-4 m-auto md:mx-0 w-60 md:w-auto md:space-y-0 md:flex-row md:space-x-4 justify-center mb-12"
       >
         <button
-          class="cta flex space-x-2 justify-center"
+          class="cta flex space-x-3 justify-center !w-auto py-3"
           @click="login('github')"
         >
           <span

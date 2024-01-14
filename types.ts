@@ -64,7 +64,6 @@ export type events =
   | "statechanged"
   | "volumechange";
 
-
 export type Json =
   | string
   | number
@@ -83,9 +82,9 @@ export interface Database {
           id: number
           medley_spot: number | null
           soft_voted: boolean | null
-          songid: string | null
-          user_avatar: string | null
-          userid: string | null
+          songid: string
+          user_avatar: string
+          userid: string
         }
         Insert: {
           created_at?: string | null
@@ -93,9 +92,9 @@ export interface Database {
           id?: number
           medley_spot?: number | null
           soft_voted?: boolean | null
-          songid?: string | null
-          user_avatar?: string | null
-          userid?: string | null
+          songid?: string
+          user_avatar?: string
+          userid?: string
         }
         Update: {
           created_at?: string | null
@@ -103,9 +102,9 @@ export interface Database {
           id?: number
           medley_spot?: number | null
           soft_voted?: boolean | null
-          songid?: string | null
-          user_avatar?: string | null
-          userid?: string | null
+          songid?: string
+          user_avatar?: string
+          userid?: string
         }
         Relationships: []
       }

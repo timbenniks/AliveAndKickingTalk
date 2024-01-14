@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Song, Database } from '../types'
 
-const { maxVotes, voteTimeout } = useRuntimeConfig().public
-
 async function getSongs() {
   const { songs } = await GqlSongs();
   const mappedSongs = songs.map(song => {
@@ -34,6 +32,8 @@ async function getSongs() {
 export const useSongStore = defineStore({
   id: 'song-store',
   state: () => {
+    const { maxVotes } = useRuntimeConfig().public
+
     return {
       voteMax: parseInt(maxVotes),
       songs: [] as Song[],
@@ -54,8 +54,8 @@ export const useSongStore = defineStore({
         .select("*")
 
       this.songs.map(song => {
-        const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId).votes
-        song.votes = votes
+        const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId)?.votes
+        song.votes = votes || 0
       })
     },
 
@@ -83,6 +83,8 @@ export const useSongStore = defineStore({
     },
 
     async upvote(songId: string) {
+      const { voteTimeout } = useRuntimeConfig().public
+
       this.voting = true;
       const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();
@@ -115,6 +117,7 @@ export const useSongStore = defineStore({
     },
 
     async downvote(songId: string) {
+      const { voteTimeout } = useRuntimeConfig().public
       this.voting = true;
       const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();

@@ -77,10 +77,10 @@ watch(votedAmount, () => {
         <div class="carousel__item w-80 md:w-96">
           <figure class="mb-4">
             <figcaption class="block text-left mb-4">
-              <span class="block uppercase font-black text-3xl md:text-4xl">{{
+              <span class="block uppercase font-black text-2xl">{{
                 song.song
               }}</span>
-              <span class="block uppercase font-light text-3xl md:text-4xl">{{
+              <span class="block uppercase font-light text-2xl">{{
                 song.artist
               }}</span>
             </figcaption>
@@ -111,7 +111,7 @@ watch(votedAmount, () => {
                 cta: song.voted,
               }"
             >
-              <span class="mt-[3px] text-md md:text-xl">
+              <span class="mt-[3px] text-md">
                 <template v-if="!song.voted && votedAmount < maxVotes"
                   >VOTE FOR THIS</template
                 >
