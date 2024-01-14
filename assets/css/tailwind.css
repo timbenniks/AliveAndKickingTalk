@@ -21,7 +21,7 @@
 
   a,
   button {
-    @apply bg-none underline underline-offset-2 hover:opacity-70;
+    @apply bg-none underline underline-offset-2;
   }
 
   .fancy-image {
@@ -50,12 +50,27 @@
   }
 
   .cta {
-    @apply py-2 px-3 border-2 text-white bg-black font-black no-underline uppercase text-sm;
+    @apply w-[180px] py-2 px-3 border-2 text-white bg-black font-black no-underline uppercase text-sm;
     border-image-slice: 1;
     border-image-source: linear-gradient(
       89.87deg,
       #256ad1 7.57%,
       #d1258c 95.58%
     );
+  }
+
+  .cta-fancy {
+    @apply w-[180px] py-2 px-3 border-2 text-white font-black no-underline uppercase text-sm;
+    background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
+    border-image-slice: 1;
+    border-image-source: linear-gradient(
+      89.87deg,
+      #256ad1 7.57%,
+      #d1258c 95.58%
+    );
+  }
+
+  .cta-negative {
+    @apply w-[180px] py-2 px-3 border-2 text-[#ADADAD] bg-[#585858] border-[#585858] font-black no-underline uppercase text-sm;
   }
 }

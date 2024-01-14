@@ -53,10 +53,6 @@ watch(votedAmount, () => {
         UPVOTE SONGS
         <span class="text-sm">({{ votedAmount }}/{{ maxVotes }})</span>
       </h1>
-      <p class="text-grey text-md md:text-xl mb-4">
-        <strong class="font-black">1</strong> vote per song, with a max of
-        <strong class="font-black">{{ maxVotes }}</strong> votes!
-      </p>
     </article>
     <Carousel
       ref="songsCarousel"
@@ -100,72 +96,39 @@ watch(votedAmount, () => {
 
           <div class="flex space-x-4 mb-4">
             <button
-              v-if="!song.voted && votedAmount < maxVotes"
-              class="cta flex space-x-2 justify-center"
-              @click="songStore.upvote(song.songId)"
-              :disabled="voting"
+              class="flex space-x-2 justify-center"
+              @click="
+                !song.voted && votedAmount < maxVotes
+                  ? songStore.upvote(song.songId)
+                  : songStore.downvote(song.songId)
+              "
+              :disabled="voting || (!song.voted && votedAmount >= maxVotes)"
               :class="{
-                '!pointer-events-none !cursor-wait !opacity-50': voting,
+                'cta-fancy !pointer-events-none': voting,
+                'cta-fancy': !song.voted && votedAmount < maxVotes,
+                'cta-negative !pointer-events-none':
+                  !song.voted && votedAmount >= maxVotes,
+                cta: song.voted,
               }"
             >
-              <img
-                src="/upicon.png"
-                loading="lazy"
-                width="19"
-                height="15"
-                class="w-5 block relative top-[5px] md:top-[9px] mr-1"
-                alt="Upvote"
-              />
               <span class="mt-[3px] text-md md:text-xl">
-                <template v-if="voting">VOTING</template>
-                <template v-else>UPVOTE</template>
+                <template v-if="!song.voted && votedAmount < maxVotes"
+                  >VOTE FOR THIS</template
+                >
+                <template v-if="!song.voted && votedAmount >= maxVotes"
+                  >NO MORE VOTES</template
+                >
+                <template v-if="song.voted">REMOVE VOTE</template>
+
                 <span class="text-xs pl-2"
                   >({{ votedAmount }}/{{ maxVotes }})</span
                 >
               </span>
             </button>
 
-            <button
-              v-if="!song.voted && votedAmount >= maxVotes"
-              disabled
-              class="pointer-events-none py-2 px-3 border-2 text-[#ADADAD] bg-[#585858] border-[#585858] font-black no-underline uppercase text-sm flex space-x-2 justify-center"
-              @click="songStore.upvote(song.songId)"
-            >
-              <span class="mt-[3px] text-md md:text-xl">
-                NO MORE VOTES
-                <span class="text-xs">({{ votedAmount }}/{{ maxVotes }})</span>
-              </span>
-            </button>
-
-            <div v-if="song.voted" class="flex space-x-4 mb-4">
-              <button
-                class="cta flex space-x-2 justify-center fancy-bg"
-                @click="songStore.downvote(song.songId)"
-                :disabled="voting"
-                :class="{
-                  '!pointer-events-none !cursor-wait !opacity-50': voting,
-                }"
-              >
-                <img
-                  src="/upicon.png"
-                  loading="lazy"
-                  width="19"
-                  height="15"
-                  class="w-5 block relative top-[5px] md:top-[9px] mr-1 rotate-180"
-                  alt="Downvote"
-                />
-                <span class="mt-[3px] text-md md:text-xl">
-                  <template v-if="voting">VOTING</template>
-                  <template v-else>DOWNVOTE</template>
-                  <span class="text-xs pl-2"
-                    >({{ votedAmount }}/{{ maxVotes }})</span
-                  >
-                </span>
-              </button>
-
-              <SongShare v-if="!voting" :song="song" />
-            </div>
+            <loader class="relative top-2" v-show="voting" />
           </div>
+          <SongShare :canshare="song.voted" :song="song" />
         </div>
       </Slide>
     </Carousel>
