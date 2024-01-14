@@ -103,10 +103,13 @@ onMounted(async () => {
         avatar = `https://res.cloudinary.com/dwfcofnrd/image/upload/w_40,r_100,q_auto,f_png/github/${vote.user_avatar
           .split("/u/")[1]
           .replace("?v=4", "")}`;
+      } else if (vote.user_avatar.includes(".licdn.")) {
+        avatar = `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar}`;
       } else {
-        avatar = `https://res.cloudinary.com/dwfcofnrd/image/upload/w_40,r_100,q_auto,f_png/twitter/${vote.user_avatar
-          .split("/profile_images/")[1]
-          .replace("_normal", "")}`;
+        avatar = `https://res.cloudinary.com/dwfcofnrd/image/fetch/w_40,r_100,q_auto,f_png/${vote.user_avatar.replace(
+          "_normal",
+          ""
+        )}`;
       }
 
       balls.push(new (Ball as any)(avatar) as Ball);
