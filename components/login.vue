@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const client = useSupabaseAuthClient();
 
-const login = async (provider: "github") => {
+const login = async (provider: "github" | "twitter" | "linkedin_oidc") => {
   const { error } = await client.auth.signInWithOAuth({ provider });
 
   if (error) {
@@ -81,9 +81,39 @@ const background = computed(() => {
               width="240"
               height="240"
               class="w-8 block"
-              alt="Login with Github"
+              alt="Github"
           /></span>
-          <span class="mt-[6px]">Login with GitHub</span>
+          <span class="mt-[6px]">Github</span>
+        </button>
+        <button
+          class="cta flex space-x-3 justify-center !w-auto py-3"
+          @click="login('twitter')"
+        >
+          <span
+            ><img
+              src="/twitter.png"
+              loading="lazy"
+              width="240"
+              height="240"
+              class="w-8 block"
+              alt="Twitter"
+          /></span>
+          <span class="mt-[6px]">Twitter</span>
+        </button>
+        <button
+          class="cta flex space-x-3 justify-center !w-auto py-3"
+          @click="login('linkedin_oidc')"
+        >
+          <span
+            ><img
+              src="/linkedin.png"
+              loading="lazy"
+              width="240"
+              height="240"
+              class="w-8 block"
+              alt="Twitter"
+          /></span>
+          <span class="mt-[6px]">LinkedIn</span>
         </button>
       </div>
     </article>

@@ -106,7 +106,7 @@ export const useSongStore = defineStore({
           .insert({
             userid: user.value?.id,
             email: user.value?.email || null,
-            user_avatar: user.value?.user_metadata.avatar_url,
+            user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata.picture,
             songid: songId
           })
       }
