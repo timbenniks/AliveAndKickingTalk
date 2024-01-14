@@ -22,7 +22,7 @@ onMounted(() => {
         v-if="canShare"
         @click="
           share(
-            'Share baby',
+            `Alive and Kicking by Tim Benniks at ${conference}`,
             `I just voted for ${song} at by ${artist} at ${conference}`,
             `https://www.aliveandkicking.dev/share/${songId}?userid=${user.id}`
           )
