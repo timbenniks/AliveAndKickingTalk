@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import type { Ref } from "vue";
-
 type events =
   | "play"
   | "pause"
