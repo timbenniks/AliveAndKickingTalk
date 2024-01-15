@@ -36,7 +36,7 @@ const cldOptions = {
 
   overlays: [
     {
-      publicId: `Alive and Kicking/overlays_new.png`,
+      publicId: `Alive and Kicking/share-vuejsams-overlay.png`,
       position: {
         x: 0,
         y: 0,
@@ -53,9 +53,9 @@ const cldOptions = {
       crop: "fit",
       text: {
         color: "white",
-        fontFamily: "lato",
+        fontFamily: "Archivo Black",
         fontSize: 70,
-        fontWeight: "black",
+        // fontWeight: "Ultrabold",
         text: artist,
       },
       position: {
@@ -68,9 +68,9 @@ const cldOptions = {
       crop: "fit",
       text: {
         color: "white",
-        fontFamily: "lato",
+        fontFamily: "Archivo Black",
         fontSize: 70,
-        fontWeight: "light",
+        // fontWeight: "Ultrabold",
         text: songTitle,
       },
       position: {
