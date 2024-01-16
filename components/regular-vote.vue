@@ -4,7 +4,6 @@ import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
 await songStore.getSongs();
-songStore.setVotedState();
 
 const { allSongs, votedAmount, maxVotes, voting } = storeToRefs(songStore);
 const songsCarousel = ref();

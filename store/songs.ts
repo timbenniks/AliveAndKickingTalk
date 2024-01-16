@@ -58,6 +58,8 @@ export const useSongStore = defineStore({
         const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId)?.votes
         song.votes = votes || 0
       })
+
+      await this.setVotedState()
     },
 
     async setVotedState() {
@@ -148,10 +150,11 @@ export const useSongStore = defineStore({
     },
 
     async mashupVote(songId: string, spot: number) {
+      const { voteTimeout } = useRuntimeConfig().public
+
       this.voting = true;
       const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();
-      let result = null
 
       if (!user.value) {
         return false
@@ -209,10 +212,35 @@ export const useSongStore = defineStore({
         }
       }
 
-      this.voting = false;
       await this.setVotedState();
+      await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
+      this.voting = false;
+    },
 
-      return result
+    async mashupDownVote(spot: number) {
+      const { voteTimeout } = useRuntimeConfig().public
+
+      this.voting = true;
+      const client = useSupabaseClient<Database>()
+      const user = useSupabaseUser();
+
+      if (!user.value) {
+        return false
+      }
+
+      const { error: deletionError } = await client
+        .from('votes')
+        .delete()
+        .eq('userid', user.value?.id)
+        .eq('mashup_spot', spot)
+
+      if (deletionError) {
+        console.error(deletionError)
+      }
+
+      await this.setVotedState();
+      await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
+      this.voting = false;
     }
   },
   getters: {
