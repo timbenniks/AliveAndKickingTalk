@@ -1,8 +1,3 @@
-export type SelectedSong = {
-  spot: number;
-  song: Song;
-};
-
 export type Song = {
   songId: string,
   song: string

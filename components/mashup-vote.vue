@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { Song, SelectedSong } from "~/types";
+import type { Song } from "~/types";
 
 const songStore = useSongStore();
 await songStore.getSongs();
@@ -74,7 +74,12 @@ async function removeVote(spot: number) {
           <template v-if="spot1">change song</template>
           <template v-if="!spot1">select song</template>
         </button>
-        <button class="cta" v-if="spot1" @click="removeVote(1)">
+        <button
+          class="cta"
+          v-if="spot1"
+          @click="removeVote(1)"
+          :disabled="voting"
+        >
           remove song
         </button>
         <span v-if="spot1"> - {{ spot1.songId }}</span>
@@ -85,7 +90,12 @@ async function removeVote(spot: number) {
           <template v-if="spot2">change song</template>
           <template v-if="!spot2">select song</template>
         </button>
-        <button class="cta" v-if="spot2" @click="removeVote(2)">
+        <button
+          class="cta"
+          v-if="spot2"
+          @click="removeVote(2)"
+          :disabled="voting"
+        >
           remove song
         </button>
         <span v-if="spot2"> - {{ spot2.songId }}</span>
@@ -96,7 +106,12 @@ async function removeVote(spot: number) {
           <template v-if="spot3">change song</template>
           <template v-if="!spot3">select song</template>
         </button>
-        <button class="cta" v-if="spot3" @click="removeVote(3)">
+        <button
+          class="cta"
+          v-if="spot3"
+          @click="removeVote(3)"
+          :disabled="voting"
+        >
           remove song
         </button>
         <span v-if="spot3"> - {{ spot3.songId }}</span>
@@ -107,7 +122,12 @@ async function removeVote(spot: number) {
           <template v-if="spot4">change song</template>
           <template v-if="!spot4">select song</template>
         </button>
-        <button class="cta" v-if="spot4" @click="removeVote(4)">
+        <button
+          class="cta"
+          v-if="spot4"
+          @click="removeVote(4)"
+          :disabled="voting"
+        >
           remove song
         </button>
         <span v-if="spot4"> - {{ spot4.songId }}</span>
