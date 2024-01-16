@@ -22,6 +22,7 @@ async function getSongs() {
         }
       }),
       votes: 0,
+      mashupSpot: null,
       voted: false
     } as Song
   })
@@ -69,14 +70,18 @@ export const useSongStore = defineStore({
 
       const { data: userVotes } = await client
         .from('votes')
-        .select('userid, songid')
+        .select('userid, songid, mashup_spot')
         .eq('userid', user.value?.id)
 
       this.songs.forEach(song => {
-        if (userVotes && userVotes.find(vote => vote.songid === song.songId)) {
+        const vote = userVotes && userVotes.find(vote => vote.songid === song.songId)
+
+        if (vote) {
+          song.mashupSpot = vote.mashup_spot as number
           song.voted = true
         }
         else {
+          song.mashupSpot = null
           song.voted = false
         }
       })
@@ -140,6 +145,74 @@ export const useSongStore = defineStore({
       await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
 
       this.voting = false;
+    },
+
+    async mashupVote(songId: string, spot: number) {
+      this.voting = true;
+      const client = useSupabaseClient<Database>()
+      const user = useSupabaseUser();
+      let result = null
+
+      if (!user.value) {
+        return false
+      }
+
+      const { data: existingVote, error: existingError } = await client
+        .from('votes')
+        .select('userid, mashup_spot')
+        .eq('userid', user.value?.id)
+        .eq('mashup_spot', spot)
+        .maybeSingle()
+
+      if (existingError) {
+        console.error(existingError)
+      }
+
+      if (existingVote) {
+        const { error: deletionError } = await client
+          .from('votes')
+          .delete()
+          .eq('userid', user.value?.id)
+          .eq('mashup_spot', spot)
+
+        if (deletionError) {
+          console.error(deletionError)
+        }
+
+        const { error: insertedVoteError } = await client
+          .from('votes')
+          .insert({
+            userid: user.value?.id,
+            email: user.value?.email || null,
+            user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata.picture,
+            songid: songId,
+            mashup_spot: spot
+          })
+
+        if (insertedVoteError) {
+          console.error(insertedVoteError)
+        }
+      }
+      else {
+        const { error: insertedVoteError } = await client
+          .from('votes')
+          .insert({
+            userid: user.value?.id,
+            email: user.value?.email || null,
+            user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata.picture,
+            songid: songId,
+            mashup_spot: spot
+          })
+
+        if (insertedVoteError) {
+          console.error(insertedVoteError)
+        }
+      }
+
+      this.voting = false;
+      await this.setVotedState();
+
+      return result
     }
   },
   getters: {

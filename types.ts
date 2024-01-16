@@ -1,3 +1,8 @@
+export type SelectedSong = {
+  spot: number;
+  song: Song;
+};
+
 export type Song = {
   songId: string,
   song: string
@@ -19,6 +24,7 @@ export type Song = {
   }>
   votes: number
   voted: boolean
+  mashupSpot: number | null
 }
 
 export type AmpPreset = {
@@ -80,7 +86,7 @@ export interface Database {
           created_at: string | null
           email: string | null
           id: number
-          medley_spot: number | null
+          mashup_spot: number | null
           soft_voted: boolean | null
           songid: string
           user_avatar: string
@@ -90,7 +96,7 @@ export interface Database {
           created_at?: string | null
           email?: string | null
           id?: number
-          medley_spot?: number | null
+          mashup_spot?: number | null
           soft_voted?: boolean | null
           songid?: string
           user_avatar?: string
@@ -100,7 +106,7 @@ export interface Database {
           created_at?: string | null
           email?: string | null
           id?: number
-          medley_spot?: number | null
+          mashup_spot?: number | null
           soft_voted?: boolean | null
           songid?: string
           user_avatar?: string
