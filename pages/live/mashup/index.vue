@@ -32,35 +32,40 @@ const songs = computed(() => {
     class="grid grid-cols-2 grid-rows-2 w-screen h-screen gap-[1px] fancy-bg"
   >
     <div
-      v-for="(song, index) in songs"
+      v-for="song in songs"
       :style="`background-image: url(${song.artwork[0].bg});`"
-      class="bg-cover p-8 flex justify-between bg-black"
+      class="bg-cover bg-black relative w-full h-full"
     >
-      <figure class="flex flex-col">
-        <img
-          :src="
-            song?.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')
-          "
-          :alt="`${song?.artist} ${song?.song}`"
-          width="100"
-          height="100"
-          class="w-72 h-72 fancy-image mb-4"
-        />
-        <figcaption class="block text-left">
-          <span class="block uppercase font-black text-3xl">{{
-            song?.song
-          }}</span>
-          <span class="block uppercase font-light text-3xl">{{
-            song?.artist
-          }}</span>
-        </figcaption>
-      </figure>
-      <div class="text-right">
-        <p class="text-[150px] leading-none font-black flowing-title">
-          {{ song.votes }}
-        </p>
-        <p class="uppercase font-light text-3xl">votes</p>
-      </div>
+      <a
+        :href="`/live/mashup/${song.songId}`"
+        class="p-8 flex justify-between relative w-full h-full no-underline"
+      >
+        <figure class="flex flex-col">
+          <img
+            :src="
+              song?.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')
+            "
+            :alt="`${song?.artist} ${song?.song}`"
+            width="100"
+            height="100"
+            class="w-72 h-72 fancy-image mb-4"
+          />
+          <figcaption class="block text-left">
+            <span class="block uppercase font-black text-3xl">{{
+              song?.song
+            }}</span>
+            <span class="block uppercase font-light text-3xl">{{
+              song?.artist
+            }}</span>
+          </figcaption>
+        </figure>
+        <div class="text-right">
+          <p class="text-[150px] leading-none font-black flowing-title">
+            {{ song.votes }}
+          </p>
+          <p class="uppercase font-light text-3xl">votes</p>
+        </div>
+      </a>
     </div>
   </section>
 </template>
