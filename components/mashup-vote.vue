@@ -25,20 +25,14 @@ const availableSongs = computed(() => {
   return result;
 });
 
-const spot1 = computed(() => {
-  return allSongs.value.find((song) => song.mashupSpot === 1);
-});
+const spots = computed(() => {
+  const result = [];
 
-const spot2 = computed(() => {
-  return allSongs.value.find((song) => song.mashupSpot === 2);
-});
+  for (let i = 0; i < 4; i++) {
+    result[i] = allSongs.value.find((song) => song.mashupSpot === i + 1);
+  }
 
-const spot3 = computed(() => {
-  return allSongs.value.find((song) => song.mashupSpot === 3);
-});
-
-const spot4 = computed(() => {
-  return allSongs.value.find((song) => song.mashupSpot === 4);
+  return result;
 });
 
 function openSongSelect(spot: number) {
@@ -74,204 +68,17 @@ async function removeVote(spot: number) {
       <p>Create your favorite meshup by selecting four songs!</p>
     </div>
     <ul
-      class="grid grid-rows-4 grid-cols-1 md:grid-cols-2 md:grid-rows-2 h-auto w-screen"
+      class="grid grid-rows-4 grid-cols-1 md:grid-cols-2 md:grid-rows-2 h-auto md:h-screen w-screen"
     >
-      <li class="p-6 pb-0 h-[168px]">
-        <div v-if="spot1">
-          <div
-            :style="`background: url(${spot1?.artwork[2].bg}); background-position: 50%`"
-            class="p-2 mb-2"
-          >
-            <figure class="flex space-x-2">
-              <img
-                :src="
-                  spot1?.cover.replace(
-                    'q_auto,f_auto',
-                    'q_auto,f_auto,w_380,h_380'
-                  )
-                "
-                :alt="`${spot1?.artist} ${spot1?.song}`"
-                width="100"
-                height="100"
-                class="w-20 h-20 fancy-image"
-              />
-              <figcaption class="block text-left">
-                <span class="block uppercase font-black text-lg">{{
-                  spot1?.song
-                }}</span>
-                <span class="block uppercase font-light text-lg">{{
-                  spot1?.artist
-                }}</span>
-              </figcaption>
-            </figure>
-          </div>
-
-          <div class="flex space-x-2">
-            <button class="cta-fancy" @click="openSongSelect(1)">
-              change song
-            </button>
-            <button class="cta" @click="removeVote(1)" :disabled="voting">
-              remove song
-            </button>
-          </div>
-        </div>
-        <div
-          v-else
-          class="fancy-image h-full box-border mb-4 flex flex-col justify-center items-center"
-        >
-          <p class="block uppercase font-black text-lg mb-2">MASHUP SPOT 1</p>
-          <button class="cta-fancy" @click="openSongSelect(1)">
-            select song
-          </button>
-        </div>
-      </li>
-      <li class="p-6 pb-0 h-[168px]">
-        <div v-if="spot2">
-          <div
-            :style="`background: url(${spot2?.artwork[2].bg}); background-position: 50%`"
-            class="p-2 mb-2"
-          >
-            <figure class="flex space-x-2">
-              <img
-                :src="
-                  spot2?.cover.replace(
-                    'q_auto,f_auto',
-                    'q_auto,f_auto,w_380,h_380'
-                  )
-                "
-                :alt="`${spot2?.artist} ${spot2?.song}`"
-                width="100"
-                height="100"
-                class="w-20 h-20 fancy-image"
-              />
-              <figcaption class="block text-left">
-                <span class="block uppercase font-black text-lg">{{
-                  spot2?.song
-                }}</span>
-                <span class="block uppercase font-light text-lg">{{
-                  spot2?.artist
-                }}</span>
-              </figcaption>
-            </figure>
-          </div>
-
-          <div class="flex space-x-2">
-            <button class="cta-fancy" @click="openSongSelect(2)">
-              change song
-            </button>
-            <button class="cta" @click="removeVote(2)" :disabled="voting">
-              remove song
-            </button>
-          </div>
-        </div>
-        <div
-          v-else
-          class="fancy-image h-full box-border mb-4 flex flex-col justify-center items-center"
-        >
-          <p class="block uppercase font-black text-lg mb-2">MASHUP SPOT 2</p>
-          <button class="cta-fancy" @click="openSongSelect(2)">
-            select song
-          </button>
-        </div>
-      </li>
-      <li class="p-6 pb-0 h-[168px]">
-        <div v-if="spot3">
-          <div
-            :style="`background: url(${spot3?.artwork[2].bg}); background-position: 50%`"
-            class="p-2 mb-2"
-          >
-            <figure class="flex space-x-2">
-              <img
-                :src="
-                  spot3?.cover.replace(
-                    'q_auto,f_auto',
-                    'q_auto,f_auto,w_380,h_380'
-                  )
-                "
-                :alt="`${spot3?.artist} ${spot3?.song}`"
-                width="100"
-                height="100"
-                class="w-20 h-20 fancy-image"
-              />
-              <figcaption class="block text-left">
-                <span class="block uppercase font-black text-lg">{{
-                  spot3?.song
-                }}</span>
-                <span class="block uppercase font-light text-lg">{{
-                  spot3?.artist
-                }}</span>
-              </figcaption>
-            </figure>
-          </div>
-
-          <div class="flex space-x-2">
-            <button class="cta-fancy" @click="openSongSelect(3)">
-              change song
-            </button>
-            <button class="cta" @click="removeVote(3)" :disabled="voting">
-              remove song
-            </button>
-          </div>
-        </div>
-        <div
-          v-else
-          class="fancy-image h-full box-border mb-4 flex flex-col justify-center items-center"
-        >
-          <p class="block uppercase font-black text-lg mb-2">MASHUP SPOT 3</p>
-          <button class="cta-fancy" @click="openSongSelect(3)">
-            select song
-          </button>
-        </div>
-      </li>
-      <li class="p-6 pb-0 h-[168px]">
-        <div v-if="spot4">
-          <div
-            :style="`background: url(${spot4?.artwork[2].bg}); background-position: 50%`"
-            class="p-2 mb-2"
-          >
-            <figure class="flex space-x-2">
-              <img
-                :src="
-                  spot4?.cover.replace(
-                    'q_auto,f_auto',
-                    'q_auto,f_auto,w_380,h_380'
-                  )
-                "
-                :alt="`${spot4?.artist} ${spot4?.song}`"
-                width="100"
-                height="100"
-                class="w-20 h-20 fancy-image"
-              />
-              <figcaption class="block text-left">
-                <span class="block uppercase font-black text-lg">{{
-                  spot4?.song
-                }}</span>
-                <span class="block uppercase font-light text-lg">{{
-                  spot4?.artist
-                }}</span>
-              </figcaption>
-            </figure>
-          </div>
-
-          <div class="flex space-x-2">
-            <button class="cta-fancy" @click="openSongSelect(4)">
-              change song
-            </button>
-            <button class="cta" @click="removeVote(4)" :disabled="voting">
-              remove song
-            </button>
-          </div>
-        </div>
-        <div
-          v-else
-          class="fancy-image h-full box-border mb-4 flex flex-col justify-center items-center"
-        >
-          <p class="block uppercase font-black text-lg mb-2">MASHUP SPOT 4</p>
-          <button class="cta-fancy" @click="openSongSelect(4)">
-            select song
-          </button>
-        </div>
-      </li>
+      <mashup-vote-song
+        v-for="(spot, index) in spots"
+        :song="spot"
+        :spot="index + 1"
+        :key="spot?.songId"
+        :voting="voting"
+        @removeVote="removeVote"
+        @openSongSelect="openSongSelect"
+      />
     </ul>
     <div
       v-if="voting"

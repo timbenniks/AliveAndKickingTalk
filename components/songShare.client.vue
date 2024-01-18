@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 const user = useSupabaseUser();
-const props = defineProps(["song"]);
+const props = defineProps(["song", "copy", "nativecopy", "buttonclass"]);
 const { conference } = useRuntimeConfig().public;
 const { song, songId, artist } = props.song;
 
@@ -19,6 +19,7 @@ onMounted(() => {
   <div class="share-vote text-left">
     <div v-if="user" class="flex space-x-3">
       <button
+        :class="buttonclass"
         v-if="canShare"
         @click="
           share(
@@ -28,11 +29,11 @@ onMounted(() => {
           )
         "
       >
-        SHARE YOUR VOTE
+        {{ nativecopy }}
       </button>
 
       <template v-else>
-        <span class="text-sm">SHARE ON</span>
+        <span class="text-sm" v-if="copy">{{ copy }}</span>
         <a
           target="_blank"
           :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
