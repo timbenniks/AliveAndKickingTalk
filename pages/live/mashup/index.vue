@@ -28,9 +28,39 @@ const songs = computed(() => {
     alt="Vue Amsterdam"
     class="absolute w-48 md:left-8 md:bottom-8 md:top-auto left-2/4 -translate-x-2/4 md:-translate-x-0 top-4"
   />
-  <section class="grid grid-cols-2 grid-rows-2 w-screen h-screen">
-    <div v-for="(song, index) in songs">
-      {{ index + 1 }}: {{ song.songId }} - {{ song.votes }}
+  <section
+    class="grid grid-cols-2 grid-rows-2 w-screen h-screen gap-[1px] fancy-bg"
+  >
+    <div
+      v-for="(song, index) in songs"
+      :style="`background-image: url(${song.artwork[0].bg});`"
+      class="bg-cover p-8 flex justify-between bg-black"
+    >
+      <figure class="flex flex-col">
+        <img
+          :src="
+            song?.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')
+          "
+          :alt="`${song?.artist} ${song?.song}`"
+          width="100"
+          height="100"
+          class="w-72 h-72 fancy-image mb-4"
+        />
+        <figcaption class="block text-left">
+          <span class="block uppercase font-black text-3xl">{{
+            song?.song
+          }}</span>
+          <span class="block uppercase font-light text-3xl">{{
+            song?.artist
+          }}</span>
+        </figcaption>
+      </figure>
+      <div class="text-right">
+        <p class="text-[150px] leading-none font-black flowing-title">
+          {{ song.votes }}
+        </p>
+        <p class="uppercase font-light text-3xl">votes</p>
+      </div>
     </div>
   </section>
 </template>
