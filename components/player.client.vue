@@ -6,8 +6,13 @@ import type { eventReturn } from "../types";
 const props = defineProps(["song"]);
 const time = ref(0);
 const vizualizer = ref<InstanceType<typeof audioplayerVisualizer>>();
+const emit = defineEmits(["onSongEnded"]);
 
 const { showVolume } = useRuntimeConfig().public;
+
+const route = useRoute();
+const { autoplay } = route.query;
+
 function onPlayerPlay({ setPlaying }: eventReturn) {
   setPlaying(true);
 
@@ -22,6 +27,7 @@ function onPlayerPause({ setPlaying }: eventReturn) {
 
 function onPlayerEnded({ setPlaying }: eventReturn) {
   setPlaying(false);
+  emit("onSongEnded");
 }
 
 function onPlayerTimeupdate({ event }: eventReturn) {
@@ -38,9 +44,10 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
     class="audioplayer"
     :src="props.song.mp3"
     :muted="false"
-    :autoplay="false"
+    :autoplay="autoplay === 'true'"
     :controls="false"
     :loop="false"
+    preload="auto"
     @play="onPlayerPlay"
     @pause="onPlayerPause"
     @ended="onPlayerEnded"
@@ -65,7 +72,11 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
         class="absolute bottom-20 w-full"
       />
 
-      <audioplayer-play @bigplay="togglePlay" :playing="playing" />
+      <audioplayer-play
+        @bigplay="togglePlay"
+        :playing="playing"
+        class="bigplay"
+      />
       <audioplayer-volume
         :vol="volume"
         @setvol="setVolume"
