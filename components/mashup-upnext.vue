@@ -10,7 +10,7 @@ defineProps(["currentSong", "songs"]);
       :class="{ 'fancy-bg': song.songId === currentSong.songId }"
     >
       <a
-        :href="`/live/mashup/${song.songId}?spot=${index + 1}&autoplay=true`"
+        :href="`/live/${song.songId}?spot=${index + 1}&autoplay=true`"
         class="no-underline flex relative w-full h-full"
         :class="`select-song-${index + 1}`"
       >

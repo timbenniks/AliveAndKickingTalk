@@ -15,7 +15,7 @@ defineProps(["songs", "mashupMode"]);
       class="bg-cover bg-black relative w-full h-full"
     >
       <a
-        :href="`/live/mashup/${song.songId}?spot=${index + 1}`"
+        :href="`/live/${song.songId}?spot=${index + 1}`"
         class="p-8 flex justify-between relative w-full h-full no-underline"
       >
         <figure

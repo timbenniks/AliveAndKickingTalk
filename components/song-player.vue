@@ -2,25 +2,20 @@
 import { storeToRefs } from "pinia";
 import type { Song } from "~/types";
 
+const props = defineProps(["song", "mashupMode"]);
 const route = useRoute();
-const { song } = route.params;
-const { spot } = route.query;
-
 const songStore = useSongStore();
+const { spot } = route.query;
 const { allSongs } = storeToRefs(songStore);
 
-await songStore.getSongs();
-await songStore.getVotesForSongs();
-await songStore.setConfigValue("active_song", song as string);
-
-const selectedSong = songStore.getSongById(song as string);
-
-setInterval(async () => {
-  await songStore.getVotesForSongs();
-}, 5000);
-
 const songs = computed(() => {
-  return allSongs.value.sort((a, b) => b.votes - a.votes).slice(0, 4);
+  if (props.mashupMode) {
+    return allSongs.value.sort((a, b) => b.votes - a.votes).slice(0, 4);
+  } else {
+    return allSongs.value
+      .filter((song) => song.songId !== props.song.songId)
+      .sort((a, b) => b.votes - a.votes);
+  }
 });
 
 function findNextSong() {
@@ -34,28 +29,32 @@ function findNextSong() {
   }
 }
 </script>
-
 <template>
   <main>
-    <backgrond-slider :song="selectedSong" class="z-0" />
+    <backgrond-slider :song="song" class="z-0" />
     <live-votes class="z-10 absolute w-screen" />
 
     <div class="grid grid-cols-7 h-screen w-screen relative z-20">
       <div class="col-span-5 relative">
-        <song-details :song="selectedSong" />
+        <song-details :song="song" />
+
         <player
-          :song="(selectedSong as Song)"
+          v-if="mashupMode"
+          :song="(song as Song)"
           @onSongEnded="findNextSong"
           :countdown="10"
         />
+        <player :song="(song as Song)" v-else />
+
         <img
           src="/logo.png"
           alt="Alive & Kicking"
           class="absolute bottom-24 right-4 w-48 z-20"
         />
       </div>
-      <div class="bg-black bg-opacity-80 col-span-2">
-        <mashup-upnext :current-song="selectedSong" :songs="songs" />
+      <div class="bg-black bg-opacity-60 col-span-2">
+        <mashup-upnext :current-song="song" :songs="songs" v-if="mashupMode" />
+        <upnext :current-song="song" :songs="songs" v-else />
       </div>
     </div>
   </main>
