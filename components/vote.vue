@@ -2,7 +2,10 @@
 import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
+await songStore.getSongs();
 await songStore.getConfigValues();
+await songStore.setVotedState();
+
 const { configValues } = storeToRefs(songStore);
 
 const mashupMode = computed(() => {
@@ -17,5 +20,5 @@ const mashupMode = computed(() => {
 
 <template>
   <mashup-vote v-if="mashupMode" />
-  <regular-vote v-else="mashupMode" />
+  <regular-vote v-else />
 </template>

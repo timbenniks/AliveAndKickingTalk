@@ -3,8 +3,6 @@ import { Carousel, Navigation, Pagination, Slide } from "vue3-carousel";
 import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
-await songStore.getSongs();
-await songStore.getConfigValues();
 
 const { allSongs, votedAmount, maxVotes, voting } = storeToRefs(songStore);
 const songsCarousel = ref();

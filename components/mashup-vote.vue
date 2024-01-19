@@ -3,11 +3,8 @@ import { storeToRefs } from "pinia";
 import type { Song } from "~/types";
 
 const songStore = useSongStore();
-await songStore.getSongs();
-await songStore.getConfigValues();
-songStore.setVotedState();
-
 const { allSongs, voting } = storeToRefs(songStore);
+
 const showSongSelection = ref(false);
 const selectedSongSpot = ref(1);
 const selectedSongs = computed(() => {

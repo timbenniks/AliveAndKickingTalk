@@ -38,9 +38,10 @@ export const useSongStore = defineStore({
     return {
       voteMax: parseInt(maxVotes),
       songs: [] as Song[],
-      conference: "Vue.js Amsterdam 2024",
+      conference: "#vuejsamsterdam",
       voting: false,
-      config: [] as ConfigValue[]
+      config: [] as ConfigValue[],
+      errorMessage: ""
     }
   },
   actions: {
@@ -71,10 +72,17 @@ export const useSongStore = defineStore({
         return false
       }
 
-      const { data: userVotes } = await client
+      const { error, data: userVotes } = await client
         .from('votes')
         .select('userid, songid, mashup_spot')
         .eq('userid', user.value?.id)
+
+      if (error) {
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+      }
+      else {
+        this.errorMessage = '';
+      }
 
       this.songs.forEach(song => {
         const vote = userVotes && userVotes.find(vote => vote.songid === song.songId)
@@ -101,7 +109,7 @@ export const useSongStore = defineStore({
         return false
       }
 
-      const { data: alreadyVoted } = await client
+      const { error: alreadyVotedError, data: alreadyVoted } = await client
         .from('votes')
         .select('userid, songid')
         .eq('songid', songId)
@@ -117,6 +125,14 @@ export const useSongStore = defineStore({
             user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata.picture,
             songid: songId
           })
+      }
+
+      if (alreadyVotedError) {
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(alreadyVotedError)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       await this.setVotedState();
@@ -141,7 +157,11 @@ export const useSongStore = defineStore({
         .eq('songid', songId)
 
       if (error) {
-        console.warn(error)
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(error)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       await this.setVotedState();
@@ -169,7 +189,11 @@ export const useSongStore = defineStore({
         .maybeSingle()
 
       if (existingError) {
-        console.error(existingError)
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(existingError)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       if (existingVote) {
@@ -180,7 +204,11 @@ export const useSongStore = defineStore({
           .eq('mashup_spot', spot)
 
         if (deletionError) {
-          console.error(deletionError)
+          this.errorMessage = 'Something went wrong. You better Tell Tim...'
+          console.log(deletionError)
+        }
+        else {
+          this.errorMessage = '';
         }
 
         const { error: insertedVoteError } = await client
@@ -194,7 +222,11 @@ export const useSongStore = defineStore({
           })
 
         if (insertedVoteError) {
-          console.error(insertedVoteError)
+          this.errorMessage = 'Something went wrong. You better Tell Tim...'
+          console.log(insertedVoteError)
+        }
+        else {
+          this.errorMessage = '';
         }
       }
       else {
@@ -209,7 +241,11 @@ export const useSongStore = defineStore({
           })
 
         if (insertedVoteError) {
-          console.error(insertedVoteError)
+          this.errorMessage = 'Something went wrong. You better Tell Tim...'
+          console.log(insertedVoteError)
+        }
+        else {
+          this.errorMessage = '';
         }
       }
 
@@ -236,7 +272,11 @@ export const useSongStore = defineStore({
         .eq('mashup_spot', spot)
 
       if (deletionError) {
-        console.error(deletionError)
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(deletionError)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       await this.setVotedState();
@@ -256,7 +296,11 @@ export const useSongStore = defineStore({
         .eq('key', key)
 
       if (setConfigValueError) {
-        console.error(setConfigValueError)
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(setConfigValueError)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       const { data, error: setConfigToStateError } = await client
@@ -264,7 +308,11 @@ export const useSongStore = defineStore({
         .select('key, val')
 
       if (setConfigToStateError) {
-        console.error(setConfigToStateError)
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(setConfigToStateError)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       if (data) {
@@ -280,7 +328,11 @@ export const useSongStore = defineStore({
         .select('key, val')
 
       if (error) {
-        console.error(error)
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.log(error)
+      }
+      else {
+        this.errorMessage = '';
       }
 
       if (data) {
@@ -290,6 +342,7 @@ export const useSongStore = defineStore({
   },
   getters: {
     allSongs: state => state.songs,
+    errors: state => state.errorMessage,
     configValues: state => state.config,
     getConfigValue: (state) => {
       return (key: string) => state.config.find((conf) => conf.key === key)
