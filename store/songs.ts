@@ -241,6 +241,22 @@ export const useSongStore = defineStore({
       await this.setVotedState();
       await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
       this.voting = false;
+    },
+
+    async setSongActiveInDB(songId: string) {
+      const client = useSupabaseClient<Database>()
+
+      const { error } = await client
+        .from('config')
+        .update({
+          key: 'active_song',
+          value: songId
+        })
+        .eq('key', 'active_song')
+
+      if (error) {
+        console.error(error)
+      }
     }
   },
   getters: {

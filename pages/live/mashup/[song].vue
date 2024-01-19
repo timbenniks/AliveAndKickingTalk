@@ -13,6 +13,8 @@ await songStore.getSongs();
 await songStore.getVotesForSongs();
 const selectedSong = songStore.getSongById(song as string);
 
+await songStore.setSongActiveInDB(song as string);
+
 setInterval(async () => {
   await songStore.getVotesForSongs();
 }, 5000);
