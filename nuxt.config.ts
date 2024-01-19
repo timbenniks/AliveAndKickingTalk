@@ -24,6 +24,10 @@ export default defineNuxtConfig({
     dirs: ['store'],
   },
 
+  supabase: {
+    redirect: true
+  },
+
   runtimeConfig: {
     public: {
       maxVotes: process.env.NUXT_MAX_VOTES,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const client = useSupabaseAuthClient();
+const client = useSupabaseClient();
 
 const login = async (provider: "github" | "twitter" | "linkedin_oidc") => {
   const { error } = await client.auth.signInWithOAuth({ provider });
