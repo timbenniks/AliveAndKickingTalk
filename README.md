@@ -5,5 +5,4 @@ https://plausible.io/aliveandkicking.dev/
 
 ## TODO
 
-- share cleanup
 - additional side screens
