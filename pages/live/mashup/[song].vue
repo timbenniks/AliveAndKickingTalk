@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { Song } from "~/types";
 
 const route = useRoute();
 const { song } = route.params;
-const { spot, autoplay } = route.query;
+const { spot } = route.query;
 
 const songStore = useSongStore();
 const { allSongs } = storeToRefs(songStore);
@@ -26,9 +27,8 @@ function findNextSong() {
   const nextSong = songs.value[nextSpot];
 
   if (nextSong) {
-    window.location.href = `http://localhost:3000/live/mashup/${
-      nextSong.songId
-    }?spot=${Number(spot) + 1}&autoplay=true`;
+    // @ts-ignore
+    document.querySelector(`.select-song-${Number(spot) + 1}`)?.click();
   }
 }
 </script>
@@ -41,7 +41,11 @@ function findNextSong() {
     <div class="grid grid-cols-7 h-screen w-screen relative z-20">
       <div class="col-span-5 relative">
         <song-details :song="selectedSong" />
-        <player :song="selectedSong" @onSongEnded="findNextSong" />
+        <player
+          :song="(selectedSong as Song)"
+          @onSongEnded="findNextSong"
+          :countdown="10"
+        />
         <img
           src="/logo.png"
           alt="Alive & Kicking"
@@ -54,15 +58,3 @@ function findNextSong() {
     </div>
   </main>
 </template>
-
-<style lang="postcss">
-.v-enter-active,
-.v-leave-active {
-  transition: opacity 1s ease;
-}
-
-.v-enter-from,
-.v-leave-to {
-  opacity: 0;
-}
-</style>

@@ -1,9 +1,13 @@
 <script lang="ts" setup>
 // https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
 import audioplayerVisualizer from "./audioplayer-visualizer.client.vue";
-import type { eventReturn } from "../types";
+import type { eventReturn, Song } from "../types";
 
-const props = defineProps(["song"]);
+const props = defineProps<{
+  song: Song;
+  countdown?: number;
+}>();
+
 const time = ref(0);
 const vizualizer = ref<InstanceType<typeof audioplayerVisualizer>>();
 const emit = defineEmits(["onSongEnded"]);
@@ -63,6 +67,7 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
         convertTimeToDuration,
         volume,
         setVolume,
+        duration,
       }"
     >
       <midi :song="song" :time="time" />
@@ -77,15 +82,20 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
         :playing="playing"
         class="bigplay"
       />
+
       <audioplayer-volume
         :vol="volume"
         @setvol="setVolume"
         v-if="showVolume === 'true'"
       />
-      <div
-        @click="togglePlay()"
-        class="absolute top-0 left-0 w-full h-full z-90"
-      ></div>
+
+      <audioplayer-countdown
+        :time="time"
+        :duration="duration"
+        :from="countdown"
+        v-if="countdown"
+      />
+
       <div
         class="bg-black p-6 absolute bottom-0 justify-between h-20 flex w-full space-x-6"
       >

@@ -12,11 +12,12 @@ defineProps(["currentSong", "songs"]);
       <a
         :href="`/live/mashup/${song.songId}?spot=${index + 1}&autoplay=true`"
         class="no-underline flex relative w-full h-full"
+        :class="`select-song-${index + 1}`"
       >
         <figure class="flex w-full">
           <img
             :src="
-              song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_140,h_140')
+              song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_340,h_340')
             "
             :alt="`${song.artist} ${song.song}`"
             width="200"

@@ -71,11 +71,11 @@ onMounted(async () => {
 
 function bindEvents() {
   EVENTS.forEach((event) => {
-    bindSudioEvents(event as events);
+    bindAudioEvents(event as events);
   });
 }
 
-function bindSudioEvents(which: events) {
+function bindAudioEvents(which: events) {
   player.value?.addEventListener(
     which,
     (event: Event) => {
