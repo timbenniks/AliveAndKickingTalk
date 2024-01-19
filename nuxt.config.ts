@@ -3,7 +3,7 @@ export default defineNuxtConfig({
     '/': { ssr: false },
     '/live': { ssr: false },
     '/slides': { ssr: false },
-    '/live/**': { ssr: false },
+    '/live/*': { ssr: false },
     '/share/*': { ssr: true },
     '/terms-of-service': { prerender: true },
     '/privacy-policy': { prerender: true },
@@ -65,7 +65,8 @@ export default defineNuxtConfig({
       script: [
         {
           defer: "true",
-          dataDomain: "aliveandkicking.dev/",
+          //@ts-ignore
+          dataDomain: "aliveandkicking.dev",
           src: "https://plausible.io/js/script.js"
         },
         {
