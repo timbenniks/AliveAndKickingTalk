@@ -12,8 +12,6 @@ setInterval(async () => {
   await songStore.getVotesForSongs();
 }, 5000);
 
-const {} = storeToRefs(songStore);
-
 const mashupMode = computed(() => {
   const mashupModeConfKey = configValues.value.find(
     (config) => config.key === "mashup_mode"

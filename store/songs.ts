@@ -2,7 +2,11 @@ import { defineStore } from 'pinia'
 import type { Song, Database, ConfigValue } from '../types'
 
 async function getSongs() {
-  const { songs } = await GqlSongs();
+  console.info('[async][function] getSongs: GqlSongs()')
+
+  // const { data, error } = await useAsyncData('songs', () => GqlSongs())
+
+  const { songs } = await GqlSongs()
   const mappedSongs = songs.map(song => {
     return {
       songId: song.songId,
@@ -27,6 +31,8 @@ async function getSongs() {
     } as Song
   })
 
+  console.info('[async][function] getSongs: GqlSongs()', mappedSongs)
+
   return mappedSongs
 }
 
@@ -46,25 +52,39 @@ export const useSongStore = defineStore({
   },
   actions: {
     async getSongs() {
+      console.info('[async][action] getSongs')
+
       this.songs = await getSongs();
     },
 
     async getVotesForSongs() {
+      console.info('[async][action] getVotesForSongs')
+
       const client = useSupabaseClient<Database>()
 
-      const { data: votesPerSong } = await client
+      const { data: votesPerSong, error: errorVotesPerSong } = await client
         .from('votes_per_song')
         .select("*")
+
+      if (errorVotesPerSong) {
+        this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.error('[async][action] setVotedState: errorVotesPerSong', errorVotesPerSong)
+      }
+      else {
+        this.errorMessage = '';
+      }
 
       this.songs.map(song => {
         const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId)?.votes
         song.votes = votes || 0
       })
 
-      await this.setVotedState()
+      //await this.setVotedState()
     },
 
     async setVotedState() {
+      console.info('[async][action] setVotedState')
+
       const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();
 
@@ -72,13 +92,14 @@ export const useSongStore = defineStore({
         return false
       }
 
-      const { error, data: userVotes } = await client
+      const { error: votesForUserError, data: userVotes } = await client
         .from('votes')
         .select('userid, songid, mashup_spot')
         .eq('userid', user.value?.id)
 
-      if (error) {
+      if (votesForUserError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
+        console.error('[async][action] setVotedState: votesForUserError', votesForUserError)
       }
       else {
         this.errorMessage = '';
@@ -99,6 +120,8 @@ export const useSongStore = defineStore({
     },
 
     async upvote(songId: string) {
+      console.info('[async][action] upvote', songId)
+
       const { voteTimeout } = useRuntimeConfig().public
 
       this.voting = true;
@@ -129,7 +152,7 @@ export const useSongStore = defineStore({
 
       if (alreadyVotedError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(alreadyVotedError)
+        console.error('[async][action] upvote: alreadyVotedError', alreadyVotedError)
       }
       else {
         this.errorMessage = '';
@@ -141,6 +164,8 @@ export const useSongStore = defineStore({
     },
 
     async downvote(songId: string) {
+      console.info('[async][action] downvote', songId)
+
       const { voteTimeout } = useRuntimeConfig().public
       this.voting = true;
       const client = useSupabaseClient<Database>()
@@ -150,15 +175,15 @@ export const useSongStore = defineStore({
         return false
       }
 
-      const { error } = await client
+      const { error: deleteVoteError } = await client
         .from('votes')
         .delete()
         .eq('userid', user.value?.id)
         .eq('songid', songId)
 
-      if (error) {
+      if (deleteVoteError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(error)
+        console.error('[async][action] downvote: deleteVoteError', deleteVoteError)
       }
       else {
         this.errorMessage = '';
@@ -171,6 +196,8 @@ export const useSongStore = defineStore({
     },
 
     async mashupVote(songId: string, spot: number) {
+      console.info('[async][action] mashupVote', songId, spot)
+
       const { voteTimeout } = useRuntimeConfig().public
 
       this.voting = true;
@@ -190,7 +217,7 @@ export const useSongStore = defineStore({
 
       if (existingError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(existingError)
+        console.error('[async][action] mashupVote: existingError', existingError)
       }
       else {
         this.errorMessage = '';
@@ -205,7 +232,7 @@ export const useSongStore = defineStore({
 
         if (deletionError) {
           this.errorMessage = 'Something went wrong. You better Tell Tim...'
-          console.log(deletionError)
+          console.error('[async][action] mashupVote: deletionError', deletionError)
         }
         else {
           this.errorMessage = '';
@@ -223,7 +250,7 @@ export const useSongStore = defineStore({
 
         if (insertedVoteError) {
           this.errorMessage = 'Something went wrong. You better Tell Tim...'
-          console.log(insertedVoteError)
+          console.error('[async][action] mashupVote: insertedVoteError', insertedVoteError)
         }
         else {
           this.errorMessage = '';
@@ -242,7 +269,7 @@ export const useSongStore = defineStore({
 
         if (insertedVoteError) {
           this.errorMessage = 'Something went wrong. You better Tell Tim...'
-          console.log(insertedVoteError)
+          console.error('[async][action] mashupVote: insertedVoteError', insertedVoteError)
         }
         else {
           this.errorMessage = '';
@@ -255,6 +282,8 @@ export const useSongStore = defineStore({
     },
 
     async mashupDownVote(spot: number) {
+      console.info('[async][action] mashupDownVote', spot)
+
       const { voteTimeout } = useRuntimeConfig().public
 
       this.voting = true;
@@ -273,7 +302,7 @@ export const useSongStore = defineStore({
 
       if (deletionError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(deletionError)
+        console.error('[async][action] mashupDownVote: deletionError', deletionError)
       }
       else {
         this.errorMessage = '';
@@ -285,6 +314,8 @@ export const useSongStore = defineStore({
     },
 
     async setConfigValue(key: string, val: string) {
+      console.info('[async][action] setConfigValue', key, val)
+
       const client = useSupabaseClient<Database>()
 
       const { error: setConfigValueError } = await client
@@ -297,7 +328,7 @@ export const useSongStore = defineStore({
 
       if (setConfigValueError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(setConfigValueError)
+        console.error('[async][action] setConfigValue: setConfigValueError', setConfigValueError)
       }
       else {
         this.errorMessage = '';
@@ -309,7 +340,7 @@ export const useSongStore = defineStore({
 
       if (setConfigToStateError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(setConfigToStateError)
+        console.error('[async][action] setConfigValue: setConfigToStateError', setConfigToStateError)
       }
       else {
         this.errorMessage = '';
@@ -321,15 +352,17 @@ export const useSongStore = defineStore({
     },
 
     async getConfigValues() {
+      console.info('[async][action] getConfigValues')
+
       const client = useSupabaseClient<Database>()
 
-      const { data, error } = await client
+      const { data, error: selectConfigValuesError } = await client
         .from('config')
         .select('key, val')
 
-      if (error) {
+      if (selectConfigValuesError) {
         this.errorMessage = 'Something went wrong. You better Tell Tim...'
-        console.log(error)
+        console.error('[async][action] getConfigValues: selectConfigValuesError', selectConfigValuesError)
       }
       else {
         this.errorMessage = '';
@@ -337,6 +370,8 @@ export const useSongStore = defineStore({
 
       if (data) {
         this.config = data;
+        console.info('[async][action] getConfigValues', data)
+
       }
     }
   },

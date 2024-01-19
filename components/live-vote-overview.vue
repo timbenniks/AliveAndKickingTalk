@@ -3,8 +3,6 @@ defineProps(["songs", "mashupMode"]);
 </script>
 
 <template>
-  <live-votes class="z-10 absolute w-screen pointer-events-none" />
-
   <section
     class="grid grid-cols-2 grid-rows-2 w-screen gap-[1px] fancy-bg relative z-10"
     :class="mashupMode ? 'h-screen' : 'h-auto'"
@@ -53,6 +51,8 @@ defineProps(["songs", "mashupMode"]);
       </a>
     </div>
   </section>
+  <live-votes class="z-10 absolute w-screen pointer-events-none top-0 left-0" />
+
   <img
     src="/logo.png"
     alt="Alive & Kicking"
