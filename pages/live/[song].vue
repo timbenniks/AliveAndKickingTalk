@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import type { Song } from "~/types";
+
 const route = useRoute();
 const { song } = route.params;
 const songStore = useSongStore();
 await songStore.getSongs();
+await songStore.getConfigValues();
 
 const selectedSong = songStore.getSongById(song as string);
 </script>
@@ -15,7 +18,7 @@ const selectedSong = songStore.getSongById(song as string);
     <div class="grid grid-cols-7 h-screen w-screen relative z-20">
       <div class="col-span-5 relative">
         <song-details :song="selectedSong" />
-        <player :song="selectedSong" />
+        <player :song="(selectedSong as Song)" />
         <img
           src="/logo.png"
           alt="Alive & Kicking"

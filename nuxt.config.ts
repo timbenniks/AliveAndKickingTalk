@@ -27,7 +27,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       maxVotes: process.env.NUXT_MAX_VOTES,
-      mashupMode: process.env.NUXT_MASHUP_MODE,
       voteTimeout: process.env.NUXT_VOTE_TIMEOUT || "500",
       conference: process.env.NUXT_CONFERENCE,
       showVolume: process.env.NUXT_SHOW_VOLUME

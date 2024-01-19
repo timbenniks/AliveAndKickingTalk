@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Song, Database } from '../types'
+import type { Song, Database, ConfigValue } from '../types'
 
 async function getSongs() {
   const { songs } = await GqlSongs();
@@ -39,7 +39,8 @@ export const useSongStore = defineStore({
       voteMax: parseInt(maxVotes),
       songs: [] as Song[],
       conference: "Vue.js Amsterdam 2024",
-      voting: false
+      voting: false,
+      config: [] as ConfigValue[]
     }
   },
   actions: {
@@ -243,24 +244,56 @@ export const useSongStore = defineStore({
       this.voting = false;
     },
 
-    async setSongActiveInDB(songId: string) {
+    async setConfigValue(key: string, val: string) {
       const client = useSupabaseClient<Database>()
 
-      const { error } = await client
+      const { error: setConfigValueError } = await client
         .from('config')
         .update({
-          key: 'active_song',
-          value: songId
+          key,
+          val
         })
-        .eq('key', 'active_song')
+        .eq('key', key)
+
+      if (setConfigValueError) {
+        console.error(setConfigValueError)
+      }
+
+      const { data, error: setConfigToStateError } = await client
+        .from('config')
+        .select('key, val')
+
+      if (setConfigToStateError) {
+        console.error(setConfigToStateError)
+      }
+
+      if (data) {
+        this.config = data;
+      }
+    },
+
+    async getConfigValues() {
+      const client = useSupabaseClient<Database>()
+
+      const { data, error } = await client
+        .from('config')
+        .select('key, val')
 
       if (error) {
         console.error(error)
+      }
+
+      if (data) {
+        this.config = data;
       }
     }
   },
   getters: {
     allSongs: state => state.songs,
+    configValues: state => state.config,
+    getConfigValue: (state) => {
+      return (key: string) => state.config.find((conf) => conf.key === key)
+    },
     votedAmount: state => state.songs.filter(song => song.voted).length,
     maxVotes: state => state.voteMax,
     getSongById: (state) => {

@@ -11,9 +11,9 @@ const { allSongs } = storeToRefs(songStore);
 
 await songStore.getSongs();
 await songStore.getVotesForSongs();
-const selectedSong = songStore.getSongById(song as string);
+await songStore.setConfigValue("active_song", song as string);
 
-await songStore.setSongActiveInDB(song as string);
+const selectedSong = songStore.getSongById(song as string);
 
 setInterval(async () => {
   await songStore.getVotesForSongs();

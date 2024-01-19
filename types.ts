@@ -1,5 +1,10 @@
+export type ConfigValue = {
+  key: string
+  val: string
+}
+
 export type Song = {
-  songId: string,
+  songId: string
   song: string
   artist: string
   cover: any

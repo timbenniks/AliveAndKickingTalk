@@ -1,25 +1,13 @@
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-
-const songStore = useSongStore();
-await songStore.getSongs();
-await songStore.getVotesForSongs();
-
-const { allSongs } = storeToRefs(songStore);
-
-setInterval(async () => {
-  await songStore.getVotesForSongs();
-}, 5000);
-
-const songs = computed(() => {
-  return allSongs.value.sort((a, b) => b.votes - a.votes).slice(0, 4);
-});
+defineProps(["songs", "mashupMode"]);
 </script>
+
 <template>
-  <live-votes class="z-20 absolute w-screen pointer-events-none" />
+  <live-votes class="z-10 absolute w-screen pointer-events-none" />
 
   <section
-    class="grid grid-cols-2 grid-rows-2 w-screen h-screen gap-[1px] fancy-bg relative z-10"
+    class="grid grid-cols-2 grid-rows-2 w-screen gap-[1px] fancy-bg relative z-10"
+    :class="mashupMode ? 'h-screen' : 'h-auto'"
   >
     <div
       v-for="(song, index) in songs"
@@ -30,7 +18,10 @@ const songs = computed(() => {
         :href="`/live/mashup/${song.songId}?spot=${index + 1}`"
         class="p-8 flex justify-between relative w-full h-full no-underline"
       >
-        <figure class="flex flex-col">
+        <figure
+          class="flex"
+          :class="mashupMode ? 'flex-col' : 'flex-row space-x-4'"
+        >
           <img
             :src="
               song?.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')
@@ -38,7 +29,8 @@ const songs = computed(() => {
             :alt="`${song?.artist} ${song?.song}`"
             width="100"
             height="100"
-            class="w-72 h-72 fancy-image mb-4"
+            class="fancy-image mb-4"
+            :class="mashupMode ? 'w-72 h-72' : 'w-44 h-44'"
           />
           <figcaption class="block text-left">
             <span class="block uppercase font-black text-3xl">{{
@@ -53,7 +45,10 @@ const songs = computed(() => {
           <p class="text-[150px] leading-none font-black flowing-title">
             {{ song.votes }}
           </p>
-          <p class="uppercase font-light text-3xl">votes</p>
+          <p class="uppercase font-light text-3xl">
+            <template v-if="song.votes === 1">vote</template>
+            <template v-else>votes</template>
+          </p>
         </div>
       </a>
     </div>
