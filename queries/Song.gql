@@ -6,6 +6,10 @@ query Song($song: String) {
     cover
     length
     mp3
+    homeTown
+    formed
+    biography
+    logo
     presets {
       name
       at

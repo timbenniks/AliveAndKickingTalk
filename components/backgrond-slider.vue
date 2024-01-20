@@ -21,7 +21,7 @@ setInterval(() => {
       :style="{
         backgroundImage: `url(${background.bg.replace(
           'q_auto,f_auto',
-          'q_auto,f_auto,w_1920,h_1080,c_crop'
+          'q_auto,f_auto,w_1920,h_1080,c_fill,g_auto'
         )})`,
         backgroundPositionY: background.y,
       }"
