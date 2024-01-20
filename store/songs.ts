@@ -4,8 +4,6 @@ import type { Song, Database, ConfigValue } from '../types'
 async function getSongs() {
   console.info('[async][function] getSongs: GqlSongs()')
 
-  // const { data, error } = await useAsyncData('songs', () => GqlSongs())
-
   const { songs } = await GqlSongs()
   const mappedSongs = songs.map(song => {
     return {
@@ -68,7 +66,7 @@ export const useSongStore = defineStore({
 
       if (errorVotesPerSong) {
         this.errorMessage = 'Error [async][action] setVotedState: errorVotesPerSong'
-        console.error('[async][action] setVotedState: errorVotesPerSong', errorVotesPerSong)
+        throw createError('[async][action] setVotedState: errorVotesPerSong', errorVotesPerSong)
       }
 
       this.songs.map(song => {
@@ -96,7 +94,7 @@ export const useSongStore = defineStore({
 
       if (votesForUserError) {
         this.errorMessage = 'Error [async][action] setVotedState: votesForUserError'
-        console.error('[async][action] setVotedState: votesForUserError', votesForUserError)
+        throw createError('[async][action] setVotedState: votesForUserError', votesForUserError)
       }
 
       this.songs.forEach(song => {
@@ -146,7 +144,7 @@ export const useSongStore = defineStore({
 
       if (alreadyVotedError) {
         this.errorMessage = 'Error [async][action] upvote: alreadyVotedError'
-        console.error('[async][action] upvote: alreadyVotedError', alreadyVotedError)
+        throw createError('[async][action] upvote: alreadyVotedError', alreadyVotedError)
       }
 
       await this.setVotedState();
@@ -174,7 +172,7 @@ export const useSongStore = defineStore({
 
       if (deleteVoteError) {
         this.errorMessage = 'Error [async][action] downvote: deleteVoteError'
-        console.error('[async][action] downvote: deleteVoteError', deleteVoteError)
+        throw createError('[async][action] downvote: deleteVoteError', deleteVoteError)
       }
 
       await this.setVotedState();
@@ -196,7 +194,7 @@ export const useSongStore = defineStore({
         this.voting = false;
 
         this.errorMessage = 'Error [async][action] mashupVote: no user'
-        console.error('[async][action] mashupVote: no user')
+        throw createError('[async][action] mashupVote: no user')
 
         return false
       }
@@ -210,7 +208,7 @@ export const useSongStore = defineStore({
 
       if (existingError) {
         this.errorMessage = 'Error [async][action] mashupVote: existingError'
-        console.error('[async][action] mashupVote: existingError', existingError)
+        throw createError('[async][action] mashupVote: existingError', existingError)
       }
 
       if (existingVote) {
@@ -222,7 +220,7 @@ export const useSongStore = defineStore({
 
         if (deletionError) {
           this.errorMessage = 'Error [async][action] mashupVote: deletionError'
-          console.error('[async][action] mashupVote: deletionError', deletionError)
+          throw createError('[async][action] mashupVote: deletionError', deletionError)
         }
 
         const { error: insertedVoteError } = await client
@@ -237,7 +235,7 @@ export const useSongStore = defineStore({
 
         if (insertedVoteError) {
           this.errorMessage = 'Error [async][action] mashupVote: insertedVoteError'
-          console.error('[async][action] mashupVote: insertedVoteError', insertedVoteError)
+          throw createError('[async][action] mashupVote: insertedVoteError', insertedVoteError)
         }
       }
       else {
@@ -253,7 +251,7 @@ export const useSongStore = defineStore({
 
         if (insertedVoteError) {
           this.errorMessage = 'Error [async][action] mashupVote: insertedVoteError'
-          console.error('[async][action] mashupVote: insertedVoteError', insertedVoteError)
+          throw createError('[async][action] mashupVote: insertedVoteError', insertedVoteError)
         }
       }
 
@@ -275,7 +273,7 @@ export const useSongStore = defineStore({
         this.voting = false;
         this.errorMessage = 'Error [async][action] mashupDownVote: no user'
 
-        console.error('[async][action] mashupDownVote: no user')
+        throw createError('[async][action] mashupDownVote: no user')
 
         return false
       }
@@ -288,7 +286,7 @@ export const useSongStore = defineStore({
 
       if (deletionError) {
         this.errorMessage = 'Error [async][action] mashupDownVote: deletionError'
-        console.error('[async][action] mashupDownVote: deletionError', deletionError)
+        throw createError('[async][action] mashupDownVote: deletionError', deletionError)
       }
 
       await this.setVotedState();
@@ -311,7 +309,7 @@ export const useSongStore = defineStore({
 
       if (setConfigValueError) {
         this.errorMessage = 'Error [async][action] setConfigValue: setConfigValueError'
-        console.error('[async][action] setConfigValue: setConfigValueError', setConfigValueError)
+        throw createError('[async][action] setConfigValue: setConfigValueError', setConfigValueError)
       }
 
       const { data, error: setConfigToStateError } = await client
@@ -320,7 +318,7 @@ export const useSongStore = defineStore({
 
       if (setConfigToStateError) {
         this.errorMessage = 'Error [async][action] setConfigValue: setConfigToStateError'
-        console.error('[async][action] setConfigValue: setConfigToStateError', setConfigToStateError)
+        throw createError('[async][action] setConfigValue: setConfigToStateError', setConfigToStateError)
       }
 
       if (data) {
@@ -339,7 +337,7 @@ export const useSongStore = defineStore({
 
       if (selectConfigValuesError) {
         this.errorMessage = 'Error [async][action] getConfigValues: selectConfigValuesError'
-        console.error('[async][action] getConfigValues: selectConfigValuesError', selectConfigValuesError)
+        throw createError('[async][action] getConfigValues: selectConfigValuesError', selectConfigValuesError)
       }
 
       if (data) {

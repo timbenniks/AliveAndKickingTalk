@@ -1,7 +1,24 @@
 <script setup lang="ts">
-const user = useSupabaseUser();
+import { storeToRefs } from "pinia";
+
+const songStore = useSongStore();
+await songStore.getSongs();
+await songStore.getConfigValues();
+await songStore.setVotedState();
+
+const { configValues } = storeToRefs(songStore);
+
+const mashupMode = computed(() => {
+  const mashupModeConfKey = configValues.value.find(
+    (config) => config.key === "mashup_mode"
+  );
+  if (mashupModeConfKey) {
+    return mashupModeConfKey.val === "true";
+  }
+});
 </script>
 
 <template>
-  <vote v-if="user" />
+  <mashup-vote v-if="mashupMode" />
+  <regular-vote v-else />
 </template>
