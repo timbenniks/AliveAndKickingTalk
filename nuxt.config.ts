@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     '/slides': { ssr: false },
     '/live/*': { ssr: false },
     '/share/*': { ssr: true },
+    '/band': { ssr: false },
     '/terms-of-service': { prerender: true },
     '/privacy-policy': { prerender: true },
   },
@@ -28,7 +29,7 @@ export default defineNuxtConfig({
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
-      exclude: ['/share/*', '/live', '/live/*'],
+      exclude: ['/share/*', '/live', '/live/*', '/band', '/band/*'],
     }
   },
 
