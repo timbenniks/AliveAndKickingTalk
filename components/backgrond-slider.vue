@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps(["song"]);
+const props = defineProps(["song", "timeout"]);
 
 function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -10,7 +10,7 @@ const background = ref(props.song.artwork[0]);
 setInterval(() => {
   background.value =
     props.song.artwork[randomIntFromInterval(0, props.song.artwork.length - 1)];
-}, 10000);
+}, props.timeout || 10000);
 </script>
 
 <template>

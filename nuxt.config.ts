@@ -29,7 +29,7 @@ export default defineNuxtConfig({
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
-      exclude: ['/share/*', '/live', '/live/*', '/band', '/band/*'],
+      exclude: ['/share/*', '/live', '/live/*', '/band', '/stats'],
     }
   },
 
@@ -38,7 +38,8 @@ export default defineNuxtConfig({
       maxVotes: process.env.NUXT_MAX_VOTES,
       voteTimeout: process.env.NUXT_VOTE_TIMEOUT || "500",
       conference: process.env.NUXT_CONFERENCE,
-      showVolume: process.env.NUXT_SHOW_VOLUME
+      showVolume: process.env.NUXT_SHOW_VOLUME,
+      plausibleKey: process.env.NUXT_PLAUSIBLE_KEY
     }
   },
 

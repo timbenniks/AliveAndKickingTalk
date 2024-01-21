@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database } from "../types";
 
 const client = useSupabaseClient<Database>();
+let realtimeChannel: RealtimeChannel;
+
 const { data: song, refresh: refreshSong } = await useAsyncData(
   "song_band",
   async () => {
@@ -42,12 +45,26 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
   }
 );
 
-setInterval(refreshSong, 5000);
+onMounted(async () => {
+  realtimeChannel = client
+    .channel("public:config")
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "config" },
+      () => refreshSong()
+    );
+
+  realtimeChannel.subscribe();
+});
+
+onUnmounted(() => {
+  client.removeChannel(realtimeChannel);
+});
 </script>
 <template>
   <main class="relative w-screen h-screen top-0 left-0">
     <template v-if="song">
-      <backgrond-slider :song="song" class="z-0" />
+      <backgrond-slider :song="song" class="z-0" :timeout="5000" />
       <img
         src="/logo.png"
         alt="Alive & Kicking"
