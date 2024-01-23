@@ -29,7 +29,7 @@ export default defineNuxtConfig({
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
-      exclude: ['/share/*', '/live', '/live/*', '/band', '/stats'],
+      exclude: ['/share/*', '/live', '/live/*', '/band', '/stats', '/practise'],
     }
   },
 
