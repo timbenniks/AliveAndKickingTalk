@@ -64,7 +64,7 @@ onUnmounted(() => {
 <template>
   <main class="relative w-screen h-screen top-0 left-0">
     <template v-if="song">
-      <backgrond-slider :song="song" class="z-0" :timeout="5000" />
+      <backgrond-slider :song="song" class="z-0" :timeout="10000" />
       <img
         src="/logo.png"
         alt="Alive & Kicking"

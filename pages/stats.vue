@@ -56,7 +56,7 @@ const { data, refresh } = await useAsyncData("stats", async () => {
   };
 });
 
-//setInterval(refresh, 10000);
+setInterval(refresh, 10000);
 </script>
 
 <template>
