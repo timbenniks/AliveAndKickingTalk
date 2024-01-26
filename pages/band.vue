@@ -60,6 +60,23 @@ onMounted(async () => {
 onUnmounted(() => {
   client.removeChannel(realtimeChannel);
 });
+
+const imgBase =
+  "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70/Alive%20and%20Kicking/bg";
+const bgs = {
+  artwork: [
+    { bg: `${imgBase}/1.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/2.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/3.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/4.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/5.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/6.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/7.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/8.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/9.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/10.png`, x: "0%", y: "0%" },
+  ],
+};
 </script>
 <template>
   <main class="relative w-screen h-screen top-0 left-0">
@@ -85,11 +102,14 @@ onUnmounted(() => {
       </article>
     </template>
     <template v-else>
-      <img
-        src="/logo.png"
-        alt="Alive & Kicking"
-        class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 w-[700px] z-20"
-      />
+      <backgrond-slider :song="bgs" class="z-0" :timeout="10000" />
+
+      <div
+        class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 z-20 flex flex-col items-center"
+      >
+        <img src="/logo.png" alt="Alive & Kicking" class="w-[600px]" />
+        <img src="/vueamsterdam.png" alt="Vuejs Amsterdam" class="w-[300px]" />
+      </div>
     </template>
   </main>
 </template>

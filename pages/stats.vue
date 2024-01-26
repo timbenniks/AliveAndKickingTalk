@@ -18,7 +18,6 @@ const { data, refresh } = await useAsyncData("stats", async () => {
     .single();
 
   const song = activeSong.val;
-
   // const aggregate = await $fetch(
   //   "https://plausible.io/api/v1/stats/aggregate?site_id=aliveandkicking.dev&period=day&metrics=visitors,pageviews,bounce_rate,visit_duration",
   //   {
@@ -57,6 +56,23 @@ const { data, refresh } = await useAsyncData("stats", async () => {
 });
 
 setInterval(refresh, 10000);
+
+const imgBase =
+  "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70/Alive%20and%20Kicking/bg";
+const bgs = {
+  artwork: [
+    { bg: `${imgBase}/1.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/2.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/3.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/4.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/5.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/6.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/7.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/8.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/9.png`, x: "0%", y: "0%" },
+    { bg: `${imgBase}/10.png`, x: "0%", y: "0%" },
+  ],
+};
 </script>
 
 <template>
@@ -92,11 +108,11 @@ setInterval(refresh, 10000);
               v-for="vote in data?.votesPerSong"
               :key="(vote.songid as string)"
             >
-              <div class="relative w-36 h-36">
+              <div class="relative w-28 h-28">
                 <img
                   width="144"
                   height="144"
-                  class="w-36 mb-4 fancy-image"
+                  class="w-28 mb-4 fancy-image"
                   :src="
                     allSongs
                       .find((song) => song.songId === vote.songid)
@@ -133,11 +149,14 @@ setInterval(refresh, 10000);
       </section>
     </template>
     <template v-else>
-      <img
-        src="/logo.png"
-        alt="Alive & Kicking"
-        class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 w-[700px] z-20"
-      />
+      <backgrond-slider :song="bgs" class="z-0" :timeout="10000" />
+
+      <div
+        class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 z-20 flex flex-col items-center"
+      >
+        <img src="/logo.png" alt="Alive & Kicking" class="w-[600px]" />
+        <img src="/vueamsterdam.png" alt="Vuejs Amsterdam" class="w-[300px]" />
+      </div>
     </template>
   </main>
 </template>

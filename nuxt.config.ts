@@ -6,6 +6,7 @@ export default defineNuxtConfig({
     '/live/*': { ssr: false },
     '/share/*': { ssr: true },
     '/band': { ssr: false },
+    '/stats': { ssr: false },
     '/terms-of-service': { prerender: true },
     '/privacy-policy': { prerender: true },
   },
