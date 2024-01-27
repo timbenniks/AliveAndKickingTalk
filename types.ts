@@ -8,6 +8,18 @@ export type PlayedSong = {
   mashupSpot: number
 }
 
+export type realtimeOptions = {
+  callback: Function
+  table: "votes" | "config" | "songs_played" | "votes_per_song"
+  event: "UPDATE" | "INSERT" | "*"
+}
+
+export type LatestVote = {
+  userid: string;
+  user_avatar: string;
+  songid: string;
+}
+
 export type Song = {
   songId: string
   song: string
@@ -30,6 +42,7 @@ export type Song = {
   votes: number
   voted: boolean
   mashupSpot: number | null
+  blocked?: boolean
 }
 
 export type AmpPreset = {

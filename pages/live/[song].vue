@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import { createRealtimeChannel, removeRealtimeChannel } from "~/helpers";
 
 const route = useRoute();
 const { song } = route.params;
@@ -16,10 +18,38 @@ await songStore.setPlayedSong(song as string, Number(spot));
 const selectedSong = songStore.getSongById(song as string);
 const { configValues } = storeToRefs(songStore);
 
-setInterval(async () => {
-  await songStore.getVotesForSongs();
-  await songStore.getPlayedSongs();
-}, 5000);
+let channel: RealtimeChannel;
+onMounted(() => {
+  channel = createRealtimeChannel("playing_song_updates", [
+    {
+      table: "votes",
+      event: "INSERT",
+      callback: async () => {
+        await songStore.getVotesForSongs();
+        await songStore.getLatestVote();
+      },
+    },
+    {
+      table: "songs_played",
+      event: "*",
+      callback: async () => {
+        await songStore.getPlayedSongs();
+      },
+    },
+  ]);
+
+  channel.subscribe();
+});
+
+onUnmounted(() => {
+  window.onbeforeunload = null;
+});
+
+onBeforeMount(() => {
+  window.onbeforeunload = () => {
+    removeRealtimeChannel(channel);
+  };
+});
 
 const mashupMode = computed(() => {
   const mashupModeConfKey = configValues.value.find(

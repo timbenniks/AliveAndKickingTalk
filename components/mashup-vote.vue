@@ -1,13 +1,36 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { createRealtimeChannel, removeRealtimeChannel } from "../helpers";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Song } from "~/types";
 
 const songStore = useSongStore();
 const { allSongs, voting, allPlayedSongs } = storeToRefs(songStore);
 
-setInterval(async () => {
-  await songStore.getPlayedSongs();
-}, 5000);
+let channel: RealtimeChannel;
+onMounted(() => {
+  channel = createRealtimeChannel("voting_check_played_songs", [
+    {
+      table: "songs_played",
+      event: "INSERT",
+      callback: async () => {
+        await songStore.getPlayedSongs();
+      },
+    },
+  ]);
+
+  channel.subscribe();
+});
+
+onUnmounted(() => {
+  window.onbeforeunload = null;
+});
+
+onBeforeMount(() => {
+  window.onbeforeunload = () => {
+    removeRealtimeChannel(channel);
+  };
+});
 
 const showSongSelection = ref(false);
 const selectedSongSpot = ref(1);

@@ -1,33 +1,17 @@
 <script setup lang="ts">
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Vote, Ball } from "../types";
-import { createRealtimeChannel, removeRealtimeChannel } from "../helpers";
+
+import { storeToRefs } from "pinia";
+const songStore = useSongStore();
+const { theLatestVotes: votes } = storeToRefs(songStore);
 
 const votez: Ref<HTMLCanvasElement | null> = ref(null);
-const client = useSupabaseClient();
-
-const { data: votes, refresh: refreshVotes } = await useAsyncData(
-  "votes",
-  async () => {
-    const { data } = await client
-      .from("votes")
-      .select("userid, user_avatar, songid")
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    return data;
-  }
-);
 
 const width = ref(window.innerWidth);
 const height = ref(window.innerHeight - 80);
 
-let channel: RealtimeChannel;
 onMounted(async () => {
   await nextTick();
-
-  channel = createRealtimeChannel(refreshVotes, "votes", "INSERT");
-  channel.subscribe();
 
   const ctx = votez.value?.getContext("2d") as CanvasRenderingContext2D;
   const tx = width.value;
@@ -98,16 +82,6 @@ onMounted(async () => {
   setInterval(function () {
     balls.splice(0, 1);
   }, 5000);
-});
-
-onUnmounted(() => {
-  window.onbeforeunload = null;
-});
-
-onBeforeMount(() => {
-  window.onbeforeunload = () => {
-    removeRealtimeChannel(channel);
-  };
 });
 </script>
 

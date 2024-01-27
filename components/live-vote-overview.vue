@@ -4,7 +4,7 @@ defineProps(["songs", "mashupMode"]);
 
 <template>
   <section
-    class="grid grid-cols-2 grid-rows-2 w-screen gap-[1px] fancy-bg relative z-10"
+    class="p-2 grid grid-cols-2 grid-rows-2 w-screen gap-2 relative z-10"
     :class="mashupMode ? 'h-screen' : 'h-auto'"
   >
     <div

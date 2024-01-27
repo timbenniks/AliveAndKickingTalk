@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Song, Database, ConfigValue, PlayedSong } from '../types'
+import type { Song, Database, ConfigValue, PlayedSong, LatestVote } from '../types'
 
 async function getSongs() {
   console.info('[async][function] getSongs: GqlSongs()')
@@ -46,6 +46,7 @@ export const useSongStore = defineStore({
       voting: false,
       config: [] as ConfigValue[],
       errorMessage: "",
+      latestVote: [] as LatestVote[]
     }
   },
   actions: {
@@ -53,6 +54,20 @@ export const useSongStore = defineStore({
       console.info('[async][action] getSongs')
 
       this.songs = await getSongs();
+    },
+
+    async getLatestVote() {
+      const client = useSupabaseClient<Database>()
+
+      const { data } = await client
+        .from("votes")
+        .select("userid, user_avatar, songid")
+        .order("created_at", { ascending: false })
+        .limit(1)
+
+      if (data) {
+        this.latestVote = data
+      }
     },
 
     async getVotesForSongs() {
@@ -389,6 +404,7 @@ export const useSongStore = defineStore({
     getPlayedSong: (state) => {
       return (songId: string) => state.playedSongs.find((song) => song.songId === songId)
     },
+    theLatestVotes: state => state.latestVote,
     errors: state => state.errorMessage,
     configValues: state => state.config,
     getConfigValue: (state) => {

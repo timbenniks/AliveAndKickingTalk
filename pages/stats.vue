@@ -17,7 +17,7 @@ const { data, refresh } = await useAsyncData("stats", async () => {
     .eq("key", "active_song")
     .single();
 
-  const song = activeSong.val;
+  const song = activeSong?.val;
   // const aggregate = await $fetch(
   //   "https://plausible.io/api/v1/stats/aggregate?site_id=aliveandkicking.dev&period=day&metrics=visitors,pageviews,bounce_rate,visit_duration",
   //   {

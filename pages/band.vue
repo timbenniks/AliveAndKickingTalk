@@ -47,7 +47,16 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
 
 let channel: RealtimeChannel;
 onMounted(() => {
-  channel = createRealtimeChannel(refreshSong, "config", "UPDATE");
+  channel = createRealtimeChannel("config_changes", [
+    {
+      table: "config",
+      event: "UPDATE",
+      callback: () => {
+        refreshSong();
+      },
+    },
+  ]);
+
   channel.subscribe();
 });
 
