@@ -7,3 +7,6 @@ node_modules
 .env
 dist
 .DS_Store
+stresstest/data.csv
+server/api/vote.post.ts
+stresstest/artillery.yml

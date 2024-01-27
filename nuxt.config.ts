@@ -1,4 +1,5 @@
 export default defineNuxtConfig({
+  devtools: { enabled: false },
   routeRules: {
     '/': { ssr: false },
     '/live': { ssr: false },

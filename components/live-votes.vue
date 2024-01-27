@@ -29,6 +29,11 @@ onMounted(async () => {
     this.image = new Image();
     this.image.src = src;
 
+    this.image.onerror = () => {
+      this.image.src =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAp1JREFUWEfNWFkrRVEUPuvHSIZEETIkipAhETJkKOLFgwcPXjx4UciQoYgyZCiiDBlCJFPELzo6t7t35+yzh7Xs43bvy3nZ9+xvre9b3/72gZ+UaddJ4h98p0y7AOA4rus47JlEgOEjddYFHSAfcK8Q13UdbEHeez16tO/37S1bD69pc2iKpRv6Oy8wwQtCMiIF+JQ+bwdQs3lsQ1nHFZKSArzPXPQ4C2pQ7ISPKlvKQvUYJATXWUvKDqI0JNsASSlbptsHLrJX7AAaRB5wB41GVczAac5qZAAxHcEC5u86yl0LAkygrUgLElwB9vPWQx1EaY+9/Z8Lgp38DQ6QBMykPdWgEIcKNgs2QzYTOjGQU0ktEOOTsFa0pe+g5qRg/kkFhhqm+CJYLt7+M8UoYJYahYXS3Via0R5JCopRAE1aNZzlMFO2F+yg5dmpk6u/IOWRKdrMVPkBjWJLyihnuVcsTFYc6vOgpCUkauOMcGAySjUSgonKoyDACPMdZVo5RlZQ/AnjVcfoRM1tRRwqg0+SOi4MFYxVn6ApRm0kYQD1P8W0w2jNKSmwIg+V2DIUMFNgHak700d+QRPSuCSgRtkJcvhguP6cdidJkE/yARtovDQCRFGl6ojlNRV6m67MgRUpPKtC2P1ZPEm6mm9okT9Cn8RoFdpabmkAxW4ywGxqCZRijByaW+/CNsOyWASfLkLqUNhKIE35PbGh/SG5A2ttxyMtzYiOb+mTpvmDys4nu1udArDu/ovRHl9T3v3MNUj9GkXZSNYp1KWppOeFRnECA6tXABT2vcXSDDXpKsNAxD4Juf3vtA6aLkEa1Ssp1SXq7IHPYAcR9+C/ag/FlCAhyBj8sgusSEopEvIXAqlD33YATZSKH9ERlyY/wF+B/GwL92p+EQAAAABJRU5ErkJggg==";
+    };
+
     this.radius = 25;
     this.x = Math.random() * (tx - this.radius * 2) + this.radius;
     this.y = Math.random() * (ty - this.radius);
