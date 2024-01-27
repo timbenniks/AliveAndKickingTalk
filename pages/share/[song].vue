@@ -13,7 +13,7 @@ await songStore.getSongs();
 await songStore.getConfigValues();
 
 const selectedSong = songStore.getSongById(song as string);
-const conference = songStore.conference;
+const { conference } = useRuntimeConfig().public;
 
 const { data: vote } = await client
   .from("votes")

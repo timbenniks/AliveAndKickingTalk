@@ -42,11 +42,10 @@ export const useSongStore = defineStore({
     return {
       voteMax: parseInt(maxVotes),
       songs: [] as Song[],
-      conference: "#vuejsamsterdam",
+      playedSongs: [] as PlayedSong[],
       voting: false,
       config: [] as ConfigValue[],
       errorMessage: "",
-      playedSongs: [] as PlayedSong[]
     }
   },
   actions: {

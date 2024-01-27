@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Vote, Ball } from "../types";
+import { createRealtimeChannel, removeRealtimeChannel } from "../helpers";
 
 const votez: Ref<HTMLCanvasElement | null> = ref(null);
 const client = useSupabaseClient();
-let realtimeChannel: RealtimeChannel;
 
 const { data: votes, refresh: refreshVotes } = await useAsyncData(
   "votes",
@@ -22,18 +22,12 @@ const { data: votes, refresh: refreshVotes } = await useAsyncData(
 const width = ref(window.innerWidth);
 const height = ref(window.innerHeight - 80);
 
+let channel: RealtimeChannel;
 onMounted(async () => {
   await nextTick();
 
-  realtimeChannel = client
-    .channel("public:votes")
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "votes" },
-      () => refreshVotes()
-    );
-
-  realtimeChannel.subscribe();
+  channel = createRealtimeChannel(refreshVotes, "votes", "INSERT");
+  channel.subscribe();
 
   const ctx = votez.value?.getContext("2d") as CanvasRenderingContext2D;
   const tx = width.value;
@@ -107,7 +101,13 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  client.removeChannel(realtimeChannel);
+  window.onbeforeunload = null;
+});
+
+onBeforeMount(() => {
+  window.onbeforeunload = () => {
+    removeRealtimeChannel(channel);
+  };
 });
 </script>
 

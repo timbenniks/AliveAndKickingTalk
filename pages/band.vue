@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database } from "../types";
+import { createRealtimeChannel, removeRealtimeChannel } from "../helpers";
 
 const client = useSupabaseClient<Database>();
-let realtimeChannel: RealtimeChannel;
 
 const { data: song, refresh: refreshSong } = await useAsyncData(
   "song_band",
@@ -14,7 +14,7 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
       .eq("key", "active_song")
       .single();
 
-    const { song } = await GqlSong({ song: data.val });
+    const { song } = await GqlSong({ song: data?.val });
 
     if (!song) {
       return false;
@@ -45,20 +45,20 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
   }
 );
 
-onMounted(async () => {
-  realtimeChannel = client
-    .channel("public:config")
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "config" },
-      () => refreshSong()
-    );
-
-  realtimeChannel.subscribe();
+let channel: RealtimeChannel;
+onMounted(() => {
+  channel = createRealtimeChannel(refreshSong, "config", "UPDATE");
+  channel.subscribe();
 });
 
 onUnmounted(() => {
-  client.removeChannel(realtimeChannel);
+  window.onbeforeunload = null;
+});
+
+onBeforeMount(() => {
+  window.onbeforeunload = () => {
+    removeRealtimeChannel(channel);
+  };
 });
 
 const imgBase =
