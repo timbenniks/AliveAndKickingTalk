@@ -9,8 +9,10 @@ defineProps(["songs", "mashupMode"]);
   >
     <div
       v-for="(song, index) in songs"
-      :style="`background-image: url(${song.artwork[0].bg});`"
-      class="bg-cover bg-black relative w-full h-full"
+      :style="
+        !song.blocked ? `background-image: url(${song.artwork[0].bg});` : ''
+      "
+      class="bg-cover bg-black relative w-full h-full fancy-bg"
     >
       <a
         :href="`/live/${song.songId}?spot=${index + 1}`"
@@ -40,13 +42,23 @@ defineProps(["songs", "mashupMode"]);
           </figcaption>
         </figure>
         <div class="text-right">
-          <p class="text-[150px] leading-none font-black flowing-title">
-            {{ song.votes }}
-          </p>
-          <p class="uppercase font-light text-3xl">
-            <template v-if="song.votes === 1">vote</template>
-            <template v-else>votes</template>
-          </p>
+          <template v-if="!song.blocked">
+            <p class="text-[150px] leading-none font-black flowing-title">
+              {{ song.votes }}
+            </p>
+            <p class="uppercase font-light text-3xl">
+              <template v-if="song.votes === 1">vote</template>
+              <template v-else>votes</template>
+            </p>
+          </template>
+          <template v-else>
+            <p class="uppercase font-black text-3xl">song locked</p>
+            <p class="uppercase font-light text-3xl">
+              {{ song.votes }}
+              <template v-if="song.votes === 1">vote</template>
+              <template v-else>votes</template>
+            </p>
+          </template>
         </div>
       </a>
     </div>

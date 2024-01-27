@@ -3,18 +3,22 @@ import { storeToRefs } from "pinia";
 
 const route = useRoute();
 const { song } = route.params;
+const { spot } = route.query;
 
 const songStore = useSongStore();
 await songStore.getSongs();
 await songStore.getVotesForSongs();
+await songStore.getPlayedSongs();
 await songStore.getConfigValues();
 await songStore.setConfigValue("active_song", song as string);
+await songStore.setPlayedSong(song as string, Number(spot));
 
 const selectedSong = songStore.getSongById(song as string);
 const { configValues } = storeToRefs(songStore);
 
 setInterval(async () => {
   await songStore.getVotesForSongs();
+  await songStore.getPlayedSongs();
 }, 5000);
 
 const mashupMode = computed(() => {

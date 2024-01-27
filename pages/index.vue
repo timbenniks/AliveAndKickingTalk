@@ -3,6 +3,7 @@ import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
 await songStore.getSongs();
+await songStore.getPlayedSongs();
 await songStore.getConfigValues();
 await songStore.setVotedState();
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Song, Database, ConfigValue } from '../types'
+import type { Song, Database, ConfigValue, PlayedSong } from '../types'
 
 async function getSongs() {
   console.info('[async][function] getSongs: GqlSongs()')
@@ -45,7 +45,8 @@ export const useSongStore = defineStore({
       conference: "#vuejsamsterdam",
       voting: false,
       config: [] as ConfigValue[],
-      errorMessage: ""
+      errorMessage: "",
+      playedSongs: [] as PlayedSong[]
     }
   },
   actions: {
@@ -66,15 +67,55 @@ export const useSongStore = defineStore({
 
       if (errorVotesPerSong) {
         this.errorMessage = 'Error [async][action] setVotedState: errorVotesPerSong'
-        throw createError('[async][action] setVotedState: errorVotesPerSong', errorVotesPerSong)
+        throw createError('[async][action] setVotedState: errorVotesPerSong')
       }
 
       this.songs.map(song => {
         const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId)?.votes
         song.votes = votes || 0
       })
+    },
 
-      //await this.setVotedState()
+    async getPlayedSongs() {
+      console.info('[async][action] getPlayedSongs')
+
+      const client = useSupabaseClient<Database>()
+
+      const { error: getPlayedSongsError, data } = await client
+        .from('songs_played')
+        .select('songid, mashup_spot')
+
+      if (getPlayedSongsError) {
+        this.errorMessage = 'Error [async][action] getPlayedSongs: getPlayedSongsError'
+        throw createError('[async][action] getPlayedSongs: getPlayedSongsError')
+      }
+
+      if (data) {
+        this.playedSongs = data.map(song => {
+          return {
+            songId: song.songid,
+            mashupSpot: song.mashup_spot
+          }
+        }) as PlayedSong[]
+
+        console.info('[async][action] getPlayedSongs', this.playedSongs)
+      }
+    },
+
+    async setPlayedSong(songId: string, mashup_spot: number) {
+      const client = useSupabaseClient<Database>()
+
+      const { error: setPlayedSongError } = await client
+        .from('songs_played')
+        .upsert({ songid: songId, mashup_spot }, { onConflict: 'songid' })
+        .eq('songid', songId);
+
+      if (setPlayedSongError) {
+        this.errorMessage = 'Error [async][action] setPlayedSong: setPlayedSongError'
+        throw createError('[async][action] setPlayedSong: setPlayedSongError')
+      }
+
+      await this.getPlayedSongs()
     },
 
     async setVotedState() {
@@ -94,7 +135,7 @@ export const useSongStore = defineStore({
 
       if (votesForUserError) {
         this.errorMessage = 'Error [async][action] setVotedState: votesForUserError'
-        throw createError('[async][action] setVotedState: votesForUserError', votesForUserError)
+        throw createError('[async][action] setVotedState: votesForUserError')
       }
 
       this.songs.forEach(song => {
@@ -144,7 +185,7 @@ export const useSongStore = defineStore({
 
       if (alreadyVotedError) {
         this.errorMessage = 'Error [async][action] upvote: alreadyVotedError'
-        throw createError('[async][action] upvote: alreadyVotedError', alreadyVotedError)
+        throw createError('[async][action] upvote: alreadyVotedError')
       }
 
       await this.setVotedState();
@@ -172,7 +213,7 @@ export const useSongStore = defineStore({
 
       if (deleteVoteError) {
         this.errorMessage = 'Error [async][action] downvote: deleteVoteError'
-        throw createError('[async][action] downvote: deleteVoteError', deleteVoteError)
+        throw createError('[async][action] downvote: deleteVoteError')
       }
 
       await this.setVotedState();
@@ -195,8 +236,6 @@ export const useSongStore = defineStore({
 
         this.errorMessage = 'Error [async][action] mashupVote: no user'
         throw createError('[async][action] mashupVote: no user')
-
-        return false
       }
 
       const { data: existingVote, error: existingError } = await client
@@ -208,7 +247,7 @@ export const useSongStore = defineStore({
 
       if (existingError) {
         this.errorMessage = 'Error [async][action] mashupVote: existingError'
-        throw createError('[async][action] mashupVote: existingError', existingError)
+        throw createError('[async][action] mashupVote: existingError')
       }
 
       if (existingVote) {
@@ -220,7 +259,7 @@ export const useSongStore = defineStore({
 
         if (deletionError) {
           this.errorMessage = 'Error [async][action] mashupVote: deletionError'
-          throw createError('[async][action] mashupVote: deletionError', deletionError)
+          throw createError('[async][action] mashupVote: deletionError')
         }
 
         const { error: insertedVoteError } = await client
@@ -235,7 +274,7 @@ export const useSongStore = defineStore({
 
         if (insertedVoteError) {
           this.errorMessage = 'Error [async][action] mashupVote: insertedVoteError'
-          throw createError('[async][action] mashupVote: insertedVoteError', insertedVoteError)
+          throw createError('[async][action] mashupVote: insertedVoteError')
         }
       }
       else {
@@ -251,7 +290,7 @@ export const useSongStore = defineStore({
 
         if (insertedVoteError) {
           this.errorMessage = 'Error [async][action] mashupVote: insertedVoteError'
-          throw createError('[async][action] mashupVote: insertedVoteError', insertedVoteError)
+          throw createError('[async][action] mashupVote: insertedVoteError')
         }
       }
 
@@ -274,8 +313,6 @@ export const useSongStore = defineStore({
         this.errorMessage = 'Error [async][action] mashupDownVote: no user'
 
         throw createError('[async][action] mashupDownVote: no user')
-
-        return false
       }
 
       const { error: deletionError } = await client
@@ -286,7 +323,7 @@ export const useSongStore = defineStore({
 
       if (deletionError) {
         this.errorMessage = 'Error [async][action] mashupDownVote: deletionError'
-        throw createError('[async][action] mashupDownVote: deletionError', deletionError)
+        throw createError('[async][action] mashupDownVote: deletionError')
       }
 
       await this.setVotedState();
@@ -309,7 +346,7 @@ export const useSongStore = defineStore({
 
       if (setConfigValueError) {
         this.errorMessage = 'Error [async][action] setConfigValue: setConfigValueError'
-        throw createError('[async][action] setConfigValue: setConfigValueError', setConfigValueError)
+        throw createError('[async][action] setConfigValue: setConfigValueError')
       }
 
       const { data, error: setConfigToStateError } = await client
@@ -318,11 +355,11 @@ export const useSongStore = defineStore({
 
       if (setConfigToStateError) {
         this.errorMessage = 'Error [async][action] setConfigValue: setConfigToStateError'
-        throw createError('[async][action] setConfigValue: setConfigToStateError', setConfigToStateError)
+        throw createError('[async][action] setConfigValue: setConfigToStateError')
       }
 
       if (data) {
-        this.config = data;
+        this.config = data as ConfigValue[];
       }
     },
 
@@ -337,11 +374,11 @@ export const useSongStore = defineStore({
 
       if (selectConfigValuesError) {
         this.errorMessage = 'Error [async][action] getConfigValues: selectConfigValuesError'
-        throw createError('[async][action] getConfigValues: selectConfigValuesError', selectConfigValuesError)
+        throw createError('[async][action] getConfigValues: selectConfigValuesError')
       }
 
       if (data) {
-        this.config = data;
+        this.config = data as ConfigValue[];
         console.info('[async][action] getConfigValues', data)
 
       }
@@ -349,6 +386,10 @@ export const useSongStore = defineStore({
   },
   getters: {
     allSongs: state => state.songs,
+    allPlayedSongs: state => state.playedSongs,
+    getPlayedSong: (state) => {
+      return (songId: string) => state.playedSongs.find((song) => song.songId === songId)
+    },
     errors: state => state.errorMessage,
     configValues: state => state.config,
     getConfigValue: (state) => {

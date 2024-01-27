@@ -3,7 +3,11 @@ import { storeToRefs } from "pinia";
 import type { Song } from "~/types";
 
 const songStore = useSongStore();
-const { allSongs, voting } = storeToRefs(songStore);
+const { allSongs, voting, allPlayedSongs } = storeToRefs(songStore);
+
+setInterval(async () => {
+  await songStore.getPlayedSongs();
+}, 5000);
 
 const showSongSelection = ref(false);
 const selectedSongSpot = ref(1);
@@ -16,8 +20,16 @@ const availableSongs = computed(() => {
     return song.songId;
   });
 
-  const result = allSongs.value.filter(
+  const songsMinusVotedSongs = allSongs.value.filter(
     (song) => !songsToRemove.includes(song.songId)
+  );
+
+  const playedSongsAsList = allPlayedSongs.value.map((song) => {
+    return song.songId;
+  });
+
+  const result = songsMinusVotedSongs.filter(
+    (song) => !playedSongsAsList.includes(song.songId)
   );
 
   return result;
@@ -68,7 +80,7 @@ async function removeVote(spot: number) {
       <p>Create your favorite meshup by selecting four songs!</p>
     </div>
     <ul
-      class="grid grid-rows-4 grid-cols-1 md:grid-cols-2 md:grid-rows-2 h-auto md:h-[calc(100vh-120px)] w-screen gap-2"
+      class="p-2 grid grid-rows-4 grid-cols-1 md:grid-cols-2 md:grid-rows-2 h-auto md:h-[calc(100vh-120px)] w-screen gap-2"
     >
       <mashup-vote-song
         v-for="(spot, index) in spots"
@@ -78,6 +90,8 @@ async function removeVote(spot: number) {
         :voting="voting"
         @removeVote="removeVote"
         @openSongSelect="openSongSelect"
+        :playedSongs="allPlayedSongs"
+        :allSongs="allSongs"
       />
     </ul>
     <div
@@ -88,7 +102,7 @@ async function removeVote(spot: number) {
     </div>
     <Transition name="slide-fade">
       <div
-        class="fixed w-screen h-full top-0 left-0 z-10 bg-[#000] bg-opacity-95 p-8"
+        class="fixed w-screen h-full overflow-y-auto top-0 left-0 z-10 bg-[#000] bg-opacity-95 p-8"
         v-show="showSongSelection"
       >
         <button
@@ -105,7 +119,7 @@ async function removeVote(spot: number) {
         </h1>
 
         <div
-          class="grid grid-cols-2 gap-4 md:max-w-screen-sm"
+          class="grid grid-cols-1 gap-2 md:max-w-screen-sm"
           style="grid-auto-rows: 1fr"
         >
           <button
@@ -114,24 +128,24 @@ async function removeVote(spot: number) {
             v-for="song in availableSongs"
             :key="`${selectedSongSpot}-${song.songId}`"
           >
-            <figure class="flex flex-col">
+            <figure class="flex flex-row space-x-2">
               <img
                 :src="
                   song?.cover.replace(
                     'q_auto,f_auto',
-                    'q_auto,f_auto,w_380,h_380'
+                    'q_auto,f_auto,w_120,h_120'
                   )
                 "
                 :alt="`${song?.artist} ${song?.song}`"
-                width="100"
-                height="100"
-                class="w-36 h-36 fancy-image mb-2"
+                width="64"
+                height="64"
+                class="w-16 h-16 fancy-image mb-2"
               />
               <figcaption class="block text-left">
-                <span class="block uppercase font-black text-md">{{
+                <span class="block uppercase font-black text-lg">{{
                   song?.song
                 }}</span>
-                <span class="block uppercase font-light text-md">{{
+                <span class="block uppercase font-light text-lg">{{
                   song?.artist
                 }}</span>
               </figcaption>

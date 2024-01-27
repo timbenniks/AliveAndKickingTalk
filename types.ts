@@ -3,6 +3,11 @@ export type ConfigValue = {
   val: string
 }
 
+export type PlayedSong = {
+  songId: string,
+  mashupSpot: number
+}
+
 export type Song = {
   songId: string
   song: string
@@ -81,6 +86,48 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      config: {
+        Row: {
+          created_at: string
+          id: number
+          key: string | null
+          val: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          key?: string | null
+          val?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          key?: string | null
+          val?: string | null
+        }
+        Relationships: []
+      }
+      songs_played: {
+        Row: {
+          created_at: string
+          id: number
+          mashup_spot: number | null
+          songid: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          mashup_spot?: number | null
+          songid?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          mashup_spot?: number | null
+          songid?: string | null
+        }
+        Relationships: []
+      }
       votes: {
         Row: {
           created_at: string | null
