@@ -54,9 +54,9 @@ function removeVote() {
               )
             "
             :alt="`${blockedSong?.artist} ${blockedSong?.song}`"
-            width="100"
-            height="100"
-            class="w-20 h-20 md:w-56 md:h-56 fancy-image"
+            width="92"
+            height="92"
+            class="w-[92px] h-[92px] md:w-56 md:h-56 fancy-image"
           />
           <figcaption class="block text-left">
             <span
