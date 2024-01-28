@@ -42,7 +42,6 @@ export default defineNuxtConfig({
       conference: process.env.NUXT_CONFERENCE,
       showVolume: process.env.NUXT_SHOW_VOLUME,
       plausibleKey: process.env.NUXT_PLAUSIBLE_KEY,
-      debugMode: process.env.NUXT_DEBUG === 'true'
     }
   },
 

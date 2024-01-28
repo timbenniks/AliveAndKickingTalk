@@ -161,7 +161,10 @@ useSeoMeta({
     <img
       :src="url"
       :alt="`I just voted for ${songTitle} by ${artist} at Tim Benniks' talk at ${conference}`"
-      class="w-full block fancy-image mb-4"
+      class="w-full block fancy-image mb-4 aspect-video"
+      loading="eager"
+      width="1920"
+      height="1080"
     />
 
     <article class="max-w-3xl text-xl">

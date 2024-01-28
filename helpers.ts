@@ -2,7 +2,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database, PlayedSong, Song, realtimeOptions } from "./types";
 
 export function log(...args: any[]) {
-  const { debugMode } = useRuntimeConfig().public
+  const debugMode = process.env.NODE_ENV === 'development'
   debugMode && console.log(...args)
 }
 
