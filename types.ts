@@ -24,7 +24,8 @@ export type Song = {
   songId: string
   song: string
   artist: string
-  cover: any
+  cover: string
+  coverPublicId: string
   length: string
   mp3: string
   presets: Array<{
@@ -33,6 +34,7 @@ export type Song = {
     pc: number
   }>
   artwork: Array<{
+    publicId: string
     bg: any
     cloudinaryTransform?: string
     opacity: string

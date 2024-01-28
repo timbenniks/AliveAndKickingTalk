@@ -12,11 +12,13 @@ async function getSongs() {
       song: song.song,
       artist: song.artist,
       cover: song.cover.secure_url.replace(`v${song.cover.version}`, 'q_auto,f_auto'),
+      coverPublicId: song.cover.public_id,
       length: song.length,
       mp3: song.mp3,
       presets: song.presets,
       artwork: song.artwork.map((art) => {
         return {
+          publicId: art.bg.public_id,
           bg: art.bg.secure_url.replace(`v${art.bg.version}`, art.cloudinaryTransform),
           x: art.x,
           y: art.y,
