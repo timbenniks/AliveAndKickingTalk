@@ -101,14 +101,15 @@ async function removeVote(spot: number) {
         MASHUP VOTING
         <span class="text-sm">({{ selectedSongs.length }} / 4)</span>
       </h1>
-      <p>
+      <p v-if="selectedSongs.length !== 4">
         Create your favorite meshup by selecting <strong>four</strong> songs!
       </p>
     </div>
 
-    <div class="px-6 py-3 fancy-bg text-lg" v-if="selectedSongs.length === 4">
-      Thank you for selecting <strong>four</strong> songs. Please share your
-      mashup on your favorite social media platform!
+    <div class="px-6 py-3 fancy-bg" v-if="selectedSongs.length === 4">
+      Thank you for selecting <strong>four</strong> songs. Why don't you share
+      this mashup on your favorite social media platform? It will help the
+      conference and the presenter!
 
       <SongShare
         class="mt-4"
