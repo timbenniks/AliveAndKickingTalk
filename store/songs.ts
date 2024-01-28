@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import type { Song, Database, ConfigValue, PlayedSong, LatestVote } from '../types'
+import { log } from '../helpers'
 
 async function getSongs() {
-  console.info('[async][function] getSongs: GqlSongs()')
+  log('[async][function] getSongs: GqlSongs()')
 
   const { songs } = await GqlSongs()
   const mappedSongs = songs.map(song => {
@@ -29,8 +30,6 @@ async function getSongs() {
     } as Song
   })
 
-  console.info('[async][function] getSongs: GqlSongs()', mappedSongs)
-
   return mappedSongs
 }
 
@@ -51,7 +50,7 @@ export const useSongStore = defineStore({
   },
   actions: {
     async getSongs() {
-      console.info('[async][action] getSongs')
+      log('[async][action] getSongs')
 
       this.songs = await getSongs();
     },
@@ -71,7 +70,7 @@ export const useSongStore = defineStore({
     },
 
     async getVotesForSongs() {
-      console.info('[async][action] getVotesForSongs')
+      log('[async][action] getVotesForSongs')
 
       const client = useSupabaseClient<Database>()
 
@@ -91,7 +90,7 @@ export const useSongStore = defineStore({
     },
 
     async getPlayedSongs() {
-      console.info('[async][action] getPlayedSongs')
+      log('[async][action] getPlayedSongs')
 
       const client = useSupabaseClient<Database>()
 
@@ -112,7 +111,7 @@ export const useSongStore = defineStore({
           }
         }) as PlayedSong[]
 
-        console.info('[async][action] getPlayedSongs', this.playedSongs)
+        log('[async][action] getPlayedSongs', this.playedSongs)
       }
     },
 
@@ -133,7 +132,7 @@ export const useSongStore = defineStore({
     },
 
     async setVotedState() {
-      console.info('[async][action] setVotedState')
+      log('[async][action] setVotedState')
 
       const client = useSupabaseClient<Database>()
       const user = useSupabaseUser();
@@ -167,7 +166,7 @@ export const useSongStore = defineStore({
     },
 
     async upvote(songId: string) {
-      console.info('[async][action] upvote', songId)
+      log('[async][action] upvote', songId)
 
       const { voteTimeout } = useRuntimeConfig().public
 
@@ -208,7 +207,7 @@ export const useSongStore = defineStore({
     },
 
     async downvote(songId: string) {
-      console.info('[async][action] downvote', songId)
+      log('[async][action] downvote', songId)
 
       const { voteTimeout } = useRuntimeConfig().public
       this.voting = true;
@@ -237,7 +236,7 @@ export const useSongStore = defineStore({
     },
 
     async mashupVote(songId: string, spot: number) {
-      console.info('[async][action] mashupVote', songId, spot)
+      log('[async][action] mashupVote', songId, spot)
 
       //const { voteTimeout } = useRuntimeConfig().public
 
@@ -314,7 +313,7 @@ export const useSongStore = defineStore({
     },
 
     async mashupDownVote(spot: number) {
-      console.info('[async][action] mashupDownVote', spot)
+      log('[async][action] mashupDownVote', spot)
 
       //const { voteTimeout } = useRuntimeConfig().public
 
@@ -346,7 +345,7 @@ export const useSongStore = defineStore({
     },
 
     async setConfigValue(key: string, val: string) {
-      console.info('[async][action] setConfigValue', key, val)
+      log('[async][action] setConfigValue', key, val)
 
       const client = useSupabaseClient<Database>()
 
@@ -378,7 +377,7 @@ export const useSongStore = defineStore({
     },
 
     async getConfigValues() {
-      console.info('[async][action] getConfigValues')
+      log('[async][action] getConfigValues')
 
       const client = useSupabaseClient<Database>()
 
@@ -393,7 +392,7 @@ export const useSongStore = defineStore({
 
       if (data) {
         this.config = data as ConfigValue[];
-        console.info('[async][action] getConfigValues', data)
+        log('[async][action] getConfigValues', data)
 
       }
     }

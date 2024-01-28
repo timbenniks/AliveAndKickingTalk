@@ -31,7 +31,7 @@ watch(
   }
 );
 
-await WebMidi.enable().catch((err) => console.log(err));
+await WebMidi.enable().catch((err) => console.error(err));
 const output: Output = WebMidi.getOutputByName("IAC Driver Alive and Kicking");
 
 function setPreset(pc: number) {

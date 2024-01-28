@@ -1,8 +1,15 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database, PlayedSong, Song, realtimeOptions } from "./types";
 
+export function log(...args: any[]) {
+  const { debugMode } = useRuntimeConfig().public
+  debugMode && console.log(...args)
+}
+
 export function createRealtimeChannel(channel: string, options: realtimeOptions[]) {
-  console.info(`[LIVE]: setting up real time channel for ${channel}`)
+  const { debugMode } = useRuntimeConfig().public
+
+  log(`[LIVE]: setting up real time channel for ${channel}`)
   const client = useSupabaseClient<Database>();
 
   const realtimeChannel: RealtimeChannel = client.channel(channel)
@@ -20,7 +27,9 @@ export function createRealtimeChannel(channel: string, options: realtimeOptions[
 }
 
 export function removeRealtimeChannel(realtimeChannel: RealtimeChannel) {
-  console.info('[LIVE]: removing real time channel')
+  const { debugMode } = useRuntimeConfig().public
+
+  log('[LIVE]: removing real time channel')
   const client = useSupabaseClient<Database>();
   client.removeChannel(realtimeChannel);
 }
