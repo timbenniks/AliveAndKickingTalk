@@ -21,15 +21,6 @@ const { data: votes } = await client
   .eq("userid", userid as string)
   .order("mashup_spot");
 
-// const songs = [
-//   {
-//     art: "",
-//     cover: "",
-//     artist: "",
-//     song: "",
-//   },
-// ];
-
 const avatar = (votes && votes[0].user_avatar.replace("_normal", "")) || "";
 const songs = votes?.map((vote) => {
   const song = allSongs.value.find((s) => s.songId === vote.songid);

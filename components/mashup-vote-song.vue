@@ -71,6 +71,7 @@ function removeVote() {
               :copy="false"
               nativecopy="SHARE"
               :song="blockedSong"
+              :mashup="false"
             />
           </figcaption>
         </figure>
@@ -116,6 +117,7 @@ function removeVote() {
             :copy="false"
             nativecopy="SHARE"
             :song="song"
+            :mashup="false"
           />
         </div>
       </div>

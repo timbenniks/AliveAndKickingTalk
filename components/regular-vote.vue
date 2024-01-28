@@ -132,6 +132,7 @@ watch(votedAmount, () => {
             nativecopy="SHARE YOUR VOTE"
             :song="song"
             v-if="song.voted"
+            :mashup="false"
           />
         </div>
       </Slide>
