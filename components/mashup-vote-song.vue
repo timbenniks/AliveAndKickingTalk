@@ -63,9 +63,10 @@ function removeVote() {
               class="block uppercase font-black text-lg md:text-3xl leading-none"
               >{{ blockedSong?.song }}</span
             >
-            <span class="block uppercase font-light text-lg md:text-3xl mb-2">{{
-              blockedSong?.artist
-            }}</span>
+            <span
+              class="block uppercase font-medium text-lg md:text-3xl mb-2"
+              >{{ blockedSong?.artist }}</span
+            >
             <SongShare
               buttonclass="cta w-full"
               :copy="false"
