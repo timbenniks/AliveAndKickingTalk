@@ -8,7 +8,6 @@ await songStore.getConfigValues();
 await songStore.setVotedState();
 
 const { configValues } = storeToRefs(songStore);
-
 const mashupMode = computed(() => {
   const mashupModeConfKey = configValues.value.find(
     (config) => config.key === "mashup_mode"

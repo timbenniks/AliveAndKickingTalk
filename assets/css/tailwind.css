@@ -4,7 +4,14 @@
 
 @layer base {
   body {
-    @apply bg-black text-white font-[Lato];
+    @apply text-white font-[Lato];
+    background: #000 url("/loader.svg") no-repeat;
+    background-position: center;
+    min-height: 100vh;
+  }
+
+  main {
+    @apply bg-black;
   }
 
   html,
