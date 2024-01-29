@@ -68,5 +68,7 @@ const songs = computed(() => {
 </script>
 
 <template>
-  <live-vote-overview :songs="songs" :mashup-mode="mashupMode" />
+  <main>
+    <live-vote-overview :songs="songs" :mashup-mode="mashupMode" />
+  </main>
 </template>

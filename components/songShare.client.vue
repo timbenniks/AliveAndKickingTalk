@@ -55,8 +55,8 @@ onMounted(() => {
             share(
               `Alive and Kicking by Tim Benniks at ${conference}`,
               props.mashup
-                ? `I just voted for my favorite mashup at ${conference}`
-                : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference}`,
+                ? `I just voted for my favorite mashup at ${conference} @timbenniks`
+                : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`,
               props.mashup
                 ? `https://aliveandkicking.dev/share/mashup?userid=${user.id}`
                 : `https://aliveandkicking.dev/share/${props.song.songId}?userid=${user.id}`
@@ -72,8 +72,8 @@ onMounted(() => {
             target="_blank"
             :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
               props.mashup
-                ? `I just voted for my favorite mashup at ${conference}`
-                : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference}`
+                ? `I just voted for my favorite mashup at ${conference} @timbenniks`
+                : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`
             )}&url=${encodeURI(
               `${
                 props.mashup
@@ -89,8 +89,8 @@ onMounted(() => {
             :href="`https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
               `${
                 props.mashup
-                  ? `I just voted for my favorite mashup at ${conference}`
-                  : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference}`
+                  ? `I just voted for my favorite mashup at ${conference} @timbenniks`
+                  : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`
               } ${
                 props.mashup
                   ? `https://aliveandkicking.dev/share/mashup?userid=${user.id}`

@@ -107,7 +107,13 @@ const bgs = {
         </p>
         <p class="mb-4 text-xl leading-7">{{ song.biography }}</p>
 
-        <img :src="song.logo" :alt="song.artist" class="fancy-image w-full" />
+        <img
+          :src="song.logo"
+          :alt="song.artist"
+          class="fancy-image w-full aspect-video"
+          width="1920"
+          height="1080"
+        />
       </article>
     </template>
     <template v-else>
