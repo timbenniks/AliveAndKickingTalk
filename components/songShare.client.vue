@@ -53,7 +53,6 @@ async function share() {
     ? `I just voted for my favorite mashup at ${conference} @timbenniks`
     : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`;
   const url = `https://aliveandkicking.dev/share/${shareSavedData?.id}`;
-
   await navigator.share({ title, text, url });
 }
 

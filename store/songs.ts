@@ -404,14 +404,17 @@ export const useSongStore = defineStore({
       let result = null
 
       if (!mashup) {
-        await client
+        const { data } = await client
           .from('shares')
           .insert({
             userid: userid as string,
             user_avatar: avatar as string,
             mashup: mashup as boolean,
             songids: songId as string
-          })
+          }).select().single()
+
+        result = data
+
       } else {
         const { data: votes } = await client
           .from("votes")
