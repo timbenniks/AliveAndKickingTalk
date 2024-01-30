@@ -24,7 +24,7 @@ function findNextSong() {
   const nextSpot = currentSpot + 1;
   const nextSong = songs.value[nextSpot];
 
-  if (nextSong) {
+  if (nextSong && spot) {
     // @ts-ignore
     document.querySelector(`.select-song-${Number(spot) + 1}`)?.click();
   }

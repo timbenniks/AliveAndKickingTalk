@@ -1,5 +1,5 @@
 query Songs {
-  songs {
+  songs(orderBy: publishedAt_DESC) {
     songId
     song
     artist

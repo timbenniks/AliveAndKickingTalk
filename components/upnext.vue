@@ -17,7 +17,7 @@ defineProps(["currentSong", "songs"]);
               :alt="`${song.artist} ${song.song}`"
               width="200"
               height="200"
-              class="w-36 h-36 block mr-4 fancy-image"
+              class="w-20 h-20 block mr-4 fancy-image"
             />
             <figcaption class="block text-left mb-4">
               <span class="block uppercase font-black text-xl break-all">{{
@@ -27,10 +27,8 @@ defineProps(["currentSong", "songs"]);
                 {{ song.artist }}
               </span>
 
-              <p class="mt-9">
-                <span class="text-5xl font-black flowing-title mr-2">{{
-                  song.votes
-                }}</span>
+              <p class="flowing-title">
+                <span class="text-xl font-black mr-2">{{ song.votes }}</span>
                 <span v-if="song.votes === 1"> VOTE </span>
                 <span v-else>VOTES</span>
               </p>

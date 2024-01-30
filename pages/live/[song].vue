@@ -12,8 +12,12 @@ await songStore.getSongs();
 await songStore.getVotesForSongs();
 await songStore.getPlayedSongs();
 await songStore.getConfigValues();
+
 await songStore.setConfigValue("active_song", song as string);
-await songStore.setPlayedSong(song as string, Number(spot));
+
+if (spot) {
+  await songStore.setPlayedSong(song as string, Number(spot));
+}
 
 const selectedSong = songStore.getSongById(song as string);
 const { configValues } = storeToRefs(songStore);
