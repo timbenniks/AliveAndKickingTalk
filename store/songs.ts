@@ -346,7 +346,7 @@ export const useSongStore = defineStore({
       this.voting = false;
     },
 
-    async setConfigValue(key: string, val: string) {
+    async setConfigValue(key: string, val: string | boolean) {
       log('[async][action] setConfigValue', key, val)
 
       const client = useSupabaseClient<Database>()
