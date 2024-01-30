@@ -73,19 +73,11 @@ export function mergePlayedSongsWithAllSongs(allSongs: ComputedRef<Song[]>, allP
   return resultSongs;
 }
 
-export async function createMashupImage(userid: string, allSongs: ComputedRef<Song[]>) {
-  const client = useSupabaseClient<Database>();
+export async function createMashupImage(avatar: string, allSongs: ComputedRef<Song[]>, songids: string) {
+  const songIdsArray = songids.split(',');
+  const filteredSongs = allSongs.value.filter(song => songIdsArray.includes(song.songId));
 
-  const { data: votes } = await client
-    .from("votes")
-    .select("*")
-    .eq("userid", userid as string)
-    .order("mashup_spot");
-
-  const avatar = (votes && votes[0].user_avatar.replace("_normal", "")) || "";
-  const songs = votes?.map((vote) => {
-    const song = allSongs.value.find((s) => s.songId === vote.songid);
-
+  const songs = filteredSongs?.map((song) => {
     return {
       art: song?.artwork[0].publicId,
       cover: song?.coverPublicId,
@@ -272,26 +264,10 @@ export async function createMashupImage(userid: string, allSongs: ComputedRef<So
   return url
 }
 
-export async function createShareImage(userid: string, songid: string, selectedSong: Song) {
-  const client = useSupabaseClient<Database>();
-
-  const { data: vote } = await client
-    .from("votes")
-    .select("*")
-    .eq("songid", songid)
-    .eq("userid", userid as string)
-    .maybeSingle();
-
-  if (!vote) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: `No vote found for song: ${songid} and user: ${userid}`
-    })
-  }
-
-  const art = selectedSong?.artwork[0].publicId;
-  const artist = selectedSong?.artist.replace("/", "%2F");
-  const songTitle = selectedSong?.song;
+export async function createShareImage(avatar: string, song: Song) {
+  const art = song?.artwork[0].publicId;
+  const artist = song?.artist.replace("/", "%2F");
+  const songTitle = song?.song;
 
   const cldOptions = {
     src: art || "",
@@ -316,7 +292,7 @@ export async function createShareImage(userid: string, songid: string, selectedS
         ],
       },
       {
-        url: vote?.user_avatar.replace("_normal", ""),
+        url: avatar.replace("_normal", ""),
         position: {
           y: -250,
           gravity: "center",

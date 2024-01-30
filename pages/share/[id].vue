@@ -1,30 +1,74 @@
 <script setup lang="ts">
-import { createMashupImage } from "../../helpers";
-import { storeToRefs } from "pinia";
-import { useSongStore } from "~/store/songs";
+import { createMashupImage, createShareImage } from "~/helpers";
+import type { Database, Song } from "~/types";
+
+const client = useSupabaseClient<Database>();
 
 const route = useRoute();
-const { userid } = route.query;
+const { id } = route.params;
 
 const songStore = useSongStore();
 await songStore.getSongs();
 
 const { allSongs } = storeToRefs(songStore);
+const url = ref();
+const selectedSong = ref();
+const artist = ref();
+const songTitle = ref();
+
+const { data: share } = await client
+  .from("shares")
+  .select("*")
+  .eq("id", id)
+  .single();
+
+if (!share) {
+  throw createError({
+    statusCode: 500,
+    statusMessage: `No sharing info found`,
+  });
+}
+
+if (share?.mashup) {
+  url.value = await createMashupImage(
+    share.user_avatar as string,
+    allSongs,
+    share.songids
+  );
+} else {
+  selectedSong.value = songStore.getSongById(share?.songids as string);
+  url.value = await createShareImage(
+    share.user_avatar,
+    selectedSong.value as Song
+  );
+
+  artist.value = selectedSong?.value.artist.replace("/", "%2F");
+  songTitle.value = selectedSong?.value.song;
+}
+
 const { conference } = useRuntimeConfig().public;
 
-const url = await createMashupImage(userid as string, allSongs);
-useSeoMeta({
+const seoOptions: any = {
   description: "Alive and Kicking, a Vue into Rock & Roll",
   ogDescription: "Alive and Kicking, a Vue into Rock & Roll",
-  title: `This is my mashup at Tim Benniks' talk at ${conference}`,
-  ogTitle: `This is my mashup at Tim Benniks' talk at ${conference}`,
-  ogImage: url,
+  ogImage: url.value,
   ogImageWidth: 1920,
   ogImageHeight: 1080,
-  twitterTitle: `This is my mashup at ${conference}`,
-  twitterImage: url,
   twitterCard: "summary_large_image",
-});
+  twitterImage: url.value,
+};
+
+if (share?.mashup) {
+  seoOptions.title = `This is my mashup at Tim Benniks' talk at ${conference}`;
+  seoOptions.ogTitle = `This is my mashup at Tim Benniks' talk at ${conference}`;
+  seoOptions.twitterTitle = `This is my mashup at Tim Benniks' talk at ${conference}`;
+} else {
+  seoOptions.title = `I just voted for ${songTitle.value} by ${artist.value} at Tim Benniks' talk at ${conference}`;
+  seoOptions.ogTitle = `I just voted for ${songTitle.value} by ${artist.value} at Tim Benniks' talk at ${conference}`;
+  seoOptions.twitterTitle = `I just voted for ${songTitle.value} by ${artist.value} at Tim Benniks' talk at ${conference}!`;
+}
+
+useSeoMeta(seoOptions);
 </script>
 
 <template>

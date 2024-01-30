@@ -12,6 +12,7 @@
 
   main {
     @apply bg-black;
+    min-height: 100vh;
   }
 
   html,

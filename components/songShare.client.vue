@@ -1,35 +1,59 @@
 <script lang="ts" setup>
 import { createMashupImage, createShareImage } from "../helpers";
+import type { Database } from "~/types";
 import { storeToRefs } from "pinia";
 
 const user = useSupabaseUser();
-const props = defineProps([
-  "song",
-  "copy",
-  "nativecopy",
-  "buttonclass",
-  "mashup",
-]);
-
+const client = useSupabaseClient<Database>();
+const props = defineProps(["song", "nativecopy", "buttonclass", "mashup"]);
 const songStore = useSongStore();
 const { allSongs } = storeToRefs(songStore);
 const { conference } = useRuntimeConfig().public;
+
 const canShare = ref();
 const url = ref();
+const avatar = (
+  user.value?.user_metadata.picture || user.value?.user_metadata.avatar_url
+).replace("_normal", "");
 
 let imgUrl = ref("");
 
 if (props.mashup) {
-  imgUrl.value = await createMashupImage(user?.value?.id as string, allSongs);
-} else {
-  imgUrl.value = await createShareImage(
-    user?.value?.id as string,
-    props.song.songId as string,
-    props.song
+  const { data: votes } = await client
+    .from("votes")
+    .select("*")
+    .eq("userid", user?.value?.id as string)
+    .order("mashup_spot");
+
+  const songids = votes
+    ?.map((vote) => {
+      return vote.songid;
+    })
+    .join(",");
+
+  imgUrl.value = await createMashupImage(
+    avatar as string,
+    allSongs,
+    songids as string
   );
+} else {
+  imgUrl.value = await createShareImage(avatar as string, props.song);
 }
 
-async function share(title: string, text: string, url: string) {
+async function share() {
+  const shareSavedData = await songStore.saveShare(
+    user.value?.id as string,
+    avatar as string,
+    props.mashup,
+    !props.mashup ? props.song.songId : null
+  );
+
+  const title = `Alive and Kicking by Tim Benniks at ${conference}`;
+  const text = props.mashup
+    ? `I just voted for my favorite mashup at ${conference} @timbenniks`
+    : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`;
+  const url = `https://aliveandkicking.dev/share/${shareSavedData?.id}`;
+
   await navigator.share({ title, text, url });
 }
 
@@ -46,61 +70,11 @@ onMounted(() => {
 
 <template>
   <div class="share-vote text-left">
-    <div v-if="user" class="flex space-x-3">
+    <div v-if="user && canShare" class="flex space-x-3">
       <template v-if="url">
-        <button
-          :class="buttonclass"
-          v-if="canShare"
-          @click="
-            share(
-              `Alive and Kicking by Tim Benniks at ${conference}`,
-              props.mashup
-                ? `I just voted for my favorite mashup at ${conference} @timbenniks`
-                : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`,
-              props.mashup
-                ? `https://aliveandkicking.dev/share/mashup?userid=${user.id}`
-                : `https://aliveandkicking.dev/share/${props.song.songId}?userid=${user.id}`
-            )
-          "
-        >
+        <button :class="buttonclass" @click="share()">
           {{ nativecopy }}
         </button>
-
-        <template v-else>
-          <span class="text-sm" v-if="copy">{{ copy }}</span>
-          <a
-            target="_blank"
-            :href="`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-              props.mashup
-                ? `I just voted for my favorite mashup at ${conference} @timbenniks`
-                : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`
-            )}&url=${encodeURI(
-              `${
-                props.mashup
-                  ? `https://aliveandkicking.dev/share/mashup?userid=${user.id}`
-                  : `https://aliveandkicking.dev/share/${props.song.songId}?userid=${user.id}`
-              }`
-            )}`"
-          >
-            <twitter class="w-5" />
-          </a>
-          <a
-            target="_blank"
-            :href="`https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
-              `${
-                props.mashup
-                  ? `I just voted for my favorite mashup at ${conference} @timbenniks`
-                  : `I just voted for ${props.song.song} at by ${props.song.artist} at ${conference} @timbenniks`
-              } ${
-                props.mashup
-                  ? `https://aliveandkicking.dev/share/mashup?userid=${user.id}`
-                  : `https://aliveandkicking.dev/share/${props.song.songId}?userid=${user.id}`
-              }`
-            )}`"
-          >
-            <img src="/linkedin.png" class="w-5 relative -top-0.5" />
-          </a>
-        </template>
       </template>
       <template v-else>
         <loader />

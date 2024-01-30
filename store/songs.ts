@@ -397,6 +397,40 @@ export const useSongStore = defineStore({
         log('[async][action] getConfigValues', data)
 
       }
+    },
+
+    async saveShare(userid: string, avatar: string, mashup: boolean, songId?: string) {
+      const client = useSupabaseClient<Database>()
+      let result = null
+
+      if (!mashup) {
+        await client
+          .from('shares')
+          .insert({
+            userid: userid as string,
+            user_avatar: avatar as string,
+            mashup: mashup as boolean,
+            songids: songId as string
+          })
+      } else {
+        const { data: votes } = await client
+          .from("votes")
+          .select("*")
+          .eq("userid", userid as string)
+          .order("mashup_spot");
+
+        const { data } = await client
+          .from('shares')
+          .insert({
+            userid: userid as string,
+            user_avatar: avatar as string,
+            mashup: mashup as boolean,
+            songids: votes?.map(vote => { return vote.songid }).join(',') as string
+          }).select().single()
+
+        result = data
+      }
+      return result
     }
   },
   getters: {

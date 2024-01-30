@@ -69,7 +69,6 @@ function removeVote() {
             >
             <SongShare
               buttonclass="cta w-full"
-              :copy="false"
               nativecopy="SHARE"
               :song="blockedSong"
               :mashup="false"
@@ -115,7 +114,6 @@ function removeVote() {
           </button>
           <SongShare
             buttonclass="cta w-full"
-            :copy="false"
             nativecopy="SHARE"
             :song="song"
             :mashup="false"

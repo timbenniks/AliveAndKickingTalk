@@ -122,6 +122,33 @@ export interface Database {
         }
         Relationships: []
       }
+      shares: {
+        Row: {
+          created_at: string
+          id: number
+          mashup: boolean
+          songids: string
+          user_avatar: string
+          userid: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          mashup: boolean
+          songids: string
+          user_avatar: string
+          userid: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          mashup?: boolean
+          songids?: string
+          user_avatar?: string
+          userid?: string
+        }
+        Relationships: []
+      }
       songs_played: {
         Row: {
           created_at: string

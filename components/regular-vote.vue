@@ -128,7 +128,6 @@ watch(votedAmount, () => {
             <loader class="relative top-2" v-show="voting" />
           </div>
           <SongShare
-            copy="SHARE ON"
             nativecopy="SHARE YOUR VOTE"
             :song="song"
             v-if="song.voted"

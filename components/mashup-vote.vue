@@ -114,7 +114,6 @@ async function removeVote(spot: number) {
       <SongShare
         class="mt-4"
         buttonclass="cta w-full"
-        :copy="false"
         nativecopy="SHARE YOUR MASHUP"
         :mashup="true"
       />
