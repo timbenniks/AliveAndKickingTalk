@@ -19,7 +19,7 @@ const songs = computed(() => {
   }
 });
 
-function findNextSong() {
+async function findNextSong() {
   const currentSpot = Number(spot) - 1;
   const nextSpot = currentSpot + 1;
   const nextSong = songs.value[nextSpot];
@@ -27,6 +27,11 @@ function findNextSong() {
   if (nextSong && spot) {
     // @ts-ignore
     document.querySelector(`.select-song-${Number(spot) + 1}`)?.click();
+  }
+
+  if (!nextSong && spot) {
+    await songStore.setConfigValue("active_song", "none");
+    location.href = "/band";
   }
 }
 </script>

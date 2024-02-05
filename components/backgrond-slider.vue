@@ -5,7 +5,9 @@ function randomIntFromInterval(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-const background = ref(props.song.artwork[0]);
+const background = ref(
+  props.song.artwork[randomIntFromInterval(0, props.song.artwork.length - 1)]
+);
 
 setInterval(() => {
   background.value =
