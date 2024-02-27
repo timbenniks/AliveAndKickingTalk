@@ -158,7 +158,7 @@ async function removeVote(spot: number) {
         </h1>
 
         <div
-          class="grid grid-cols-1 gap-2 md:max-w-screen-sm"
+          class="grid grid-cols-1 gap-2 md:max-w-screen-sm lg:max-w-screen-xl lg:grid-cols-2"
           style="grid-auto-rows: 1fr"
         >
           <button
@@ -172,19 +172,19 @@ async function removeVote(spot: number) {
                 :src="
                   song?.cover.replace(
                     'q_auto,f_auto',
-                    'q_auto,f_auto,w_120,h_120'
+                    'q_auto,f_auto,w_144,h_144'
                   )
                 "
                 :alt="`${song?.artist} ${song?.song}`"
-                width="64"
-                height="64"
-                class="w-16 h-16 fancy-image mb-2"
+                width="144"
+                height="144"
+                class="w-16 h-16 lg:w-36 lg:h-36 fancy-image mb-2"
               />
               <figcaption class="block text-left">
-                <span class="block uppercase font-black text-lg">{{
+                <span class="block uppercase font-black text-lg lg:text-2xl">{{
                   song?.song
                 }}</span>
-                <span class="block uppercase font-light text-lg">{{
+                <span class="block uppercase font-light text-lg lg:text-2xl">{{
                   song?.artist
                 }}</span>
               </figcaption>

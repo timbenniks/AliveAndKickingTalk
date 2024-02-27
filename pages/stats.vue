@@ -86,7 +86,7 @@ const bgs = {
       <div class="p-8 flex justify-between">
         <section class="votes">
           <p class="uppercase font-light text-3xl mb-4">Link to app</p>
-          <qr class="w-36 h-36" />
+          <qr class="w-52 h-52" />
         </section>
         <section class="votes">
           <p class="uppercase font-light text-3xl">Votes</p>
@@ -103,7 +103,7 @@ const bgs = {
         <section class="votes-per-song">
           <p class="uppercase font-light text-3xl mb-4">Votes per song</p>
 
-          <ul class="flex space-x-4">
+          <ul class="grid gap-4 grid-cols-4 max-w-[500px]">
             <li
               v-for="vote in data?.votesPerSong"
               :key="(vote.songid as string)"
