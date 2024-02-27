@@ -69,7 +69,7 @@ defineProps(["songs", "mashupMode"]);
   </section>
   <live-votes class="z-10 absolute w-screen pointer-events-none top-0 left-0" />
 
-  <img
+  <!-- <img
     src="/logo.png"
     alt="Alive & Kicking"
     class="absolute bottom-8 right-8 md:w-48 w-36 z-20"
@@ -78,5 +78,5 @@ defineProps(["songs", "mashupMode"]);
     src="/vueamsterdam.png"
     alt="Vue Amsterdam"
     class="z-20 absolute w-48 md:left-8 md:bottom-8 md:top-auto left-2/4 -translate-x-2/4 md:-translate-x-0 top-4"
-  />
+  /> -->
 </template>
