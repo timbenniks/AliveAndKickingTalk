@@ -115,7 +115,8 @@ onMounted(() => {
             class="flex justify-center"
             @click="shareNoneNative('twitter')"
           >
-            <twitter class="w-5 mr-2" /> {{ nativecopy }}
+            <twitter class="w-5 mr-2" />
+            <template v-if="mashup">{{ nativecopy }}</template>
           </button>
           <button
             :class="buttonclass"
@@ -123,7 +124,7 @@ onMounted(() => {
             @click="shareNoneNative('linkedin')"
           >
             <img src="/linkedin.png" class="w-5 mr-2" />
-            {{ nativecopy }}
+            <template v-if="mashup">{{ nativecopy }}</template>
           </button>
         </div>
       </template>

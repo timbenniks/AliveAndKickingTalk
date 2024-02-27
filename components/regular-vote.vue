@@ -126,13 +126,14 @@ watch(votedAmount, () => {
             </button>
 
             <loader class="relative top-2" v-show="voting" />
+            <SongShare
+              nativecopy="SHARE"
+              :song="song"
+              v-if="song.voted"
+              :mashup="false"
+              class="relative top-3"
+            />
           </div>
-          <SongShare
-            nativecopy="SHARE YOUR VOTE"
-            :song="song"
-            v-if="song.voted"
-            :mashup="false"
-          />
         </div>
       </Slide>
     </Carousel>
@@ -252,8 +253,9 @@ watch(votedAmount, () => {
   border: 0;
   margin: 0;
   cursor: pointer;
-  padding: 0 0.7rem;
   background: transparent;
+
+  @apply px-[0.4rem] md:px-[0.65rem];
 }
 
 .carousel__pagination-button::after {
