@@ -11,7 +11,6 @@ export default eventHandler(async (event: H3Event) => {
   })
 
   return users.map(user => {
-    return (user.user_metadata.picture || user.user_metadata.avatar_url).replace('_normal', '')
-
+    return user.user_metadata?.picture || user.user_metadata?.avatar_url || ""
   })
 })
