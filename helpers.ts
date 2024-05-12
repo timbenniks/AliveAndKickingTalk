@@ -236,7 +236,7 @@ export async function createMashupImage(avatar: string, allSongs: ComputedRef<So
 
       // Marketing
       {
-        publicId: "Alive and Kicking/vuejsams24-overlay-mashup-6",
+        publicId: "Alive and Kicking/contentcon24-overlay-mashup",
         position: {
           x: 0,
           y: 0,
@@ -279,7 +279,7 @@ export async function createShareImage(avatar: string, song: Song) {
 
     overlays: [
       {
-        publicId: `Alive and Kicking/share-vuejsams-overlay.png`,
+        publicId: `Alive and Kicking/contentcon24-overlay-2.png`,
         position: {
           x: 0,
           y: 0,
