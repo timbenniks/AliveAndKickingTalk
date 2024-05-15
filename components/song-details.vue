@@ -21,11 +21,11 @@ defineProps(["song"]);
       <span class="block uppercase font-light text-5xl mb-4">{{
         song.artist
       }}</span>
-      <img
+      <!-- <img
         src="/vueamsterdam.png"
         alt="Vue Amsterdam"
         class="w-48 relative -left-1"
-      />
+      /> -->
     </figcaption>
   </figure>
 </template>

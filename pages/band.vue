@@ -123,7 +123,7 @@ const bgs = {
         class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 z-20 flex flex-col items-center"
       >
         <img src="/logo.png" alt="Alive & Kicking" class="w-[600px]" />
-        <img src="/vueamsterdam.png" alt="Vuejs Amsterdam" class="w-[300px]" />
+        <!-- <img src="/vueamsterdam.png" alt="Vuejs Amsterdam" class="w-[300px]" /> -->
       </div>
     </template>
   </main>
