@@ -1,26 +1,31 @@
 query Song($song: String) {
-  song(where: { songId: $song }) {
-    songId
-    song
-    artist
-    cover
-    length
-    mp3
-    homeTown
-    formed
-    biography
-    logo
-    presets {
-      name
-      at
-      pc
-    }
-    artwork {
-      bg
-      cloudinaryTransform
-      opacity
-      x
-      y
+  all_song(where: { songid: $song }) {
+    items {
+      title
+      song
+      songid
+      artist
+      biography
+      cover
+      formed
+      home_town
+      length
+      logo
+      mp3
+      artwork {
+        imageConnection {
+          edges {
+            node {
+              url
+            }
+          }
+        }
+      }
+      presets {
+        at
+        name
+        pc
+      }
     }
   }
 }

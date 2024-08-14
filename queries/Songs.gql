@@ -1,22 +1,31 @@
 query Songs {
-  songs(orderBy: publishedAt_DESC) {
-    songId
-    song
-    artist
-    cover
-    length
-    mp3
-    presets {
-      name
-      at
-      pc
-    }
-    artwork {
-      bg
-      cloudinaryTransform
-      opacity
-      x
-      y
+  all_song(order_by: created_at_DESC) {
+    items {
+      title
+      song
+      songid
+      artist
+      biography
+      cover
+      formed
+      home_town
+      length
+      logo
+      mp3
+      artwork {
+        imageConnection {
+          edges {
+            node {
+              url
+            }
+          }
+        }
+      }
+      presets {
+        at
+        name
+        pc
+      }
     }
   }
 }

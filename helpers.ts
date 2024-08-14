@@ -79,7 +79,7 @@ export async function createMashupImage(avatar: string, allSongs: ComputedRef<So
 
   const songs = filteredSongs?.map((song) => {
     return {
-      art: song?.artwork[0].publicId,
+      art: song?.logo[0].public_id,
       cover: song?.coverPublicId,
       artist: song?.artist.replace("/", "%2F"),
       song: song?.song,
@@ -265,7 +265,7 @@ export async function createMashupImage(avatar: string, allSongs: ComputedRef<So
 }
 
 export async function createShareImage(avatar: string, song: Song) {
-  const art = song?.artwork[0].publicId;
+  const art = song?.logo[0].public_id;
   const artist = song?.artist.replace("/", "%2F");
   const songTitle = song?.song;
 

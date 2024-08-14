@@ -14,31 +14,30 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
       .eq("key", "active_song")
       .single();
 
-    const { song } = await GqlSong({ song: data?.val });
+    const { all_song } = await GqlSong({ song: data?.val });
 
-    if (!song) {
+    if (!all_song) {
       return false;
     }
 
+    const song = all_song.items && all_song.items[0];
+
     return {
-      artist: song.artist,
+      artist: song?.artist,
       logo:
-        song?.logo.secure_url.replace(
+        song?.logo[0].secure_url.replace(
           `v${song.logo.version}`,
           "q_auto,f_auto"
         ) || "",
       biography: song?.biography || "",
-      homeTown: song?.homeTown || "",
+      homeTown: song?.home_town || "",
       formed: song?.formed || "",
-      artwork: song.artwork.map((art) => {
+      artwork: song?.artwork?.imageConnection.edges.map((art: any) => {
         return {
-          bg: art.bg.secure_url.replace(
-            `v${art.bg.version}`,
-            art.cloudinaryTransform?.replace(",o_30", "")
-          ),
-          x: art.x,
-          y: art.y,
-          opacity: art.opacity,
+          bg: `https://res.cloudinary.com/dwfcofnrd/image/fetch/f_auto,q_auto,o_30/${art.node.url}`,
+          x: "0%",
+          y: "0%",
+          opacity: 1,
         };
       }),
     };

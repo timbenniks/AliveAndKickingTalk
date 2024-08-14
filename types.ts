@@ -33,6 +33,7 @@ export type Song = {
     at: number
     pc: number
   }>
+  logo: any
   artwork: Array<{
     publicId: string
     bg: any

@@ -5,25 +5,27 @@ import { log } from '../helpers'
 async function getSongs() {
   log('[async][function] getSongs: GqlSongs()')
 
-  const { songs } = await GqlSongs()
-  const mappedSongs = songs.map(song => {
+  const { all_song } = await GqlSongs()
+
+  const mappedSongs = all_song?.items?.map((song: any) => {
     return {
-      songId: song.songId,
+      songId: song.songid,
       song: song.song,
       artist: song.artist,
-      cover: song.cover.secure_url.replace(`v${song.cover.version}`, 'q_auto,f_auto'),
-      coverPublicId: song.cover.public_id,
+      cover: song.cover[0].secure_url.replace(`v${song.cover.version}`, 'q_auto,f_auto'),
+      logo: song.logo,
+      coverPublicId: song.cover[0].public_id,
       length: song.length,
       mp3: song.mp3,
       presets: song.presets,
-      artwork: song.artwork.map((art) => {
+      artwork: song.artwork?.imageConnection.edges.map((art: any) => {
         return {
-          publicId: art.bg.public_id,
-          bg: art.bg.secure_url.replace(`v${art.bg.version}`, art.cloudinaryTransform),
-          x: art.x,
-          y: art.y,
-          opacity: art.opacity,
-          cloudinaryTransform: art.cloudinaryTransform
+          publicId: art.node.url,
+          bg: `https://res.cloudinary.com/dwfcofnrd/image/fetch/f_auto,q_auto,o_30/${art.node.url}`,
+          x: "0%",
+          y: "0%",
+          opacity: 1,
+          cloudinaryTransform: "f_auto,q_auto,o_30"
         }
       }),
       votes: 0,

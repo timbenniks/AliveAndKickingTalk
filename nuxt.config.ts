@@ -1,5 +1,6 @@
 export default defineNuxtConfig({
   devtools: { enabled: false },
+
   routeRules: {
     '/': { ssr: false },
     '/live': { ssr: false },
@@ -11,6 +12,7 @@ export default defineNuxtConfig({
     '/terms-of-service': { prerender: true },
     '/privacy-policy': { prerender: true },
   },
+
   modules: [
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
@@ -23,6 +25,7 @@ export default defineNuxtConfig({
     ],
     'nuxt-graphql-client'
   ],
+
   imports: {
     dirs: ['store'],
   },
@@ -35,6 +38,18 @@ export default defineNuxtConfig({
     }
   },
 
+  'graphql-client': {
+    clients: {
+      default: {
+        host: process.env.GQL_HOST as string,
+        headers: {
+          'access_token': process.env.ACCESS_TOKEN as string,
+          'branch': 'main'
+        }
+      }
+    }
+  },
+
   runtimeConfig: {
     public: {
       maxVotes: process.env.NUXT_MAX_VOTES,
@@ -42,6 +57,7 @@ export default defineNuxtConfig({
       conference: process.env.NUXT_CONFERENCE,
       showVolume: process.env.NUXT_SHOW_VOLUME,
       plausibleKey: process.env.NUXT_PLAUSIBLE_KEY,
+      accessToken: process.env.ACCESS_TOKEN
     }
   },
 
@@ -50,6 +66,7 @@ export default defineNuxtConfig({
       Lato: [100, 300, 400, 500, 900],
     }
   },
+
   app: {
     head: {
       title: "Alive and Kicking - A Vue into Rock & Roll",
@@ -88,5 +105,7 @@ export default defineNuxtConfig({
         }
       ],
     }
-  }
+  },
+
+  compatibilityDate: '2024-08-14'
 })
