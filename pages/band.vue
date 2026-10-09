@@ -14,34 +14,8 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
       .eq("key", "active_song")
       .single();
 
-    const { song } = await GqlSong({ song: data?.val });
-
-    if (!song) {
-      return false;
-    }
-
-    return {
-      artist: song.artist,
-      logo:
-        song?.logo.secure_url.replace(
-          `v${song.logo.version}`,
-          "q_auto,f_auto"
-        ) || "",
-      biography: song?.biography || "",
-      homeTown: song?.homeTown || "",
-      formed: song?.formed || "",
-      artwork: song.artwork.map((art) => {
-        return {
-          bg: art.bg.secure_url.replace(
-            `v${art.bg.version}`,
-            art.cloudinaryTransform?.replace(",o_30", "")
-          ),
-          x: art.x,
-          y: art.y,
-          opacity: art.opacity,
-        };
-      }),
-    };
+    const songs = await $fetch('/api/songs');
+    return songs.find(song => song.songId === data?.val) || false;
   }
 );
 
@@ -61,6 +35,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (channel) removeRealtimeChannel(channel);
   window.onbeforeunload = null;
 });
 

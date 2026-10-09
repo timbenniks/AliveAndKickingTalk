@@ -3,36 +3,7 @@ import type { Song, Database, ConfigValue, PlayedSong, LatestVote } from '../typ
 import { log } from '../helpers'
 
 async function getSongs() {
-  log('[async][function] getSongs: GqlSongs()')
-
-  const { songs } = await GqlSongs()
-  const mappedSongs = songs.map(song => {
-    return {
-      songId: song.songId,
-      song: song.song,
-      artist: song.artist,
-      cover: song.cover.secure_url.replace(`v${song.cover.version}`, 'q_auto,f_auto'),
-      coverPublicId: song.cover.public_id,
-      length: song.length,
-      mp3: song.mp3,
-      presets: song.presets,
-      artwork: song.artwork.map((art) => {
-        return {
-          publicId: art.bg.public_id,
-          bg: art.bg.secure_url.replace(`v${art.bg.version}`, art.cloudinaryTransform),
-          x: art.x,
-          y: art.y,
-          opacity: art.opacity,
-          cloudinaryTransform: art.cloudinaryTransform
-        }
-      }),
-      votes: 0,
-      mashupSpot: null,
-      voted: false
-    } as Song
-  })
-
-  return mappedSongs
+  return await $fetch<Song[]>('/api/songs')
 }
 
 export const useSongStore = defineStore({

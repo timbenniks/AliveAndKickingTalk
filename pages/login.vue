@@ -2,7 +2,10 @@
 const client = useSupabaseClient();
 
 const login = async (provider: "github" | "twitter" | "linkedin_oidc") => {
-  const { error } = await client.auth.signInWithOAuth({ provider });
+  const { error } = await client.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: `${window.location.origin}/confirm` },
+  });
 
   if (error) {
     console.error(error);

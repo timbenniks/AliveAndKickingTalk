@@ -12,7 +12,7 @@ onMounted(() => {
   channel = createRealtimeChannel("voting_check_played_songs", [
     {
       table: "songs_played",
-      event: "INSERT",
+      event: "*",
       callback: async () => {
         await songStore.getPlayedSongs();
       },
@@ -23,6 +23,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (channel) removeRealtimeChannel(channel);
   window.onbeforeunload = null;
 });
 

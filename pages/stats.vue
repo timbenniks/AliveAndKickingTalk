@@ -2,7 +2,6 @@
 import type { Database } from "../types";
 
 const client = useSupabaseClient<Database>();
-const { plausibleKey } = useRuntimeConfig().public;
 
 const songStore = useSongStore();
 await songStore.getSongs();
@@ -18,23 +17,7 @@ const { data, refresh } = await useAsyncData("stats", async () => {
     .single();
 
   const song = activeSong?.val;
-  // const aggregate = await $fetch(
-  //   "https://plausible.io/api/v1/stats/aggregate?site_id=aliveandkicking.dev&period=day&metrics=visitors,pageviews,bounce_rate,visit_duration",
-  //   {
-  //     headers: {
-  //       Authorization: `Bearer ${plausibleKey}`,
-  //     },
-  //   }
-  // );
-
-  const liveCount = await $fetch(
-    "https://plausible.io/api/v1/stats/realtime/visitors?site_id=aliveandkicking.dev",
-    {
-      headers: {
-        Authorization: `Bearer ${plausibleKey}`,
-      },
-    }
-  );
+  const liveCount = await $fetch('/api/visitors');
 
   const { data: votesPerSong, error: errorVotesPerSong } = await client
     .from("votes_per_song")
@@ -97,7 +80,7 @@ const bgs = {
         <section class="people">
           <p class="uppercase font-light text-3xl">Voters</p>
           <p class="text-9xl font-black flowing-title inline-block">
-            {{ data?.liveCount }}
+            {{ data?.liveCount ?? '—' }}
           </p>
         </section>
         <section class="votes-per-song">
