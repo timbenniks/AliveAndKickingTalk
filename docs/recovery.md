@@ -90,3 +90,13 @@ GitHub, LinkedIn (OIDC), and Twitter providers are configured in the hosted Supa
 The existing Vercel project is `aliveandkicking` in `tim-benniks-projects-1b967033`, serving `https://www.aliveandkicking.dev`. It builds the GitHub `main` branch using Node 22, `npm ci`, and `npm run build`. The app environment in Vercel has been updated to the recovered Supabase project and Contentstack delivery configuration. OAuth provider credentials and the database password are not app deployment variables.
 
 Supabase Site URL is `https://www.aliveandkicking.dev`, with `https://www.aliveandkicking.dev/confirm` allowed alongside the localhost callback.
+
+## Logged-out landing page
+
+The public `/login` page now introduces the talk using the existing Lato typography, blue/pink gradient buttons, logo, stage photography and personalized share artwork. Anonymous visitors to `/` still reach this page through the existing authentication redirect; signed-in visitors continue straight to voting.
+
+The header and hero link directly to the sign-in section. GitHub, Twitter and LinkedIn keep the same OAuth providers and `/confirm` callback. Sign-in failures display a retry message. Event organizers can open Tim's press kit, and visitors can watch the Vue.js Amsterdam 2024 recording or explore the repository. The sample share artwork is labelled as an example from ContentCon. The marketing content renders server-side without fetching songs or voter profiles.
+
+The layout supports mobile and desktop, visible keyboard focus and reduced-motion preferences. No new dependencies were added.
+
+Verified with a production build: anonymous home redirects to the marketing page, marketing text and metadata are in server-rendered HTML, the sign-in shortcut reaches the provider buttons, images load, narrow/mobile and desktop layouts do not overflow, and GitHub login returns to the existing voting screen. No lint or typecheck scripts are configured.
