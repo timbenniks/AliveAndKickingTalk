@@ -8,7 +8,19 @@ npm run dev
 
 Configure `.env` using `.env.example`. The app uses hosted Supabase and Contentstack.
 
-For a production check, run `npm run build` and `npm run preview`.
+Requires Node 22.22.3 or newer in the Node 22 line; verified with 22.23.1.
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run preview
+```
+
+Open `/practise` for audio/MIDI rehearsal without changing the live setlist. The app still uses hosted Supabase; voting and live-show controls affect that database.
+
+See [the modernization record](docs/modernization.md) for the Nuxt 4 branch changes, tests and remaining rollout work.
 
 See [the recovery record](docs/recovery.md) for restored data, environment setup, changes and verification.
 

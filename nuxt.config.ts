@@ -1,5 +1,7 @@
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   routeRules: {
     '/': { ssr: false },
     '/live': { ssr: false },
@@ -8,29 +10,21 @@ export default defineNuxtConfig({
     '/share/*': { ssr: true },
     '/band': { ssr: false },
     '/stats': { ssr: false },
+    '/practise': { ssr: false },
+    '/practise/**': { ssr: false },
     '/terms-of-service': { prerender: true },
     '/privacy-policy': { prerender: true },
   },
-  modules: [
-    '@nuxtjs/supabase',
-    '@nuxtjs/tailwindcss',
-    '@nuxtjs/google-fonts',
-    [
-      '@pinia/nuxt',
-      {
-        autoImports: ['defineStore', 'acceptHMRUpdate'],
-      },
-    ],
-  ],
-  imports: {
-    dirs: ['store'],
-  },
+  modules: ['@nuxtjs/supabase', '@pinia/nuxt', '@nuxt/fonts', '@nuxt/eslint'],
+  css: ['~/assets/css/tailwind.css'],
+  vite: { plugins: [tailwindcss()] },
 
   supabase: {
+    types: '~~/shared/types/database.ts',
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
-      exclude: ['/share/*', '/live', '/live/*', '/band', '/stats', '/practise', '/terms-of-service', '/privacy-policy'],
+      exclude: ['/share/*', '/live', '/live/*', '/band', '/stats', '/practise', '/practise/*', '/terms-of-service', '/privacy-policy'],
     }
   },
 
@@ -39,18 +33,14 @@ export default defineNuxtConfig({
     contentstackToken: process.env.ACCESS_TOKEN,
     plausibleKey: process.env.NUXT_PLAUSIBLE_KEY,
     public: {
-      maxVotes: process.env.NUXT_MAX_VOTES,
+      maxVotes: process.env.NUXT_MAX_VOTES || '5',
       voteTimeout: process.env.NUXT_VOTE_TIMEOUT || "500",
-      conference: process.env.NUXT_CONFERENCE,
-      showVolume: process.env.NUXT_SHOW_VOLUME,
+      conference: process.env.NUXT_CONFERENCE || '',
+      showVolume: process.env.NUXT_SHOW_VOLUME || 'false',
     }
   },
 
-  googleFonts: {
-    families: {
-      Lato: [100, 300, 400, 500, 900],
-    }
-  },
+  fonts: { families: [{ name: 'Lato', provider: 'google', weights: [100, 300, 400, 700, 900] }] },
   app: {
     head: {
       title: "Alive and Kicking - A Vue into Rock & Roll",
@@ -61,7 +51,7 @@ export default defineNuxtConfig({
       meta: [
         {
           name: "viewport",
-          content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+          content: "width=device-width, initial-scale=1.0"
         },
         {
           charset: "utf-8"
@@ -77,14 +67,13 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          defer: "true",
-          //@ts-ignore
-          dataDomain: "aliveandkicking.dev",
+          defer: true,
+          'data-domain': "aliveandkicking.dev",
           src: "https://plausible.io/js/script.js"
         },
         {
-          hid: "plausible",
-          children: "window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }",
+          key: "plausible",
+          textContent: "window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }",
           type: "text/javascript",
         }
       ],
