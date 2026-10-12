@@ -2,7 +2,7 @@ import type { AmpPreset, PlayedSong, Song } from '../types/song.ts'
 
 export function presetAtTime(presets: AmpPreset[], time: number): AmpPreset | undefined {
   return presets.reduce<AmpPreset | undefined>((selected, preset) =>
-    preset.at <= time && (!selected || preset.at >= selected.at) ? preset : selected, undefined)
+    preset.at <= time && (!selected || preset.at >= selected.at) ? preset : selected, undefined) ?? presets[0]
 }
 
 export function buildSetlist(songs: Song[], played: PlayedSong[]): Song[] {

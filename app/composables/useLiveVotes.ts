@@ -18,6 +18,7 @@ export function useLiveVotes(name: string) {
     dirty = false;
     try {
       await Promise.all([store.getVotesForSongs(), store.getPlayedSongs(), store.getConfigValues()]);
+      store.errorMessage = '';
       retryDelay = 250;
       if (connected) status.value = "Live votes connected";
     } catch {

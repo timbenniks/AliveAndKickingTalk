@@ -8,6 +8,7 @@ assert.equal(presetAtTime(presets, 9.99)?.pc, 0);
 assert.equal(presetAtTime(presets, 10)?.pc, 5);
 assert.equal(presetAtTime(presets, 2)?.pc, 0); // Seeking backwards.
 assert.equal(presetAtTime([...presets].reverse(), 11)?.pc, 5);
+assert.equal(presetAtTime([{ name: 'Intro', at: 5, pc: 3 }], 1)?.pc, 3); // Before the first preset.
 const songs = ['a', 'b', 'c', 'd', 'e'].map((songId, i) => ({ songId, votes: i }));
 const before = structuredClone(songs);
 const list = buildSetlist(songs, [{ songId: 'b', mashupSpot: 2 }]);
