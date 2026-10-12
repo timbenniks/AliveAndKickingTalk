@@ -1,6 +1,6 @@
 import { normalizeSong, songsQuery } from '../lib/contentstack';
 
-export default defineEventHandler(async (event) => {
+export default defineCachedEventHandler(async (event) => {
   const { contentstackHost, contentstackToken } = useRuntimeConfig(event);
   if (!contentstackHost || !contentstackToken) {
     throw createError({ statusCode: 503, statusMessage: 'Contentstack is not configured' });
@@ -22,4 +22,4 @@ export default defineEventHandler(async (event) => {
     // Do not expose upstream request headers or credentials in error responses.
     throw createError({ statusCode: 502, statusMessage: 'Unable to load songs from Contentstack' });
   }
-});
+}, { maxAge: 60, swr: false, name: 'song-catalogue' });

@@ -1,0 +1,4 @@
+<template>
+  <NuxtPage />
+  <Errors />
+</template>
