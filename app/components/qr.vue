@@ -8,8 +8,8 @@
     height="999"
     viewBox="0 0 999 999"
   >
-    <rect width="999" height="999" fill="#ffffff" x="0" y="0"/>
-    <g fill="#000000">
+    <rect width="999" height="999" fill="#f3ead6" x="0" y="0"/>
+    <g fill="#14080c">
       <g transform="translate(270,54) scale(4.635)">
         <rect width="6" height="6"/>
       </g>
@@ -1356,28 +1356,28 @@
       </g>
     </g>
     <g>
-      <g transform="translate(54,54)" fill="#000000">
+      <g transform="translate(54,54)" fill="#14080c">
         <g transform="scale(13.5)">
           <path d="M0,0v14h14V0H0z M12,12H2V2h10V12z"/>
         </g>
       </g>
-      <g transform="translate(756,54)" fill="#000000">
+      <g transform="translate(756,54)" fill="#14080c">
         <g transform="scale(13.5)">
           <path d="M0,0v14h14V0H0z M12,12H2V2h10V12z"/>
         </g>
       </g>
-      <g transform="translate(54,756)" fill="#000000">
+      <g transform="translate(54,756)" fill="#14080c">
         <g transform="scale(13.5)">
           <path d="M0,0v14h14V0H0z M12,12H2V2h10V12z"/>
         </g>
       </g>
-      <g transform="translate(108,108)" fill="#000000">
+      <g transform="translate(108,108)" fill="#14080c">
         <g transform="scale(13.5)"><rect width="6" height="6"/></g>
       </g>
-      <g transform="translate(810,108)" fill="#000000">
+      <g transform="translate(810,108)" fill="#14080c">
         <g transform="scale(13.5)"><rect width="6" height="6"/></g>
       </g>
-      <g transform="translate(108,810)" fill="#000000">
+      <g transform="translate(108,810)" fill="#14080c">
         <g transform="scale(13.5)"><rect width="6" height="6"/></g>
       </g>
     </g>

@@ -36,7 +36,11 @@ const songs = computed(() => {
 
 <template>
   <main>
-    <p role="status" class="fixed bottom-2 left-2 z-50 bg-black/80 px-2 text-xs">{{ realtimeStatus }}</p>
+    <p role="status" class="overview-status">{{ realtimeStatus }}</p>
     <live-vote-overview :songs="songs" :mashup-mode="mashupMode" />
   </main>
 </template>
+
+<style>
+.overview-status { position: fixed; right: 0.75rem; bottom: 0.5rem; z-index: 50; font-family: var(--font-caps); font-size: 0.6rem; text-transform: uppercase; color: var(--color-dust); }
+</style>

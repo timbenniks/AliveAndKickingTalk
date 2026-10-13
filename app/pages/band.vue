@@ -44,62 +44,65 @@ onBeforeMount(() => {
     removeRealtimeChannel(channel);
   };
 });
-
-const imgBase =
-  "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70/Alive%20and%20Kicking/bg";
-const bgs = {
-  artwork: [
-    { bg: `${imgBase}/1.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/2.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/3.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/4.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/5.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/6.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/7.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/8.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/9.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/10.png`, x: "0%", y: "0%" },
-  ],
-};
 </script>
-<template>
-  <main class="relative w-screen h-screen top-0 left-0">
-    <template v-if="song">
-      <backgrond-slider :song="song" class="z-0" :timeout="10000" />
-      <img
-        src="/logo.png"
-        alt="Alive & Kicking"
-        class="absolute bottom-4 right-4 w-96 z-20"
-      >
-      <article
-        class="bg-black/80 absolute z-20 bottom-4 left-4 w-[600px] p-4"
-      >
-        <h1 class="text-7xl font-black mb-2 flowing-title inline-block">
-          {{ song.artist }}
-        </h1>
-        <p class="font-black uppercase mb-4">
-          {{ song.formed }}, {{ song.homeTown }}
-        </p>
-        <p class="mb-4 text-xl leading-7">{{ song.biography }}</p>
 
-        <img
-          :src="song.logo"
-          :alt="song.artist"
-          class="fancy-image w-full aspect-video"
-          width="1920"
-          height="1080"
-        >
+<template>
+  <main class="band">
+    <template v-if="song">
+      <background-slider :song="song" :timeout="10000" />
+      <article class="band-card px-frame">
+        <p class="band-kicker">Now on stage</p>
+        <h1 class="band-name">{{ song.artist }}</h1>
+        <p v-if="song.formed || song.homeTown" class="band-meta">
+          <template v-if="song.formed">Formed {{ song.formed }}</template>
+          <template v-if="song.formed && song.homeTown"> · </template>
+          <template v-if="song.homeTown">{{ song.homeTown }}</template>
+        </p>
+        <p class="band-bio">{{ song.biography }}</p>
+        <img v-if="song.logo" :src="song.logo" :alt="song.artist" class="band-logo" width="1920" height="1080">
       </article>
+      <div class="band-brand">
+        <PixelLabel text="Alive and Kicking" :scale="4" :max-cols="20" />
+        <p>Rock Anthem edition</p>
+      </div>
     </template>
     <template v-else>
-      <backgrond-slider :song="bgs" class="z-0" :timeout="10000" />
-
-      <div
-        class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 z-20 flex flex-col items-center"
-      >
-        <img src="/logo.png" alt="Alive & Kicking" class="w-[600px]" >
-        <!-- <img src="/vueamsterdam.png" alt="Vuejs Amsterdam" class="w-[300px]" /> -->
+      <background-slider :timeout="10000" />
+      <div class="band-idle">
+        <PixelLabel text="Alive and Kicking" :scale="10" :max-cols="20" />
+        <p>Rock Anthem edition</p>
       </div>
     </template>
   </main>
 </template>
+
+<style>
+.band { position: relative; min-height: 100dvh; overflow: hidden; background: var(--color-night); color: var(--color-bone); font-family: var(--font-sans); }
+.band-card {
+  --edge: var(--color-tolex-hi);
+  position: absolute;
+  left: max(1.5rem, 2.5vw);
+  bottom: max(1.5rem, 2.5vw);
+  z-index: 1;
+  display: grid;
+  gap: 1rem;
+  width: min(680px, calc(100vw - 3rem));
+  max-height: calc(100dvh - 3rem);
+  overflow: auto;
+  padding: 1.75rem;
+  background: color-mix(in srgb, var(--color-tolex) 92%, transparent);
+}
+.band-kicker, .band-meta { font-family: var(--font-caps); font-size: 0.9rem; text-transform: uppercase; color: var(--color-gold); }
+.band-meta { color: var(--color-dust); }
+.band-name { font-family: var(--font-pixel); font-size: clamp(3rem, 5.5vw, 6rem); line-height: 0.85; }
+.band-bio { font-size: clamp(1.15rem, 1.35vw, 1.5rem); line-height: 1.4; }
+.band-logo { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; background: var(--color-night); box-shadow: var(--px) var(--px) 0 var(--color-ink); }
+.band-brand { position: absolute; right: max(1.5rem, 2.5vw); bottom: max(1.5rem, 2.5vw); z-index: 1; display: grid; justify-items: end; gap: 0.5rem; }
+.band-idle { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; }
+.band-brand .pixel-label, .band-idle .pixel-label { max-width: 90vw; }
+.band-brand p, .band-idle p { font-family: var(--font-caps); text-transform: uppercase; color: var(--color-gold); }
+.band-idle p { font-size: clamp(1rem, 2vw, 1.75rem); }
+@media (max-width: 1100px) {
+  .band-brand { display: none; }
+}
+</style>

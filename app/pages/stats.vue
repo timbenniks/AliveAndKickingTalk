@@ -42,106 +42,105 @@ let timer: ReturnType<typeof setInterval>;
 onMounted(() => { timer = setInterval(() => refresh(), 10000); });
 onUnmounted(() => clearInterval(timer));
 
-const imgBase =
-  "https://res.cloudinary.com/dwfcofnrd/image/upload/q_auto,f_auto,o_70/Alive%20and%20Kicking/bg";
-const bgs = {
-  artwork: [
-    { bg: `${imgBase}/1.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/2.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/3.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/4.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/5.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/6.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/7.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/8.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/9.png`, x: "0%", y: "0%" },
-    { bg: `${imgBase}/10.png`, x: "0%", y: "0%" },
-  ],
-};
+const coverFor = (songId: string | null) =>
+  allSongs.value.find(song => song.songId === songId)?.cover.replace("q_auto,f_auto", "q_auto,f_auto,w_240,h_240") || "";
 </script>
 
 <template>
-  <main class="relative w-screen h-screen top-0 left-0">
+  <main class="stats">
     <template v-if="data?.song !== 'none'">
-      <img
-        src="/logo.png"
-        alt="Alive & Kicking"
-        class="absolute bottom-4 right-4 w-96 z-20"
-      >
-      <div class="p-8 flex justify-between">
-        <section class="votes">
-          <p class="uppercase font-light text-3xl mb-4">Link to app</p>
-          <qr class="w-52 h-52" />
-        </section>
-        <section class="votes">
-          <p class="uppercase font-light text-3xl">Votes</p>
-          <p class="text-9xl font-black flowing-title inline-block">
-            {{ data?.votesCount }}
-          </p>
-        </section>
-        <section class="people">
-          <p class="uppercase font-light text-3xl">Voters</p>
-          <p class="text-9xl font-black flowing-title inline-block">
-            {{ data?.liveCount ?? '—' }}
-          </p>
-        </section>
-        <section class="votes-per-song">
-          <p class="uppercase font-light text-3xl mb-4">Votes per song</p>
+      <header class="stats-head">
+        <PixelLabel text="Alive and Kicking" :scale="4" :max-cols="20" />
+        <p>Rock Anthem edition</p>
+      </header>
 
-          <ul class="grid gap-4 grid-cols-4 max-w-[500px]">
-            <li
-              v-for="vote in data?.votesPerSong"
-              :key="(vote.songid as string)"
-            >
-              <div class="relative w-28 h-28">
-                <img
-                  width="144"
-                  height="144"
-                  class="w-28 mb-4 fancy-image"
-                  :src="
-                    allSongs
-                      .find((song) => song.songId === vote.songid)
-                      ?.cover.replace('q_auto,f_auto', 'q_auto,f_auto,o_70')
-                  "
-                >
-                <p
-                  class="absolute bottom-2 right-2 text-6xl font-black drop-shadow-xl"
-                >
-                  {{ vote.votes }}
-                </p>
-              </div>
+      <div class="stats-board">
+        <section class="stats-tile stats-qr px-frame">
+          <h2 class="stats-label">Scan to vote</h2>
+          <qr class="stats-qr-code" />
+          <p class="stats-url">aliveandkicking.dev</p>
+        </section>
+        <section class="stats-tile px-frame">
+          <h2 class="stats-label">Votes</h2>
+          <p class="stats-number">{{ data?.votesCount ?? "—" }}</p>
+        </section>
+        <section class="stats-tile px-frame">
+          <h2 class="stats-label">Online now</h2>
+          <p class="stats-number">{{ data?.liveCount ?? "—" }}</p>
+        </section>
+        <section class="stats-tile stats-songs px-frame">
+          <h2 class="stats-label">Votes per song</h2>
+          <ul class="stats-song-grid">
+            <li v-for="vote in data?.votesPerSong" :key="(vote.songid as string)" class="stats-song">
+              <img :src="coverFor(vote.songid)" alt="" width="120" height="120">
+              <span>{{ vote.votes }}</span>
             </li>
           </ul>
         </section>
       </div>
 
-      <section class="users p-8">
-        <p class="uppercase font-light text-3xl mb-4">
-          People ({{ data?.users.length }})
-        </p>
-
-        <ul class="flex flex-wrap gap-1">
-          <li v-for="user in data?.users" :key="user">
-            <img
-              :src="user"
-              class="rounded-full w-10 h-10"
-              width="40"
-              height="40"
-              loding="lazy"
-            >
+      <section class="stats-people">
+        <h2 class="stats-label">People ({{ data?.users.length ?? 0 }})</h2>
+        <ul class="stats-faces">
+          <li v-for="(user, index) in data?.users" :key="`${index}-${user}`">
+            <PixelAvatar :src="user" :size="32" />
           </li>
         </ul>
       </section>
     </template>
     <template v-else>
-      <backgrond-slider :song="bgs" class="z-0" :timeout="10000" />
-
-      <div
-        class="absolute top-2/4 left-2/4 -translate-x-2/4 -translate-y-2/4 z-20 flex flex-col items-center"
-      >
-        <img src="/logo.png" alt="Alive & Kicking" class="w-[600px]" >
-        <!-- <img src="/vueamsterdam.png" alt="Vuejs Amsterdam" class="w-[300px]" /> -->
+      <background-slider :timeout="10000" />
+      <div class="stats-idle">
+        <PixelLabel text="Alive and Kicking" :scale="10" :max-cols="20" />
+        <p>Rock Anthem edition</p>
       </div>
     </template>
   </main>
 </template>
+
+<style>
+.stats {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  height: 100dvh;
+  overflow: hidden;
+  padding: 2rem max(1.5rem, 2.5vw);
+  background: var(--color-night);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+}
+.stats-head { display: flex; align-items: center; gap: 1.25rem; }
+.stats-head p, .stats-idle p { font-family: var(--font-caps); text-transform: uppercase; color: var(--color-gold); }
+.stats-board { display: grid; grid-template-columns: auto 1fr 1fr 1.6fr; gap: 1.75rem; align-items: stretch; }
+.stats-tile { --edge: var(--color-tolex-hi); display: grid; align-content: start; gap: 0.75rem; padding: 1.25rem 1.5rem; background: var(--color-tolex); }
+.stats-label { font-family: var(--font-caps); font-size: clamp(0.8rem, 1vw, 1.05rem); text-transform: uppercase; color: var(--color-dust); }
+.stats-number { font-family: var(--font-pixel); font-size: clamp(5rem, 9vw, 10rem); line-height: 0.8; color: var(--color-gold); }
+.stats-qr { justify-items: center; }
+.stats-qr-code { display: block; width: clamp(160px, 13vw, 240px); height: auto; }
+.stats-url { font-family: var(--font-caps); font-size: 0.8rem; text-transform: uppercase; color: var(--color-gold); }
+.stats-song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 0.75rem; }
+.stats-song { position: relative; }
+.stats-song img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; opacity: 0.7; }
+.stats-song span { position: absolute; right: 0.375rem; bottom: 0.125rem; font-family: var(--font-pixel); font-size: 2.5rem; line-height: 1; color: var(--color-bone); text-shadow: 3px 3px 0 var(--color-ink); }
+.stats-people { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+/* The wall of faces fades out at the bottom instead of scrolling the projector. */
+.stats-faces {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+}
+.stats-idle { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 1.5rem; padding: 1.5rem; }
+.stats-idle .pixel-label { max-width: 90vw; }
+.stats-idle p { font-size: clamp(1rem, 2vw, 1.75rem); }
+@media (max-width: 1100px) {
+  .stats { height: auto; min-height: 100dvh; overflow: visible; }
+  .stats-board { grid-template-columns: 1fr 1fr; }
+}
+</style>
