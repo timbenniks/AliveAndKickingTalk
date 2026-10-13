@@ -8,6 +8,8 @@ const props = defineProps<{
   shake: number
   transparent: boolean
   rich: boolean
+  // Show moment: the camera leans in on the fretboard while a solo cue runs.
+  solo: boolean
 }>()
 
 const CELLAR = '#000000'
@@ -15,15 +17,24 @@ const tres = useTres()
 const { onBeforeRender } = useLoop()
 let fogReady = false
 let lookReady = false
+let push = 0
 
-onBeforeRender(({ elapsed }) => {
+onBeforeRender(({ elapsed, delta }) => {
   const cam = tres.camera.value
   if (!cam) return
   const live = stageClock.analysis === 'live' && stageClock.playing && !stageClock.reducedMotion
   const drive = live ? stageClock.energy : 0
   const shake = stageClock.reducedMotion ? 0 : props.shake * drive
-  cam.position.set(Math.sin(elapsed * 1.4) * 0.04 * shake, 1.4 + drive * 0.03, -2.2)
-  cam.lookAt(0, 2.4, 4)
+  // Ease in over about a second and a half; follow the song, so pause holds it.
+  const target = props.solo && stageClock.playing && !stageClock.reducedMotion ? 1 : 0
+  push += (target - push) * Math.min(1, delta * 1.6)
+  const ease = push * push * (3 - 2 * push)
+  cam.position.set(
+    Math.sin(elapsed * 1.4) * 0.04 * shake + Math.sin(elapsed * 0.35) * 0.18 * ease,
+    1.4 + drive * 0.03 - 0.28 * ease,
+    -2.2 + 0.95 * ease,
+  )
+  cam.lookAt(0, 2.4 - 0.55 * ease, 4)
   const scene = tres.scene.value as Scene | undefined
   if (scene && !fogReady) {
     fogReady = true

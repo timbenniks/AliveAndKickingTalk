@@ -8,6 +8,7 @@ import StageEnvironment from './StageEnvironment.vue'
 import StageLights from './StageLights.vue'
 import StageParticles from './StageParticles.vue'
 import StageSides from './StageSides.vue'
+import StageMoments from './StageMoments.vue'
 import type { StageEffect } from '#shared/stage/styles'
 import { BloomPmndrs, EffectComposerPmndrs, VignettePmndrs } from '@tresjs/post-processing'
 
@@ -20,6 +21,9 @@ defineProps<{
   dpr: number
   transparent: boolean
   rich: boolean
+  solo: boolean
+  pyroKey: number
+  confettiKey: number
 }>()
 
 const emit = defineEmits<{ error: [] }>()
@@ -35,13 +39,14 @@ const emit = defineEmits<{ error: [] }>()
     antialias
     @error="emit('error')"
   >
-    <CameraRig :background="theme.background" :shake="theme.cameraShake" :transparent="transparent" :rich="rich" />
+    <CameraRig :background="theme.background" :shake="theme.cameraShake" :transparent="transparent" :rich="rich" :solo="solo" />
     <StageLights :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
     <StageEnvironment />
     <StageSides :effect="effect" :primary="theme.primary" :secondary="theme.secondary" />
     <NoteHighway :reset-key="resetKey" :gems="gems" />
     <ChapterGates :marks="marks" />
     <StageParticles :primary="theme.primary" :particles="theme.particles" />
+    <StageMoments :pyro-key="pyroKey" :confetti-key="confettiKey" />
     <!-- High quality only. Bloom is thresholded so only the lit parts glow:
          gems, frets, strings and light heads, never the board or the art. -->
     <Suspense v-if="rich">

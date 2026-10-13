@@ -204,6 +204,7 @@ function tick() {
   const now = stageClock.flow;
 
   stageClock.audioTime = audioTime;
+  stageClock.duration = element && Number.isFinite(element.duration) ? element.duration : 0;
   stageClock.time = Math.max(0, audioTime - offsetMs.value / 1000);
   stageClock.playing = songPlaying;
   stageClock.pulsing = pulsing;

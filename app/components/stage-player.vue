@@ -41,6 +41,12 @@ const theme = shallowRef(lookFor("neon-stadium"));
 const stageStyle = shallowRef(styleById("stadium-smoke"));
 let lastCueId = "-";
 
+// Show moments. A solo is a cue styled as one or an amp preset named for one.
+const solo = ref(false);
+const pyroKey = ref(0);
+const confettiKey = ref(0);
+let finaleFired = false;
+
 const chapters = ref<{ render: (time: number) => void } | null>(null);
 const debugText = ref<HTMLElement | null>(null);
 const rigOpen = ref(false);
@@ -51,7 +57,17 @@ stage.onTick(() => {
     lastCueId = cue?.id ?? "";
     theme.value = lookFor(cue?.theme);
     stageStyle.value = styleById(cue?.style);
+    const isSolo = cue?.style === "solo-flames" || /solo/i.test(cue?.presetName ?? "");
+    // Pyro only when a solo starts during playback, not on load or on a seek while paused.
+    if (isSolo && !solo.value && stageClock.playing) pyroKey.value += 1;
+    solo.value = isSolo;
   }
+  // Confetti in the last two seconds; seeking back re-arms it.
+  const left = stageClock.duration - stageClock.audioTime;
+  if (stageClock.duration && stageClock.playing && left < 2 && !finaleFired) {
+    finaleFired = true;
+    confettiKey.value += 1;
+  } else if (left > 3) finaleFired = false;
   chapters.value?.render(stageClock.time);
   if (rigOpen.value && debugText.value) {
     debugText.value.textContent = `lanes ${stageClock.lanes.map(l => l.toFixed(2)).join(" ")}\nenergy ${stageClock.energy.toFixed(2)} · ${stageClock.analysis}\ntheme ${theme.value.id}`;
@@ -141,6 +157,9 @@ onUnmounted(() => {
         :gems="stageStyle.gems"
         :dpr="dpr"
         :rich="rich"
+        :solo="solo"
+        :pyro-key="pyroKey"
+        :confetti-key="confettiKey"
         @error="webglOk = false"
       />
     </div>
