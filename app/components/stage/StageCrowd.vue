@@ -118,7 +118,7 @@ const bodyGeo = mergeGeometries([
 const bodyMat = shadeFaces(new MeshStandardMaterial({ roughness: 0.7, metalness: 0, emissive: '#2c2348', emissiveIntensity: 0.6 }))
 const bodies = new InstancedMesh(bodyGeo, bodyMat, MAX)
 
-const headGeo = new BoxGeometry(0.32, 0.32, 0.32)
+const headGeo = new BoxGeometry(0.44, 0.44, 0.44)
 const cells = new Float32Array(MAX * 2)
 slots.forEach((_, i) => {
   cells[i * 2] = i % COLS
@@ -250,7 +250,7 @@ onBeforeRender(({ delta }) => {
     dummy.scale.setScalar(1)
     dummy.updateMatrix()
     bodies.setMatrixAt(i, dummy.matrix)
-    dummy.position.y += 1.04
+    dummy.position.y += 1.1
     dummy.updateMatrix()
     heads.setMatrixAt(i, dummy.matrix)
   }

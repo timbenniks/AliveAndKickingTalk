@@ -59,6 +59,19 @@ watch(theLatestVotes, (votes) => {
   toastTimer = setTimeout(() => { toast.value = null; }, 4000);
 });
 
+// Dev only: send a pretend vote down the same path the realtime channel uses.
+const isDev = import.meta.dev;
+function simulateVote() {
+  const faces = (crowd.value || []).map(fan => fan.avatar).filter(src => /githubusercontent|twimg/.test(src));
+  const song = allSongs.value[Math.floor(Math.random() * allSongs.value.length)];
+  if (!song) return;
+  songStore.latestVote = [{
+    userid: `simulated-${Date.now()}`,
+    songid: song.songId,
+    user_avatar: faces[Math.floor(Math.random() * faces.length)] || "",
+  }];
+}
+
 const cues = computed(() => presetCues(props.song));
 const marks = computed(() => chapterMarks({ cues: cues.value, sections: [] }));
 const duration = computed(() => lengthToSeconds(props.song.length) ?? 0);
@@ -248,6 +261,7 @@ onUnmounted(() => {
           <PixelButton variant="secondary" :aria-pressed="reduced" @click="forceReduced = !forceReduced">{{ reduced ? 'Motion reduced' : 'Reduce motion' }}</PixelButton>
           <PixelButton variant="secondary" :aria-pressed="lowQuality" @click="lowQuality = !lowQuality">{{ lowQuality ? 'Low quality' : 'High quality' }}</PixelButton>
         </div>
+        <PixelButton v-if="isDev && live" variant="secondary" @click="simulateVote">Simulate a vote</PixelButton>
         <details class="rig-debug" @toggle="rigOpen = ($event.target as HTMLDetailsElement).open">
           <summary class="rig-field"><span>Signal</span></summary>
           <pre ref="debugText" />
