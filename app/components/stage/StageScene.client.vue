@@ -9,6 +9,8 @@ import StageLights from './StageLights.vue'
 import StageParticles from './StageParticles.vue'
 import StageSides from './StageSides.vue'
 import StageMoments from './StageMoments.vue'
+import StageCrowd from './StageCrowd.vue'
+import type { Fan } from '#shared/stage/types'
 import type { StageEffect } from '#shared/stage/styles'
 import { BloomPmndrs, EffectComposerPmndrs, VignettePmndrs } from '@tresjs/post-processing'
 
@@ -24,6 +26,8 @@ defineProps<{
   solo: boolean
   pyroKey: number
   confettiKey: number
+  // Live screen only: the voters who form the mosh pit.
+  crowd?: Fan[]
 }>()
 
 const emit = defineEmits<{ error: [] }>()
@@ -47,6 +51,7 @@ const emit = defineEmits<{ error: [] }>()
     <ChapterGates :marks="marks" />
     <StageParticles :primary="theme.primary" :particles="theme.particles" />
     <StageMoments :pyro-key="pyroKey" :confetti-key="confettiKey" />
+    <StageCrowd v-if="crowd" :seed="crowd" />
     <!-- High quality only. Bloom is thresholded so only the lit parts glow:
          gems, frets, strings and light heads, never the board or the art. -->
     <Suspense v-if="rich">

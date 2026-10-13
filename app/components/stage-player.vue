@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { mergePlayedSongsWithAllSongs } from "~/helpers";
-import type { Song } from "~/types";
-import type { LaneSource } from "#shared/stage/types";
+import type { Database, Song } from "~/types";
+import type { Fan, LaneSource } from "#shared/stage/types";
 import { stageClock } from "#shared/stage/clock";
 import { styleById } from "#shared/stage/styles";
 import { lookFor } from "#shared/stage/themes";
@@ -14,7 +14,7 @@ const props = defineProps<{ song: Song; mashupMode?: boolean; live?: boolean; ba
 
 const route = useRoute();
 const songStore = useSongStore();
-const { allSongs, allPlayedSongs } = storeToRefs(songStore);
+const { allSongs, allPlayedSongs, theLatestVotes } = storeToRefs(songStore);
 const stage = useStageAudio();
 
 const upNext = computed(() => {
@@ -33,6 +33,31 @@ async function findNextSong() {
     location.href = "/band";
   }
 }
+
+// The mosh pit (live screen only): seeded with everyone who has voted, newest
+// first, one fan per voter. New votes drop in and get a short toast.
+const crowd = shallowRef<Fan[] | undefined>();
+const toast = shallowRef<{ avatar: string; song: string; key: number } | null>(null);
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function seedCrowd() {
+  const { data } = await useSupabaseClient<Database>()
+    .from("votes").select("userid, songid, user_avatar").order("id", { ascending: false }).limit(500);
+  const seen = new Set<string>();
+  crowd.value = (data || []).filter(vote => !seen.has(vote.userid) && seen.add(vote.userid))
+    .map(vote => ({ userid: vote.userid, avatar: vote.user_avatar || "", songId: vote.songid }));
+}
+
+watch(theLatestVotes, (votes) => {
+  if (!props.live) return;
+  for (const vote of votes) {
+    stageClock.arrivals.push({ userid: vote.userid, avatar: vote.user_avatar, songId: vote.songid });
+    const song = allSongs.value.find(item => item.songId === vote.songid)?.song;
+    if (song) toast.value = { avatar: vote.user_avatar, song, key: Date.now() };
+  }
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value = null; }, 4000);
+});
 
 const cues = computed(() => presetCues(props.song));
 const marks = computed(() => chapterMarks({ cues: cues.value, sections: [] }));
@@ -114,6 +139,7 @@ function chooseSource(id: LaneSource) {
 }
 
 onMounted(() => {
+  if (props.live) void seedCrowd();
   media = matchMedia("(prefers-reduced-motion: reduce)");
   onMotion();
   media.addEventListener("change", onMotion);
@@ -127,6 +153,8 @@ onMounted(() => {
 });
 onUnmounted(() => {
   clearInterval(artTimer);
+  clearTimeout(toastTimer);
+  stageClock.arrivals.length = 0;
   media?.removeEventListener("change", onMotion);
 });
 </script>
@@ -160,11 +188,17 @@ onUnmounted(() => {
         :solo="solo"
         :pyro-key="pyroKey"
         :confetti-key="confettiKey"
+        :crowd="crowd"
         @error="webglOk = false"
       />
     </div>
 
-    <live-votes v-if="live" class="stage-votes" />
+    <Transition name="vote-toast">
+      <p v-if="toast" :key="toast.key" class="vote-toast" role="status">
+        <PixelAvatar :src="toast.avatar" alt="" :size="40" />
+        <span><span class="vote-toast-label">Vote in</span>{{ toast.song }}</span>
+      </p>
+    </Transition>
 
     <div class="hud">
       <header class="stage-bill">
@@ -230,7 +264,24 @@ onUnmounted(() => {
 .song-art .plate.on { opacity: 0.42; }
 .stage-canvas { position: fixed; inset: 0; z-index: 1; }
 .stage-canvas canvas { display: block; width: 100%; height: 100%; }
-.stage-votes { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.vote-toast {
+  position: fixed;
+  left: max(1rem, 2vw);
+  bottom: 5.5rem;
+  z-index: 4;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.875rem 0.5rem 0.5rem;
+  background: color-mix(in srgb, var(--color-night) 85%, transparent);
+  box-shadow: var(--px) var(--px) 0 var(--color-ink);
+  font-family: var(--font-pixel);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.vote-toast-label { display: block; font-family: var(--font-caps); font-size: 0.6rem; text-transform: uppercase; color: var(--color-gold); margin-bottom: 0.25rem; }
+.vote-toast-enter-active, .vote-toast-leave-active { transition: transform 160ms steps(4), opacity 160ms steps(4); }
+.vote-toast-enter-from, .vote-toast-leave-to { transform: translateY(calc(var(--px) * 4)); opacity: 0; }
 
 .hud { position: relative; z-index: 3; min-height: 100dvh; pointer-events: none; }
 .hud a, .hud button, .hud summary, .hud input, .hud select { pointer-events: auto; }
@@ -268,5 +319,6 @@ onUnmounted(() => {
 }
 @media (prefers-reduced-motion: reduce) {
   .song-art .plate { transition: none; }
+  .vote-toast-enter-active, .vote-toast-leave-active { transition: none; }
 }
 </style>

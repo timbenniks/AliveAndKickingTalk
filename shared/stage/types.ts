@@ -29,3 +29,10 @@ export interface StagePulse {
   lane: number
   strength: number
 }
+
+// A voter in the mosh pit.
+export interface Fan {
+  userid: string
+  avatar: string
+  songId: string
+}
