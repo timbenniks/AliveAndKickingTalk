@@ -9,6 +9,7 @@ import StageLights from './StageLights.vue'
 import StageParticles from './StageParticles.vue'
 import StageSides from './StageSides.vue'
 import type { StageEffect } from '#shared/stage/styles'
+import { BloomPmndrs, EffectComposerPmndrs, VignettePmndrs } from '@tresjs/post-processing'
 
 defineProps<{
   marks: ChapterMark[]
@@ -29,7 +30,7 @@ const emit = defineEmits<{ error: [] }>()
     :alpha="transparent"
     :clear-alpha="transparent ? 0 : 1"
     :clear-color="'#000000'"
-    :premultiplied-alpha="!transparent"
+    :premultiplied-alpha="true"
     :dpr="dpr"
     antialias
     @error="emit('error')"
@@ -41,5 +42,13 @@ const emit = defineEmits<{ error: [] }>()
     <NoteHighway :reset-key="resetKey" :gems="gems" />
     <ChapterGates :marks="marks" />
     <StageParticles :primary="theme.primary" :particles="theme.particles" />
+    <!-- High quality only. Bloom is thresholded so only the lit parts glow:
+         gems, frets, strings and light heads, never the board or the art. -->
+    <Suspense v-if="rich">
+      <EffectComposerPmndrs :multisampling="4">
+        <BloomPmndrs :intensity="1.15" :luminance-threshold="0.62" :luminance-smoothing="0.2" :radius="0.72" mipmap-blur />
+        <VignettePmndrs :darkness="0.5" :offset="0.32" />
+      </EffectComposerPmndrs>
+    </Suspense>
   </TresCanvas>
 </template>

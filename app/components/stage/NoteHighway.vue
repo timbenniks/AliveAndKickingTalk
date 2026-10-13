@@ -414,9 +414,9 @@ function emitSmoke(x: number, y: number, z: number, lane: number) {
   puff.vx = (Math.random() - 0.5) * 0.08
   puff.vy = 0.16 + Math.random() * 0.2
   puff.vz = (Math.random() - 0.5) * 0.06
-  puff.r = smokeColor.r * 0.45 + 0.4
-  puff.g = smokeColor.g * 0.45 + 0.4
-  puff.b = smokeColor.b * 0.45 + 0.4
+  puff.r = smokeColor.r * 0.22 + 0.12
+  puff.g = smokeColor.g * 0.22 + 0.12
+  puff.b = smokeColor.b * 0.22 + 0.12
 }
 
 function emitSparks(lane: number) {
@@ -450,8 +450,8 @@ function syncLook() {
   const key = LANE_X.map((_, lane) => laneColor(lane)).join('|')
   if (key === lookKey) return
   lookKey = key
-  const gemIntensity = 0.14
-  const trailIntensity = 0.12
+  const gemIntensity = 0.75
+  const trailIntensity = 0.4
   for (let lane = 0; lane < LANE_X.length; lane++) {
     const color = laneColor(lane)
     const gem = gemMaterials[lane]!
@@ -533,8 +533,8 @@ onBeforeRender(() => {
     const level = flashLevel[lane] ?? 0
     const ring = mesh.material as MeshStandardMaterial
     const center = cap.material as MeshStandardMaterial
-    ring.emissiveIntensity = 0.22 + level * 0.45
-    center.emissiveIntensity = 0.28 + level * 0.5
+    ring.emissiveIntensity = 0.22 + level * 1.8
+    center.emissiveIntensity = 0.28 + level * 2.2
     const scale = 1 + level * 0.16
     mesh.scale.set(scale, 1, scale)
     cap.scale.set(scale, 1, scale)
@@ -542,8 +542,8 @@ onBeforeRender(() => {
     const glow = fretGlows[lane]
     if (glow) {
       const mat = glow.material as MeshBasicMaterial
-      mat.opacity = 0.16 + level * 0.7
-      glow.scale.setScalar(1 + level * 0.35)
+      mat.opacity = 0.12 + level * 0.85
+      glow.scale.setScalar(1 + level * 0.6)
     }
   })
   const step = continuous ? delta : 0
@@ -569,7 +569,7 @@ onBeforeRender(() => {
   sparkGeo.attributes.color!.needsUpdate = true
   if (step > 0 && !stageClock.reducedMotion) {
     for (const spot of gemSpots) {
-      if (Math.random() < step * 5) emitSmoke(spot.x, spot.y, spot.z, spot.lane)
+      if (Math.random() < step * 1.2) emitSmoke(spot.x, spot.y, spot.z, spot.lane)
     }
   }
   let smokeLive = false

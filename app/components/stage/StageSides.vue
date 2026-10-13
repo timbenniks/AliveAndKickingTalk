@@ -100,7 +100,7 @@ const flames = Array.from({ length: 14 }, (_, index) => {
     map: flameMap,
     color: '#ff8c1a',
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.5,
     blending: AdditiveBlending,
     depthWrite: false,
     depthTest: false,
@@ -201,7 +201,7 @@ onBeforeRender(({ elapsed }) => {
 
   if (props.effect === 'smoke' || props.effect === 'mist') {
     const pool = props.effect === 'smoke' ? smoke : mist
-    washColor.set(props.effect === 'smoke' ? '#d7d2dc' : (props.primary || '#d7f7ff'))
+    washColor.set(props.effect === 'smoke' ? '#5e5866' : (props.primary || '#d7f7ff')).multiplyScalar(props.effect === 'smoke' ? 1 : 0.55)
     for (const puff of pool) {
       const cycle = ((elapsed * (calm ? 0.08 : 0.16) + puff.phase) % 1)
       const fade = Math.sin(cycle * Math.PI)
@@ -214,7 +214,7 @@ onBeforeRender(({ elapsed }) => {
       )
       puff.sprite.scale.set(spread, spread * 0.7, 1)
       puff.material.color.copy(washColor)
-      puff.material.opacity = fade * (props.effect === 'smoke' ? 0.28 : 0.2) * (0.6 + energy)
+      puff.material.opacity = fade * (props.effect === 'smoke' ? 0.2 : 0.14) * (0.6 + energy)
     }
   }
 
