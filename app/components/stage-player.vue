@@ -150,11 +150,10 @@ onUnmounted(() => {
     <div class="hud">
       <header class="stage-bill">
         <NuxtLink v-if="backTo" :to="backTo" class="stage-back">← Setlist</NuxtLink>
-        <img v-if="song.logo" class="stage-logo" :src="song.logo" alt="">
-        <PixelLabel :text="song.artist" :scale="3" color="#ffc531" :max-cols="18" />
+        <PixelLabel :text="song.artist" :scale="2" color="#ffc531" :max-cols="24" />
         <h1>
           <span class="sr-only">{{ song.song }} by {{ song.artist }}</span>
-          <PixelLabel :text="song.song" :scale="6" :max-cols="12" aria-hidden="true" />
+          <PixelLabel :text="song.song" :scale="4" :max-cols="16" aria-hidden="true" />
         </h1>
         <p v-if="surfaceReady && !webglOk" class="stage-alert">This browser cannot draw the 3D stage. The track still plays.</p>
       </header>
@@ -217,24 +216,24 @@ onUnmounted(() => {
 .hud { position: relative; z-index: 3; min-height: 100dvh; pointer-events: none; }
 .hud a, .hud button, .hud summary, .hud input, .hud select { pointer-events: auto; }
 
-.stage-bill { position: absolute; top: 1rem; left: max(1rem, 2vw); display: grid; gap: 0.75rem; justify-items: start; max-width: min(34vw, 420px); }
+.stage-bill { position: absolute; top: 1rem; left: max(1rem, 2vw); display: grid; gap: 0.5rem; justify-items: start; max-width: min(30vw, 400px); }
 .stage-bill h1 { margin: 0; }
-.stage-logo { width: min(200px, 30vw); max-height: 72px; object-fit: contain; object-position: left; filter: drop-shadow(var(--px) var(--px) 0 var(--color-ink)); }
 .stage-back { font-family: var(--font-caps); font-size: 0.75rem; text-transform: uppercase; color: var(--color-gold); text-decoration: none; }
 .stage-alert { font-family: var(--font-caps); font-size: 0.75rem; color: var(--color-fret-2); }
 
-.stage-page .chapters { position: absolute; top: 43%; left: 0; right: 0; transform: translateY(-100%); }
-.stage-live .chapters { right: min(26vw, 380px); }
+.stage-page { --side: 0px; }
+.stage-live { --side: min(20vw, 280px); }
+/* Equal insets on both sides keep the amp board centred over the highway. */
+.stage-page .chapters { position: absolute; top: 43%; left: var(--side); right: var(--side); width: auto; transform: translateY(-100%); }
 
 .stage-upnext {
   position: absolute;
-  top: 1.5rem;
-  right: 0;
-  bottom: 5rem;
-  width: min(26vw, 380px);
+  top: 2rem;
+  right: max(1rem, 1vw);
+  max-height: calc(100dvh - 7rem);
+  width: calc(var(--side) - 2rem);
   overflow-y: auto;
   pointer-events: auto;
-  background: color-mix(in srgb, var(--color-night) 78%, transparent);
 }
 
 .rig-sources { display: grid; gap: 0.25rem; border: 0; padding: 0; margin: 0; }
@@ -246,7 +245,7 @@ onUnmounted(() => {
 @media (max-width: 900px) {
   .stage-bill { max-width: 60vw; }
   .stage-upnext { display: none; }
-  .stage-live .chapters { right: 0; }
+  .stage-live { --side: 0px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .song-art .plate { transition: none; }
