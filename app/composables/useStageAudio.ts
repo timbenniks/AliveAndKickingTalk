@@ -32,6 +32,7 @@ let raf = 0;
 let users = 0;
 const tickHandlers = new Set<() => void>();
 let heardSignal = false;
+let lastWall = 0;
 const baseline = [0, 0, 0, 0, 0, 0];
 const lastHit = [-10, -10, -10, -10, -10, -10];
 
@@ -189,12 +190,20 @@ function tick() {
   const element = songElement;
   const songPlaying = !!element && !element.paused && !element.ended;
   const audioTime = element && Number.isFinite(element.currentTime) ? element.currentTime : 0;
-  const now = songPlaying || !context ? audioTime : context.currentTime;
   const guitarLive = laneSource.value === 'guitar' && !!guitarAnalyser;
   const live = songPlaying || guitarLive || laneSource.value === 'midi';
 
+  // Two clocks. `time` is the song position: it stops when the song stops, so
+  // cues, gates and the amp board pause with the music. `flow` only drives the
+  // highway: it runs while anything is playing, so a live guitar still flows
+  // over a paused track. Wall-clock deltas, capped so a hidden tab cannot jump.
+  const wall = performance.now() / 1000;
+  if (live && lastWall) stageClock.flow += Math.min(0.1, wall - lastWall);
+  lastWall = wall;
+  const now = stageClock.flow;
+
   stageClock.audioTime = audioTime;
-  stageClock.time = Math.max(0, now - offsetMs.value / 1000);
+  stageClock.time = Math.max(0, audioTime - offsetMs.value / 1000);
   stageClock.playing = live;
 
   // Lights and camera follow the band (the song) when it plays, else the guitar.

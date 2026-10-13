@@ -479,7 +479,7 @@ function syncLook() {
 const { onBeforeRender } = useLoop()
 onBeforeRender(() => {
   syncLook()
-  const time = stageClock.time
+  const time = stageClock.flow
   const delta = time - previous
   const continuous = delta >= 0 && delta < 0.25
   gemSpots.length = 0
@@ -604,7 +604,7 @@ onBeforeRender(() => {
 function clearPulses() {
   pulses.length = 0
   stageClock.events.length = 0
-  previous = stageClock.time
+  previous = stageClock.flow
 }
 
 watch(() => props.resetKey, clearPulses)

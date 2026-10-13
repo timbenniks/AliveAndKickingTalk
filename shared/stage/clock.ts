@@ -7,7 +7,10 @@ export const LANE_X = [1.4, 0.84, 0.28, -0.28, -0.84, -1.4] as const
 export const LANE_COLORS = ['#3dff45', '#ff2d2d', '#ffe14a', '#3aa6ff', '#ff8c1a', '#d15cff'] as const
 
 export const stageClock = {
+  // Song position (pauses with the song).
   time: 0,
+  // Highway clock (runs while the song or a live input plays).
+  flow: 0,
   audioTime: 0,
   playing: false,
   bass: 0,
