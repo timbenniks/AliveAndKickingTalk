@@ -483,7 +483,7 @@ onBeforeRender(() => {
   const delta = time - previous
   const continuous = delta >= 0 && delta < 0.25
   gemSpots.length = 0
-  if (stageClock.playing && stageClock.analysis === 'live' && continuous && !stageClock.reducedMotion) {
+  if (stageClock.pulsing && stageClock.analysis === 'live' && continuous && !stageClock.reducedMotion) {
     for (const { lane, strength } of stageClock.events) {
       if (lane < 0 || lane >= LANE_X.length) continue
       pulses.push({ at: time, lane, strength: strength || 0.4, span: 0.06 })
@@ -499,7 +499,7 @@ onBeforeRender(() => {
       if (pulses[i]!.at >= visibleUntil) pulses[kept++] = pulses[i]!
     }
     pulses.length = kept
-    if (stageClock.playing && continuous) {
+    if (stageClock.pulsing && continuous) {
       const latest = Array.from({ length: LANE_X.length }, () => -1)
       for (let i = pulses.length - 1; i >= 0; i--) {
         const pulse = pulses[i]!

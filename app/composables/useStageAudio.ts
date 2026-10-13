@@ -191,31 +191,29 @@ function tick() {
   const songPlaying = !!element && !element.paused && !element.ended;
   const audioTime = element && Number.isFinite(element.currentTime) ? element.currentTime : 0;
   const guitarLive = laneSource.value === 'guitar' && !!guitarAnalyser;
-  const live = songPlaying || guitarLive || laneSource.value === 'midi';
+  // The rule: lanes follow the chosen source; everything else follows the music.
+  const pulsing = laneSource.value === 'song' ? songPlaying : guitarLive || laneSource.value === 'midi';
 
-  // Two clocks. `time` is the song position: it stops when the song stops, so
-  // cues, gates and the amp board pause with the music. `flow` only drives the
-  // highway: it runs while anything is playing, so a live guitar still flows
+  // Two clocks. `time` is the song position: cues, gates, the amp board and
+  // light sweeps stop when the song stops. `flow` only moves the highway
+  // pulses, and runs while the lane source is live, so a guitar still flows
   // over a paused track. Wall-clock deltas, capped so a hidden tab cannot jump.
   const wall = performance.now() / 1000;
-  if (live && lastWall) stageClock.flow += Math.min(0.1, wall - lastWall);
+  if (pulsing && lastWall) stageClock.flow += Math.min(0.1, wall - lastWall);
   lastWall = wall;
   const now = stageClock.flow;
 
   stageClock.audioTime = audioTime;
   stageClock.time = Math.max(0, audioTime - offsetMs.value / 1000);
-  stageClock.playing = live;
+  stageClock.playing = songPlaying;
+  stageClock.pulsing = pulsing;
 
-  // Lights and camera follow the band (the song) when it plays, else the guitar.
-  const featureAnalyser = songPlaying ? songAnalyser : guitarLive ? guitarAnalyser : null;
-  const featureFreq = songPlaying ? songFreq : guitarFreq;
-  if (featureAnalyser) {
-    featureAnalyser.getByteFrequencyData(featureFreq);
-    // Bin ranges are for a 256-point FFT; scale them for the guitar's larger FFT.
-    const k = featureFreq.length / 128;
-    const bass = band(featureFreq, 2 * k, 10 * k);
-    const mid = band(featureFreq, 10 * k, 40 * k);
-    const treble = band(featureFreq, 40 * k, 90 * k);
+  // Lights, camera shake and side effects follow the song only.
+  if (songPlaying && songAnalyser) {
+    songAnalyser.getByteFrequencyData(songFreq);
+    const bass = band(songFreq, 2, 10);
+    const mid = band(songFreq, 10, 40);
+    const treble = band(songFreq, 40, 90);
     const energy = bass * 0.5 + mid * 0.35 + treble * 0.15;
     stageClock.onset = Math.max(0, energy - stageClock.energy);
     stageClock.bass = smooth(stageClock.bass, bass);
@@ -263,6 +261,7 @@ function teardown() {
   songElement = null;
   heardSignal = false;
   stageClock.playing = false;
+  stageClock.pulsing = false;
   stageClock.lanes.fill(0);
   stageClock.events.length = 0;
   setAnalysis('idle');

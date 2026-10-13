@@ -12,7 +12,10 @@ export const stageClock = {
   // Highway clock (runs while the song or a live input plays).
   flow: 0,
   audioTime: 0,
+  // The song is playing: lights, camera and effects react.
   playing: false,
+  // The lane source is live: the highway shows pulses.
+  pulsing: false,
   bass: 0,
   mid: 0,
   treble: 0,
