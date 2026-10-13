@@ -53,21 +53,16 @@
 }
 
 @layer base {
-  *, ::before, ::after { border-color: var(--color-grey); }
-}
+  *, ::before, ::after { border-color: var(--color-tolex-hi); }
 
-@layer base {
   body {
-    @apply text-white font-sans;
-    background: #000 url("/loader.svg") no-repeat;
-    background-position: center;
     min-height: 100vh;
+    background: var(--color-night);
+    color: var(--color-bone);
+    font-family: var(--font-sans);
   }
 
-  main {
-    @apply bg-black;
-    min-height: 100vh;
-  }
+  main { min-height: 100vh; }
 
   html,
   body {
@@ -81,58 +76,43 @@
     height: auto;
   }
 
-  a,
-  button {
-    @apply bg-none underline underline-offset-2;
-  }
+  a { text-underline-offset: 3px; }
 
-  .fancy-image {
-    @apply border-2;
-    border-image-slice: 1;
-    border-image-source: linear-gradient(
-      89.87deg,
-      #256ad1 7.57%,
-      #d1258c 95.58%
-    );
-  }
+  :focus-visible { outline: var(--px) solid var(--color-fret-4); outline-offset: var(--px); }
+}
 
-  .fancy-bg {
-    background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
-  }
-
-  .flowing-title {
-    background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
-    white-space: initial;
-  }
-
-  .cta {
-    @apply w-[180px] py-2 px-3 border-2 text-white bg-black font-black no-underline uppercase text-sm;
-    border-image-slice: 1;
-    border-image-source: linear-gradient(
-      89.87deg,
-      #256ad1 7.57%,
-      #d1258c 95.58%
-    );
-  }
-
-  .cta-fancy {
-    @apply w-[180px] py-2 px-3 border-2 text-white font-black no-underline uppercase text-sm;
-    background: linear-gradient(89.87deg, #256ad1 7.57%, #d1258c 95.58%);
-    border-image-slice: 1;
-    border-image-source: linear-gradient(
-      89.87deg,
-      #256ad1 7.57%,
-      #d1258c 95.58%
-    );
-  }
-
-  .cta-negative {
-    @apply w-[180px] py-2 px-3 border-2 text-[#ADADAD] bg-[#585858] border-[#585858] font-black no-underline uppercase text-sm;
-  }
+/* Stompbox buttons (PixelButton, or any link that needs to look like one). */
+@layer components {
+.stompbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
+}
+.stompbox-md { padding: 0.375rem 1rem; font-size: 1.375rem; line-height: 1; }
+.stompbox-lg { padding: 0.5rem 1.5rem; font-size: 2rem; line-height: 1; }
+.stompbox-primary { background: var(--color-gold); color: var(--color-ink); --edge: var(--color-ink); }
+.stompbox-secondary { background: var(--color-tolex); color: var(--color-bone); --edge: var(--color-bone); }
+.stompbox-danger { background: var(--color-tolex); color: var(--color-fret-2); --edge: var(--color-fret-2); }
+.stompbox:hover:not(:disabled) { filter: brightness(1.12); }
+.stompbox:active:not(:disabled) { --depth: 0px; transform: translate(var(--px), var(--px)); }
+.stompbox:focus-visible { outline: var(--px) solid var(--color-fret-4); outline-offset: calc(var(--px) * 2); }
+.stompbox:disabled {
+  --depth: 0px;
+  cursor: not-allowed;
+  background: var(--color-tolex);
+  color: var(--color-dust);
+  --edge: var(--color-tolex-hi);
+}
+@media (prefers-reduced-motion: reduce) {
+  .stompbox { transition: none; }
+}
 }

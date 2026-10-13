@@ -47,8 +47,6 @@ export default defineNuxtConfig({
 
   fonts: {
     families: [
-      // Lato stays until every page is restyled (Phase 4).
-      { name: 'Lato', provider: 'google', weights: [100, 300, 400, 700, 900] },
       { name: 'Barlow Semi Condensed', provider: 'google', weights: [400, 500, 700] },
       { name: 'Jersey 10', provider: 'google', weights: [400] },
       { name: 'Silkscreen', provider: 'google', weights: [400, 700] },
@@ -56,7 +54,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: "Alive and Kicking - A Vue into Rock & Roll",
+      title: "Alive and Kicking: Rock Anthem Edition",
 
       htmlAttrs: {
         lang: "en",
@@ -70,12 +68,16 @@ export default defineNuxtConfig({
           charset: "utf-8"
         },
         {
+          name: "theme-color",
+          content: "#100c1c"
+        },
+        {
           property: "og:image",
           content: "https://res.cloudinary.com/dwfcofnrd/image/upload/c_fill,w_1920,h_1080,g_face/f_auto/q_auto/Alive%20and%20Kicking/332022097_722321479543137_5355332749224365662_n.jpg"
         },
         {
           name: "description",
-          content: "This is the Vue guitar Karaoke talk. The audience can vote for a song to be played live on stage. The whole experience is done in the browser and uses Vue and Nuxt."
+          content: "Vote for the next rock anthem and watch it played live on a voxel stage. Every vote puts your face in the mosh pit. Built with Vue, Nuxt and TresJS."
         }
       ],
       script: [

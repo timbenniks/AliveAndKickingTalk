@@ -1,6 +1,6 @@
 <template>
-  <main class="max-w-screen-xl mx-auto my-12">
-    <h1 class="text-2xl">PRIVACY NOTICE</h1>
+  <main class="legal">
+    <h1>PRIVACY NOTICE</h1>
     <br >
     <br >
     Last updated January 14th 2024<br >
@@ -278,3 +278,17 @@
     request.
   </main>
 </template>
+
+<style>
+.legal {
+  min-height: 100dvh;
+  padding: 3rem max(1rem, calc((100% - 760px) / 2)) 5rem;
+  background: var(--color-night);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  line-height: 1.55;
+}
+.legal h1 { font-family: var(--font-pixel); font-size: clamp(2.25rem, 7vw, 3.5rem); line-height: 1; margin-bottom: 1rem; }
+.legal a { color: var(--color-gold); }
+</style>
