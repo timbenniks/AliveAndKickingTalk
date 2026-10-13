@@ -64,10 +64,11 @@
 
   main { min-height: 100vh; }
 
+  /* clip, not hidden: hidden turns the page into a scroll container and breaks position: sticky. */
   html,
   body {
     max-width: 100% !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
   }
 
   img,

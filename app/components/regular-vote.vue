@@ -1,234 +1,194 @@
 <script setup lang="ts">
-import { Carousel, Navigation, Pagination, Slide } from "vue3-carousel";
 import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
-
 const { allSongs, votedAmount, maxVotes, voting } = storeToRefs(songStore);
-
-const background = ref(allSongs.value[0]?.artwork[0] || { bg: '', x: '50%' });
-const handleSlideStart = (data: { slidingToIndex: number }) => {
-  background.value = allSongs.value[data.slidingToIndex]?.artwork[0] || background.value;
-};
 
 // Fret colors mark the songs you voted for: one color per song, in setlist order.
 const fretFor = (index: number) => (index % 6) + 1;
+const full = computed(() => votedAmount.value >= maxVotes.value);
+const pending = ref("");
 
-const pagination = useTemplateRef<HTMLElement>('pagination');
-watchEffect(() => {
-  const items = pagination.value?.querySelectorAll('li');
-  items?.forEach((node, index) => node.classList.toggle('voted', !!allSongs.value[index]?.voted));
-});
+// The whole row is the vote toggle. The order never changes while you tap.
+async function toggle(songId: string, voted: boolean) {
+  if (voting.value || (!voted && full.value)) return;
+  pending.value = songId;
+  try {
+    if (voted) await songStore.downvote(songId);
+    else {
+      await songStore.upvote(songId);
+      navigator.vibrate?.(12);
+    }
+  } finally {
+    pending.value = "";
+  }
+}
+
+function label(song: { song: string; artist: string; voted: boolean }) {
+  if (song.voted) return `Remove your vote for ${song.song} by ${song.artist}`;
+  if (full.value) return `${song.song} by ${song.artist}. No votes left`;
+  return `Vote for ${song.song} by ${song.artist}`;
+}
 </script>
 
 <template>
   <main class="vote-page">
-    <Transition name="vote-bg">
-      <div
-        :key="background.bg"
-        class="vote-bg"
-        :style="{
-          backgroundImage: `url(${background.bg})`,
-          backgroundPositionX: background.x,
-        }"
-      />
-    </Transition>
-
     <header class="vote-head">
       <p class="vote-eyebrow">Alive and Kicking: Rock Anthem Edition</p>
       <h1 class="vote-title">Vote for the next anthem</h1>
-      <p class="vote-count" aria-live="polite">
-        <PixelBadge>{{ votedAmount }} of {{ maxVotes }} votes used</PixelBadge>
-      </p>
+      <div class="vote-meter" :class="{ 'is-full': full }">
+        <span class="vote-pips" aria-hidden="true">
+          <i v-for="slot in maxVotes" :key="slot" :class="{ on: slot <= votedAmount }" />
+        </span>
+        <p class="vote-meter-text" aria-live="polite">
+          <template v-if="full">All {{ maxVotes }} votes used. Tap a pick to free one.</template>
+          <template v-else-if="votedAmount">{{ votedAmount }} of {{ maxVotes }} votes used</template>
+          <template v-else>Pick up to {{ maxVotes }} songs</template>
+        </p>
+      </div>
     </header>
 
-    <Carousel class="vote-carousel" @slide-start="handleSlideStart">
-      <template #addons="{ slidesCount, currentSlide }">
-        <Navigation />
-
-        <div ref="pagination" class="vote-pager">
-          <p class="vote-pager-count">{{ currentSlide + 1 }}/{{ slidesCount }}</p>
-          <Pagination />
-        </div>
-      </template>
-
-      <Slide v-for="(song, index) in allSongs" :key="song.songId">
-        <PixelPanel class="vote-card" tag="article" :fret="song.voted ? fretFor(index) : 0">
+    <ol class="vote-list">
+      <li
+        v-for="(song, index) in allSongs"
+        :key="song.songId"
+        class="vote-row"
+        :class="{ 'is-voted': song.voted, 'is-locked': !song.voted && full }"
+        :style="{ '--fret': `var(--color-fret-${fretFor(index)})` }"
+      >
+        <button
+          type="button"
+          class="vote-toggle"
+          :aria-pressed="song.voted"
+          :aria-label="label(song)"
+          :aria-disabled="voting || (!song.voted && full) ? 'true' : undefined"
+          @click="toggle(song.songId, song.voted)"
+        >
           <img
             class="vote-cover"
-            :src="song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_380,h_380')"
-            :alt="`${song.song} by ${song.artist}, cover`"
-            width="384"
-            height="384"
+            :src="song.cover.replace('q_auto,f_auto', 'q_auto,f_auto,w_160,h_160')"
+            alt=""
+            width="64"
+            height="64"
           >
-          <div class="vote-copy">
-            <h2 class="vote-song">{{ song.song }}</h2>
-            <p class="vote-artist">{{ song.artist }}</p>
-            <PixelBadge v-if="song.voted" :fret="fretFor(index)">Your vote</PixelBadge>
-          </div>
+          <span class="vote-copy">
+            <span class="vote-song">{{ song.song }}</span>
+            <span class="vote-artist">{{ song.artist }}</span>
+          </span>
+          <span class="vote-box" aria-hidden="true">
+            <loader v-if="pending === song.songId" />
+            <svg v-else-if="song.voted" viewBox="0 0 7 6" shape-rendering="crispEdges">
+              <path d="M6 0h1v1h-1zM5 1h2v1h-2zM0 2h1v1h-1zM4 2h2v1h-2zM0 3h2v1h-2zM3 3h2v1h-2zM1 4h3v1h-3zM2 5h1v1h-1z" fill="currentColor" />
+            </svg>
+            <svg v-else viewBox="0 0 8 8" shape-rendering="crispEdges">
+              <path d="M3 1h2v2h2v2H5v2H3V5H1V3h2z" fill="currentColor" />
+            </svg>
+          </span>
+        </button>
+        <SongShare v-if="song.voted" class="vote-share" nativecopy="Share my vote" :song="song" :mashup="false" />
+      </li>
+    </ol>
 
-          <div class="vote-actions">
-            <PixelButton
-              :variant="song.voted ? 'secondary' : 'primary'"
-              :disabled="voting || (!song.voted && votedAmount >= maxVotes)"
-              @click="
-                !song.voted && votedAmount < maxVotes
-                  ? songStore.upvote(song.songId)
-                  : songStore.downvote(song.songId)
-              "
-            >
-              <template v-if="song.voted">Remove vote</template>
-              <template v-else-if="votedAmount >= maxVotes">No votes left</template>
-              <template v-else>Vote for this song</template>
-            </PixelButton>
-            <loader v-show="voting" />
-            <SongShare v-if="song.voted" nativecopy="Share" :song="song" :mashup="false" />
-          </div>
-          <p v-if="!song.voted && votedAmount >= maxVotes" class="vote-hint">
-            Remove a vote from another song to pick this one.
-          </p>
-        </PixelPanel>
-      </Slide>
-    </Carousel>
+    <FretStrip class="vote-foot" />
   </main>
 </template>
 
 <style>
 .vote-page {
-  position: relative;
   min-height: 100dvh;
-  overflow: hidden;
-  padding: 1.25rem 0 3rem;
+  padding-bottom: 2.5rem;
   background: var(--color-night);
   color: var(--color-bone);
   font-family: var(--font-sans);
 }
-.vote-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-size: cover;
-  opacity: 0.32;
-}
-.vote-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-night) 40%, transparent), var(--color-night) 85%);
-}
-.vote-bg-enter-active, .vote-bg-leave-active { transition: opacity 0.6s steps(6); }
-.vote-bg-enter-from, .vote-bg-leave-to { opacity: 0; }
 
+/* The header stays put so the vote count is always in view. */
 .vote-head {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  justify-items: center;
-  gap: 0.5rem;
-  padding: 0 1rem;
-  text-align: center;
-}
-.vote-eyebrow { font-family: var(--font-caps); font-size: 0.65rem; text-transform: uppercase; color: var(--color-gold); }
-.vote-title { font-family: var(--font-pixel); font-weight: 400; font-size: clamp(2.5rem, 9vw, 4rem); line-height: 0.9; }
-
-.vote-carousel { position: relative; z-index: 1; margin-top: 5.5rem; text-align: center; }
-.vote-carousel * { box-sizing: border-box; }
-
-.vote-card {
-  width: min(22rem, calc(100vw - 7.25rem));
-  display: grid;
-  gap: 0.875rem;
-  justify-items: start;
-  text-align: left;
-}
-.vote-cover { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; box-shadow: var(--px) var(--px) 0 var(--color-ink); }
-.vote-copy { display: grid; gap: 0.25rem; justify-items: start; }
-.vote-song { font-family: var(--font-pixel); font-weight: 400; font-size: 2rem; line-height: 0.95; }
-.vote-artist { color: var(--color-dust); font-size: 1.1rem; }
-.vote-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
-.vote-hint { color: var(--color-dust); font-size: 0.95rem; }
-
-/* vue3-carousel structure, restyled. */
-.carousel__track { display: flex; margin: 0; padding: 0; position: relative; }
-.carousel__viewport { overflow: hidden; padding-block: 0.5rem 1rem; }
-.carousel__sr-only {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
-}
-.carousel__slide {
-  scroll-snap-stop: auto;
-  flex-shrink: 0;
-  margin: 0;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  /* Fix iOS scrolling #22 */
-  transform: translateZ(0);
-}
-.carousel__icon { width: 1.75rem; height: 1.75rem; fill: currentColor; }
-.carousel__prev,
-.carousel__next {
-  position: absolute;
-  top: 40%;
+  position: sticky;
+  top: 0;
   z-index: 2;
   display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0;
-  border: 0;
-  margin: 0;
-  background: var(--color-tolex);
-  color: var(--color-bone);
-  box-shadow: var(--px) var(--px) 0 var(--color-ink);
-  cursor: pointer;
-  text-decoration: none;
-  transform: translateY(-50%);
+  gap: 0.5rem;
+  padding: 1rem max(1rem, calc((100% - 560px) / 2)) 0.875rem;
+  background: color-mix(in srgb, var(--color-night) 94%, transparent);
+  box-shadow: 0 var(--px) 0 var(--color-ink);
+  backdrop-filter: blur(6px);
 }
-.carousel__prev:hover, .carousel__next:hover { color: var(--color-gold); }
-.carousel__prev:focus-visible, .carousel__next:focus-visible,
-.carousel__pagination-button:focus-visible { outline: var(--px) solid var(--color-fret-4); outline-offset: var(--px); }
-.carousel__next--disabled, .carousel__prev--disabled { opacity: 0.2; pointer-events: none; }
-.carousel__prev { left: 0.25rem; }
-.carousel__next { right: 0.25rem; }
-
-.vote-pager {
-  position: absolute;
-  top: -4.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: max-content;
-  max-width: calc(100vw - 2rem);
-  padding: 0.375rem 0.75rem;
-  background: color-mix(in srgb, var(--color-night) 80%, transparent);
-  box-shadow: var(--px) var(--px) 0 var(--color-ink);
-}
-.vote-pager-count { font-family: var(--font-pixel); font-size: 1.75rem; line-height: 1; color: var(--color-gold); white-space: nowrap; }
-.carousel__pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.25rem; list-style: none; margin: 0; padding: 0; line-height: 0; }
-.carousel__pagination-button { display: block; border: 0; margin: 0; padding: 0.2rem; background: transparent; cursor: pointer; text-decoration: none; }
-.carousel__pagination-button::after {
-  display: block;
-  content: "";
-  width: calc(var(--px) * 2);
-  height: calc(var(--px) * 2);
+.vote-eyebrow { font-family: var(--font-caps); font-size: 0.65rem; text-transform: uppercase; color: var(--color-gold); }
+.vote-title { font-family: var(--font-pixel); font-size: clamp(2rem, 9vw, 2.75rem); line-height: 0.95; }
+.vote-meter { display: flex; align-items: center; gap: 0.75rem; min-height: 1.5rem; }
+.vote-pips { display: flex; gap: calc(var(--px) * 1.5); }
+.vote-pips i {
+  width: calc(var(--px) * 4);
+  height: calc(var(--px) * 4);
   background: var(--color-tolex-hi);
+  box-shadow: inset 0 calc(var(--px) * -1) 0 var(--color-ink);
 }
-.carousel__pagination-button:hover::after,
-.carousel__pagination-button--active::after { background: var(--color-bone); }
-/* Songs you voted for light up gold in the pager. */
-.carousel__pagination-item.voted .carousel__pagination-button::after { background: var(--color-gold); }
+.vote-pips i.on { background: var(--color-gold); animation: pip-in 180ms steps(3); }
+.vote-meter-text { font-size: 1rem; color: var(--color-dust); }
+.vote-meter.is-full .vote-meter-text { color: var(--color-bone); }
 
-@media (min-width: 48rem) {
-  .vote-carousel { margin-top: 6rem; }
-  .carousel__prev { left: calc(50% - 16rem); }
-  .carousel__next { right: calc(50% - 16rem); }
-  .carousel__prev, .carousel__next { width: 3.5rem; height: 3.5rem; }
+.vote-list { display: grid; gap: 0.75rem; padding: 1rem max(1rem, calc((100% - 560px) / 2)) 0; }
+
+.vote-row {
+  --edge: var(--color-tolex-hi);
+  display: grid;
+  margin: var(--px);
+  background: var(--color-tolex);
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--edge),
+    0 var(--px) 0 0 var(--edge),
+    calc(-1 * var(--px)) 0 0 0 var(--edge),
+    var(--px) 0 0 0 var(--edge),
+    var(--px) calc(var(--px) * 2) 0 0 var(--color-ink),
+    calc(var(--px) * 2) var(--px) 0 0 var(--color-ink);
 }
+.vote-row.is-voted { --edge: var(--fret); background: color-mix(in srgb, var(--fret) 14%, var(--color-tolex)); }
+.vote-row.is-locked { opacity: 0.5; }
+
+.vote-toggle {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 0.875rem;
+  align-items: center;
+  width: 100%;
+  min-height: 80px;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.vote-toggle[aria-disabled="true"] { cursor: not-allowed; }
+.vote-toggle:active:not([aria-disabled="true"]) { transform: translate(var(--px), var(--px)); }
+.vote-cover { width: 64px; height: 64px; object-fit: cover; box-shadow: var(--px) var(--px) 0 var(--color-ink); }
+.vote-copy { display: grid; gap: 0.15rem; min-width: 0; }
+.vote-song { font-family: var(--font-pixel); font-size: 1.5rem; line-height: 1; overflow-wrap: anywhere; }
+.vote-artist { font-size: 0.95rem; color: var(--color-dust); }
+
+/* The vote box: an empty plus, then a gold check once it's yours. */
+.vote-box {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--color-night);
+  color: var(--color-dust);
+  box-shadow: inset 0 0 0 var(--px) var(--color-tolex-hi);
+}
+.vote-box svg { width: 22px; height: 22px; }
+.vote-row.is-voted .vote-box { background: var(--color-gold); color: var(--color-ink); box-shadow: var(--px) var(--px) 0 var(--color-ink); animation: box-in 200ms steps(4); }
+.vote-toggle:hover:not([aria-disabled="true"]) .vote-box { color: var(--color-bone); }
+
+.vote-share { padding: 0 0.75rem 0.75rem calc(64px + 1.375rem); }
+.vote-share .stompbox { font-size: 1rem; padding: 0.25rem 0.75rem; }
+
+.vote-foot { margin: 2rem max(1rem, calc((100% - 560px) / 2)) 0; }
+
+@keyframes pip-in { from { transform: scale(1.6); } }
+@keyframes box-in { 50% { transform: scale(1.25); } }
 @media (prefers-reduced-motion: reduce) {
-  .vote-bg-enter-active, .vote-bg-leave-active { transition: none; }
+  .vote-pips i.on, .vote-row.is-voted .vote-box { animation: none; }
+  .vote-toggle:active:not([aria-disabled="true"]) { transform: none; }
 }
 </style>
