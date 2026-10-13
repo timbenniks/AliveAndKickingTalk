@@ -3,6 +3,7 @@ import { onBeforeUnmount, watch } from 'vue'
 import { useLoop } from '@tresjs/core'
 import {
   BoxGeometry,
+  Matrix4,
   Group,
   Mesh,
   RepeatWrapping,
@@ -16,6 +17,7 @@ import {
   NearestFilter,
   Object3D,
   SRGBColorSpace,
+  Vector3,
 } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { LANE_COLORS, stageClock } from '#shared/stage/clock'
@@ -49,13 +51,19 @@ const slots = (() => {
   return spots.slice(0, MAX)
 })()
 
+// A stage dive: a ballistic arc from the launch point into the seat, with
+// whole flips (and maybe a pirouette) so the fan always lands upright.
+type Dive = {
+  t: number, duration: number, x: number, y: number, z: number,
+  apex: number, flips: number, axis: 'x' | 'z', twirl: number
+}
 type Seat = {
-  userid: string, used: boolean, y: number, vy: number, boost: number,
-  phase: number, rate: number, shirt: number, since: number
+  userid: string, used: boolean, boost: number,
+  phase: number, rate: number, shirt: number, since: number, dive: Dive | null
 }
 const seats: Seat[] = slots.map((_, i) => ({
-  userid: '', used: false, y: GROUND, vy: 0, boost: 0,
-  phase: (i * 2.399) % (Math.PI * 2), rate: 5.5 + ((i * 37) % 10) / 10 * 2.5, shirt: i % LANE_COLORS.length, since: 0,
+  userid: '', used: false, boost: 0,
+  phase: (i * 2.399) % (Math.PI * 2), rate: 5.5 + ((i * 37) % 10) / 10 * 2.5, shirt: i % LANE_COLORS.length, since: 0, dive: null,
 }))
 
 // Avatar atlas: 16x8 cells of 16px, one per seat.
@@ -180,6 +188,45 @@ for (const side of [-1, 1]) {
   riserParts.push(deckGeo, lipGeo)
 }
 
+const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)]!
+const between = (min: number, max: number) => min + Math.random() * (max - min)
+
+// Most fans dive off the stage (the highway); some get thrown in from the
+// back of the pit. Heights, distances and flips all vary.
+function launch(spot: { x: number, z: number }): Dive {
+  const side = Math.sign(spot.x)
+  const fromStage = Math.random() < 0.65
+  const apex = between(1.1, 3.6)
+  return {
+    t: 0,
+    duration: 0.75 + apex * 0.2 + between(0, 0.25),
+    x: fromStage ? side * between(0.4, 1.7) : side * between(9, 11.5),
+    y: fromStage ? between(1.2, 2.1) : between(0.4, 1.4),
+    z: spot.z + between(-1.2, 1.6),
+    apex,
+    flips: pick([0, 1, 1, 1, 2, 2, 3]) * (Math.random() < 0.5 ? -1 : 1),
+    axis: Math.random() < 0.6 ? 'z' : 'x',
+    twirl: pick([0, 0, 1, -1]),
+  }
+}
+
+// When a diver lands, the fans around them jump to catch.
+function catchDiver(index: number) {
+  const here = slots[index]!
+  seats.forEach((seat, i) => {
+    const spot = slots[i]!
+    if (seat.used && Math.hypot(spot.x - here.x, spot.z - here.z) < 1.4) seat.boost = Math.max(seat.boost, i === index ? 1 : 0.7)
+  })
+}
+
+const pivotUp = new Matrix4().makeTranslation(0, 0.55, 0)
+const pivotDown = new Matrix4().makeTranslation(0, -0.55, 0)
+const headOffset = new Matrix4().makeTranslation(0, 1.1, 0)
+const spin = new Matrix4()
+const twirl = new Matrix4()
+const bodyMatrix = new Matrix4()
+const headMatrix = new Matrix4()
+
 let filled = 0
 let clock = 0
 
@@ -201,9 +248,8 @@ function seatFor(fan: Fan, drop: boolean) {
   seat.used = true
   seat.userid = fan.userid
   seat.since = clock
-  seat.y = drop ? GROUND + 2 + Math.random() * 0.4 : GROUND
-  seat.vy = 0
-  seat.boost = drop ? 0.6 : 0
+  seat.boost = 0
+  seat.dive = drop ? launch(slots[index]!) : null
   drawAvatar(index, fan.avatar)
   filled = MAX
   bodies.count = heads.count = MAX
@@ -216,6 +262,8 @@ watch(() => props.seed, (fans) => {
 }, { immediate: true })
 
 const dummy = new Object3D()
+const xAxis = new Vector3(1, 0, 0)
+const zAxis = new Vector3(0, 0, 1)
 const { onBeforeRender } = useLoop()
 onBeforeRender(({ delta }) => {
   const dt = Math.min(delta, 0.05)
@@ -234,25 +282,41 @@ onBeforeRender(({ delta }) => {
       heads.setMatrixAt(i, dummy.matrix)
       continue
     }
-    // Falling in after a vote.
-    if (seat.y > GROUND || seat.vy > 0) {
-      seat.vy -= 14 * dt
-      seat.y = Math.max(GROUND, seat.y + seat.vy * dt)
-      if (seat.y === GROUND) seat.vy = 0
-    }
     seat.boost = Math.max(0, seat.boost - dt * 0.9)
-    // Bounce with the bass while the song plays; a gentle sway otherwise.
-    const beat = Math.max(0, Math.sin(clock * seat.rate + seat.phase))
-    const hop = calm ? 0 : beat * (0.03 + drive * 0.32) + seat.boost * beat * 0.5
     const sway = Math.sin(clock * 1.3 + seat.phase) * (calm ? 0.02 : 0.05)
-    dummy.position.set(spot.x + sway, seat.y + hop, spot.z)
-    dummy.rotation.set(0, Math.PI + sway * 2, sway)
-    dummy.scale.setScalar(1)
-    dummy.updateMatrix()
-    bodies.setMatrixAt(i, dummy.matrix)
-    dummy.position.y += 1.1
-    dummy.updateMatrix()
-    heads.setMatrixAt(i, dummy.matrix)
+    const dive = seat.dive
+    if (dive) {
+      dive.t += dt
+      const p = Math.min(1, dive.t / dive.duration)
+      const turn = p * p * (3 - 2 * p)
+      dummy.position.set(
+        dive.x + (spot.x - dive.x) * p,
+        dive.y + (GROUND - dive.y) * p + 4 * dive.apex * p * (1 - p),
+        dive.z + (spot.z - dive.z) * p,
+      )
+      dummy.rotation.set(0, Math.PI, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      // Flip around the body's middle, not its feet.
+      spin.makeRotationAxis(dive.axis === 'x' ? xAxis : zAxis, dive.flips * Math.PI * 2 * turn)
+      twirl.makeRotationY(dive.twirl * Math.PI * 2 * turn)
+      bodyMatrix.copy(dummy.matrix).multiply(pivotUp).multiply(twirl).multiply(spin).multiply(pivotDown)
+      if (p >= 1) {
+        seat.dive = null
+        catchDiver(i)
+      }
+    } else {
+      // Bounce with the bass while the song plays; a gentle sway otherwise.
+      const beat = Math.max(0, Math.sin(clock * seat.rate + seat.phase))
+      const hop = calm ? 0 : beat * (0.03 + drive * 0.32) + seat.boost * beat * 0.5
+      dummy.position.set(spot.x + sway, GROUND + hop, spot.z)
+      dummy.rotation.set(0, Math.PI + sway * 2, sway)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      bodyMatrix.copy(dummy.matrix)
+    }
+    bodies.setMatrixAt(i, bodyMatrix)
+    heads.setMatrixAt(i, headMatrix.copy(bodyMatrix).multiply(headOffset))
   }
   bodies.instanceMatrix.needsUpdate = true
   heads.instanceMatrix.needsUpdate = true
