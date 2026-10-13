@@ -3,6 +3,9 @@ import { onBeforeUnmount, watch } from 'vue'
 import { useLoop } from '@tresjs/core'
 import {
   BoxGeometry,
+  Group,
+  Mesh,
+  RepeatWrapping,
   CanvasTexture,
   Color,
   DynamicDrawUsage,
@@ -17,6 +20,7 @@ import {
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { LANE_COLORS, stageClock } from '#shared/stage/clock'
 import type { Fan } from '#shared/stage/types'
+import { shadeFaces } from '#shared/stage/formShade'
 
 // The mosh pit: one voxel fan per voter, standing in the dark either side of
 // the highway so the fretboard runs through the crowd. Heads wear the voter's
@@ -109,7 +113,9 @@ const bodyGeo = mergeGeometries([
   block(0.1, 0.32, 0.1, -0.24, 0.72),
   block(0.1, 0.32, 0.1, 0.24, 0.72),
 ])!
-const bodyMat = new MeshStandardMaterial({ roughness: 0.75, metalness: 0 })
+// Faceted like the fretboard so lit tops read against the dark backdrop, and a
+// little self-light in the shirt color so bodies never sink into the background.
+const bodyMat = shadeFaces(new MeshStandardMaterial({ roughness: 0.7, metalness: 0, emissive: '#2c2348', emissiveIntensity: 0.6 }))
 const bodies = new InstancedMesh(bodyGeo, bodyMat, MAX)
 
 const headGeo = new BoxGeometry(0.32, 0.32, 0.32)
@@ -135,7 +141,44 @@ for (const mesh of [bodies, heads]) {
 }
 const shirt = new Color()
 // Dark shirts in the fret colors: the faces carry the crowd, not the bodies.
-seats.forEach((seat, i) => bodies.setColorAt(i, shirt.set(LANE_COLORS[seat.shirt]!).multiplyScalar(0.3)))
+seats.forEach((seat, i) => bodies.setColorAt(i, shirt.set(LANE_COLORS[seat.shirt]!).multiplyScalar(0.6)))
+
+// A riser under each wedge: dark pixel tiles and a lighter front lip.
+const risers = new Group()
+const tiles = document.createElement('canvas')
+tiles.width = tiles.height = 16
+const tile = tiles.getContext('2d')!
+tile.fillStyle = '#14080c'
+tile.fillRect(0, 0, 16, 16)
+tile.fillStyle = '#241c3d'
+tile.fillRect(1, 1, 7, 7)
+tile.fillRect(9, 9, 6, 6)
+tile.fillStyle = '#1e1733'
+tile.fillRect(9, 1, 6, 7)
+tile.fillRect(1, 9, 7, 6)
+const tileMap = new CanvasTexture(tiles)
+tileMap.magFilter = tileMap.minFilter = NearestFilter
+tileMap.generateMipmaps = false
+tileMap.colorSpace = SRGBColorSpace
+tileMap.wrapS = tileMap.wrapT = RepeatWrapping
+const deckMat = shadeFaces(new MeshStandardMaterial({ map: tileMap, roughness: 0.85, metalness: 0.05 }))
+const lipMat = shadeFaces(new MeshStandardMaterial({ color: '#2c2348', roughness: 0.6 }))
+const riserParts: BoxGeometry[] = []
+const DECK = { inner: 2.35, outer: 11.5, near: 3.2, far: 13.2, height: 0.3 }
+for (const side of [-1, 1]) {
+  const width = DECK.outer - DECK.inner
+  const depth = DECK.far - DECK.near
+  const deckGeo = new BoxGeometry(width, DECK.height, depth)
+  tileMap.repeat.set(width / 0.8, depth / 0.8)
+  const deck = new Mesh(deckGeo, deckMat)
+  deck.position.set(side * (DECK.inner + width / 2), GROUND - DECK.height / 2, DECK.near + depth / 2)
+  // The front edge faces the audience: a lighter lip.
+  const lipGeo = new BoxGeometry(width, DECK.height + 0.06, 0.16)
+  const lip = new Mesh(lipGeo, lipMat)
+  lip.position.set(side * (DECK.inner + width / 2), GROUND - DECK.height / 2 + 0.03, DECK.near - 0.08)
+  risers.add(deck, lip)
+  riserParts.push(deckGeo, lipGeo)
+}
 
 let filled = 0
 let clock = 0
@@ -217,6 +260,8 @@ onBeforeRender(({ delta }) => {
 })
 
 onBeforeUnmount(() => {
+  for (const part of riserParts) part.dispose()
+  for (const item of [deckMat, lipMat, tileMap]) item.dispose()
   bodyGeo.dispose()
   headGeo.dispose()
   bodyMat.dispose()
@@ -226,6 +271,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <primitive :object="risers" />
   <primitive :object="bodies" />
   <primitive :object="heads" />
 </template>
