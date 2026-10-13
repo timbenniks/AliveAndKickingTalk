@@ -2,7 +2,7 @@ name: App checks
 on:
   pull_request:
   push:
-    branches: [main, modernize/nuxt-4]
+    branches: [main, talk-2024]
 jobs:
   check:
     runs-on: ubuntu-latest
