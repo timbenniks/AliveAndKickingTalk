@@ -5,7 +5,51 @@
   --color-black: #000;
   --color-white: #fff;
   --color-grey: #e5e5e5;
-  --font-sans: 'Lato', sans-serif;
+}
+
+/* Static: components read these as CSS variables, so Tailwind must always emit them. */
+@theme static {
+  /* Rock Anthem: a rig on a dark stage. */
+  --color-night: #100c1c;   /* stage haze */
+  --color-tolex: #1e1733;   /* amp covering, panel surfaces */
+  --color-tolex-hi: #2c2348;
+  --color-bone: #f3ead6;    /* gig-poster paper, body ink */
+  --color-dust: #a99fbb;    /* secondary ink */
+  --color-gold: #ffc531;    /* amp piping, primary action */
+  --color-ink: #14080c;     /* hard pixel shadow */
+
+  /* Fret colors, one per string/lane. Meaning only, never decoration. */
+  --color-fret-1: #3dff45;
+  --color-fret-2: #ff2d2d;
+  --color-fret-3: #ffe14a;
+  --color-fret-4: #3aa6ff;
+  --color-fret-5: #ff8c1a;
+  --color-fret-6: #d15cff;
+
+  --font-sans: 'Barlow Semi Condensed', sans-serif;
+  --font-pixel: 'Jersey 10', 'Barlow Semi Condensed', sans-serif;
+  --font-caps: 'Silkscreen', monospace;
+}
+
+/* One pixel of the art style. Borders, shadows and steps snap to it. */
+:root { --px: 4px; }
+
+/* A pixel frame: notched corners and a stepped voxel extrude down-right. */
+@utility px-frame {
+  --edge: var(--color-bone);
+  --depth: var(--px);
+  margin: var(--px);
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--edge),
+    0 var(--px) 0 0 var(--edge),
+    calc(-1 * var(--px)) 0 0 0 var(--edge),
+    var(--px) 0 0 0 var(--edge),
+    var(--depth) calc(var(--px) + var(--depth)) 0 0 var(--color-ink),
+    calc(var(--px) + var(--depth)) var(--depth) 0 0 var(--color-ink);
+}
+
+@utility pixelated {
+  image-rendering: pixelated;
 }
 
 @layer base {

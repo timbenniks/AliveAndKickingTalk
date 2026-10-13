@@ -17,6 +17,11 @@ export default defineNuxtConfig({
   },
   modules: ['@nuxtjs/supabase', '@pinia/nuxt', '@nuxt/fonts', '@nuxt/eslint', '@tresjs/nuxt'],
   css: ['~/assets/css/tailwind.css'],
+  components: [
+    { path: '~/components/ui', pathPrefix: false },
+    { path: '~/components/stage', pathPrefix: false },
+    '~/components',
+  ],
   vite: { plugins: [tailwindcss()], optimizeDeps: { include: ['three'] } },
 
   supabase: {
@@ -24,7 +29,7 @@ export default defineNuxtConfig({
     redirectOptions: {
       login: '/login',
       callback: '/confirm',
-      exclude: ['/share/*', '/live', '/live/*', '/band', '/stats', '/practise', '/practise/*', '/terms-of-service', '/privacy-policy'],
+      exclude: ['/styleguide', '/share/*', '/live', '/live/*', '/band', '/stats', '/practise', '/practise/*', '/terms-of-service', '/privacy-policy'],
     }
   },
 
@@ -40,7 +45,15 @@ export default defineNuxtConfig({
     }
   },
 
-  fonts: { families: [{ name: 'Lato', provider: 'google', weights: [100, 300, 400, 700, 900] }] },
+  fonts: {
+    families: [
+      // Lato stays until every page is restyled (Phase 4).
+      { name: 'Lato', provider: 'google', weights: [100, 300, 400, 700, 900] },
+      { name: 'Barlow Semi Condensed', provider: 'google', weights: [400, 500, 700] },
+      { name: 'Jersey 10', provider: 'google', weights: [400] },
+      { name: 'Silkscreen', provider: 'google', weights: [400, 700] },
+    ],
+  },
   app: {
     head: {
       title: "Alive and Kicking - A Vue into Rock & Roll",
