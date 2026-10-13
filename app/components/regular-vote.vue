@@ -2,26 +2,16 @@
 import { storeToRefs } from "pinia";
 
 const songStore = useSongStore();
-const { allSongs, votedAmount, maxVotes, voting } = storeToRefs(songStore);
+const { allSongs, votedAmount, maxVotes, savingVotes } = storeToRefs(songStore);
 
 // Fret colors mark the songs you voted for: one color per song, in setlist order.
 const fretFor = (index: number) => (index % 6) + 1;
 const full = computed(() => votedAmount.value >= maxVotes.value);
-const pending = ref("");
 
-// The whole row is the vote toggle. The order never changes while you tap.
-async function toggle(songId: string, voted: boolean) {
-  if (voting.value || (!voted && full.value)) return;
-  pending.value = songId;
-  try {
-    if (voted) await songStore.downvote(songId);
-    else {
-      await songStore.upvote(songId);
-      navigator.vibrate?.(12);
-    }
-  } finally {
-    pending.value = "";
-  }
+// The row flips the moment you tap; the store saves it in the background.
+function toggle(songId: string, voted: boolean) {
+  if (!voted && full.value) return;
+  if (songStore.toggleVote(songId) && !voted) navigator.vibrate?.(12);
 }
 
 function label(song: { song: string; artist: string; voted: boolean }) {
@@ -40,7 +30,7 @@ function label(song: { song: string; artist: string; voted: boolean }) {
         <span class="vote-pips" aria-hidden="true">
           <i v-for="slot in maxVotes" :key="slot" :class="{ on: slot <= votedAmount }" />
         </span>
-        <p class="vote-meter-text" aria-live="polite">
+        <p class="vote-meter-text" aria-live="polite" :class="{ 'is-saving': savingVotes }">
           <template v-if="full">All {{ maxVotes }} votes used. Tap a pick to free one.</template>
           <template v-else-if="votedAmount">{{ votedAmount }} of {{ maxVotes }} votes used</template>
           <template v-else>Pick up to {{ maxVotes }} songs</template>
@@ -61,7 +51,7 @@ function label(song: { song: string; artist: string; voted: boolean }) {
           class="vote-toggle"
           :aria-pressed="song.voted"
           :aria-label="label(song)"
-          :aria-disabled="voting || (!song.voted && full) ? 'true' : undefined"
+          :aria-disabled="!song.voted && full ? 'true' : undefined"
           @click="toggle(song.songId, song.voted)"
         >
           <img
@@ -76,8 +66,7 @@ function label(song: { song: string; artist: string; voted: boolean }) {
             <span class="vote-artist">{{ song.artist }}</span>
           </span>
           <span class="vote-box" aria-hidden="true">
-            <loader v-if="pending === song.songId" />
-            <svg v-else-if="song.voted" viewBox="0 0 7 6" shape-rendering="crispEdges">
+            <svg v-if="song.voted" viewBox="0 0 7 6" shape-rendering="crispEdges">
               <path d="M6 0h1v1h-1zM5 1h2v1h-2zM0 2h1v1h-1zM4 2h2v1h-2zM0 3h2v1h-2zM3 3h2v1h-2zM1 4h3v1h-3zM2 5h1v1h-1z" fill="currentColor" />
             </svg>
             <svg v-else viewBox="0 0 8 8" shape-rendering="crispEdges">
@@ -127,6 +116,9 @@ function label(song: { song: string; artist: string; voted: boolean }) {
 .vote-pips i.on { background: var(--color-gold); animation: pip-in 180ms steps(3); }
 .vote-meter-text { font-size: 1rem; color: var(--color-dust); }
 .vote-meter.is-full .vote-meter-text { color: var(--color-bone); }
+/* A quiet blink on the count while votes save in the background. */
+.vote-meter-text.is-saving::after { content: " · saving"; color: var(--color-gold); animation: saving 0.8s steps(2) infinite; }
+@keyframes saving { 50% { opacity: 0.3; } }
 
 .vote-list { display: grid; gap: 0.75rem; padding: 1rem max(1rem, calc((100% - 560px) / 2)) 0; }
 
@@ -188,7 +180,7 @@ function label(song: { song: string; artist: string; voted: boolean }) {
 @keyframes pip-in { from { transform: scale(1.6); } }
 @keyframes box-in { 50% { transform: scale(1.25); } }
 @media (prefers-reduced-motion: reduce) {
-  .vote-pips i.on, .vote-row.is-voted .vote-box { animation: none; }
+  .vote-pips i.on, .vote-row.is-voted .vote-box, .vote-meter-text.is-saving::after { animation: none; }
   .vote-toggle:active:not([aria-disabled="true"]) { transform: none; }
 }
 </style>

@@ -29,3 +29,45 @@ export async function performVote(state: { voting: boolean; errorMessage: string
     state.voting = false;
   }
 }
+
+// Votes are shown the moment you tap and saved in the background, one after
+// another, so quick taps never get dropped. When the queue drains it resyncs
+// once from the database, which also undoes any vote that failed to save.
+export function createVoteQueue(handlers: {
+  write: (songId: string, on: boolean) => Promise<unknown>
+  resync: () => Promise<unknown>
+  onError: (error: unknown) => void
+  onBusy?: (busy: boolean) => void
+}) {
+  const pending: Array<{ songId: string; on: boolean }> = []
+  let running: Promise<void> | null = null
+
+  async function drain() {
+    handlers.onBusy?.(true)
+    let failed = false
+    while (pending.length) {
+      const { songId, on } = pending.shift()!
+      try {
+        await handlers.write(songId, on)
+      } catch (error) {
+        failed = true
+        handlers.onError(error)
+      }
+    }
+    try {
+      await handlers.resync()
+    } catch (error) {
+      if (!failed) handlers.onError(error)
+    }
+    running = null
+    handlers.onBusy?.(false)
+  }
+
+  return {
+    push(songId: string, on: boolean) {
+      pending.push({ songId, on })
+      running ??= drain()
+      return running
+    },
+  }
+}

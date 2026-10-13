@@ -1,7 +1,9 @@
-import { performVote } from '#shared/utils/performance'
+import { createVoteQueue, performVote } from '#shared/utils/performance'
 import { defineStore } from 'pinia'
 import type { Song, Database, ConfigValue, PlayedSong, LatestVote } from '../types'
 import { log } from '../helpers'
+
+let voteQueue: ReturnType<typeof createVoteQueue> | null = null
 
 async function getSongs() {
   return await $fetch<Song[]>('/api/songs')
@@ -16,6 +18,7 @@ export const useSongStore = defineStore('song-store', {
       songs: [] as Song[],
       playedSongs: [] as PlayedSong[],
       voting: false,
+      savingVotes: false,
       config: [] as ConfigValue[],
       errorMessage: "",
       latestVote: [] as LatestVote[]
@@ -124,76 +127,46 @@ export const useSongStore = defineStore('song-store', {
       })
     },
 
-    async upvote(songId: string) {
-      return performVote(this, async () => {
-        log('[async][action] upvote', songId)
-
-        const { voteTimeout } = useRuntimeConfig().public
-
-
-        const client = useSupabaseClient<Database>()
-        const user = useSupabaseUser();
-
-        if (!user.value) {
-          throw new Error("Sign in to vote")
-        }
-
-        const { error: alreadyVotedError, data: alreadyVoted } = await client
-          .from('votes')
-          .select('userid, songid')
-          .eq('songid', songId)
-          .eq('userid', user.value?.sub)
-          .maybeSingle()
-
-        if (alreadyVotedError) throw alreadyVotedError;
-        if (!alreadyVoted) {
-          const { error: insertError } = await client
-            .from('votes')
-            .insert({
-              userid: user.value?.sub,
-              email: user.value?.email || null,
-              user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata?.picture || '',
-              songid: songId
-            })
-          if (insertError) throw insertError;
-        }
-
-
-        await this.setVotedState();
-        await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
-
+    // Instant vote toggle for the song list: flips on screen now, saves in the
+    // background through a queue, then resyncs once from the database.
+    toggleVote(songId: string) {
+      const song = this.songs.find(item => item.songId === songId);
+      if (!song) return false;
+      const on = !song.voted;
+      if (on && this.songs.filter(item => item.voted).length >= this.voteMax) return false;
+      song.voted = on;
+      voteQueue ??= createVoteQueue({
+        write: (id, vote) => this.writeVote(id, vote),
+        resync: () => this.setVotedState(),
+        onError: () => { this.errorMessage = 'Your vote could not be saved. Check your connection and try again.'; },
+        onBusy: (busy) => { this.savingVotes = busy; },
       });
+      void voteQueue.push(songId, on);
+      return true;
     },
 
-    async downvote(songId: string) {
-      return performVote(this, async () => {
-        log('[async][action] downvote', songId)
-
-        const { voteTimeout } = useRuntimeConfig().public
-
-        const client = useSupabaseClient<Database>()
-        const user = useSupabaseUser();
-
-        if (!user.value) {
-          throw new Error("Sign in to vote")
-        }
-
-        const { error: deleteVoteError } = await client
-          .from('votes')
-          .delete()
-          .eq('userid', user.value?.sub)
-          .eq('songid', songId)
-
-        if (deleteVoteError) {
-          this.errorMessage = 'Error [async][action] downvote: deleteVoteError'
-          throw createError('[async][action] downvote: deleteVoteError')
-        }
-
-        await this.setVotedState();
-        await new Promise(resolve => setTimeout(resolve, parseInt(voteTimeout)));
-
-
+    // One vote write, no waiting or resync. The queue calls this.
+    async writeVote(songId: string, on: boolean) {
+      const client = useSupabaseClient<Database>();
+      const user = useSupabaseUser();
+      if (!user.value) throw new Error("Sign in to vote");
+      if (!on) {
+        const { error } = await client.from('votes').delete().eq('userid', user.value.sub).eq('songid', songId);
+        if (error) throw error;
+        return;
+      }
+      // There is no unique constraint on votes yet, so check before inserting.
+      const { error: lookupError, data: existing } = await client
+        .from('votes').select('songid').eq('songid', songId).eq('userid', user.value.sub).maybeSingle();
+      if (lookupError) throw lookupError;
+      if (existing) return;
+      const { error } = await client.from('votes').insert({
+        userid: user.value.sub,
+        email: user.value.email || null,
+        user_avatar: user.value.user_metadata?.avatar_url || user.value.user_metadata?.picture || '',
+        songid: songId,
       });
+      if (error) throw error;
     },
 
     async mashupVote(songId: string, spot: number) {

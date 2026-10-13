@@ -39,7 +39,6 @@ export default defineNuxtConfig({
     plausibleKey: process.env.NUXT_PLAUSIBLE_KEY,
     public: {
       maxVotes: process.env.NUXT_MAX_VOTES || '5',
-      voteTimeout: process.env.NUXT_VOTE_TIMEOUT || "500",
       conference: process.env.NUXT_CONFERENCE || '',
       showVolume: process.env.NUXT_SHOW_VOLUME || 'false',
     }

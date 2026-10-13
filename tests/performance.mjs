@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { presetAtTime, buildSetlist, performVote } from '../shared/utils/performance.ts';
+import { presetAtTime, buildSetlist, performVote, createVoteQueue } from '../shared/utils/performance.ts';
 
 const presets = [{ name: 'Clean', at: 0, pc: 0 }, { name: 'Lead', at: 10, pc: 5 }];
 assert.equal(presetAtTime([], 0), undefined);
@@ -25,4 +25,26 @@ assert.equal(state.errorMessage, '');
 assert.equal(state.voting, false);
 state.voting = true;
 assert.equal(await performVote(state, async () => assert.fail('duplicate request')), false);
-console.log('Preset boundaries, setlist ordering and voting recovery checks passed');
+// Vote queue: writes run in tap order, one at a time, then one resync.
+const log = [];
+let inFlight = 0;
+const queue = createVoteQueue({
+  write: async (songId, on) => {
+    inFlight += 1;
+    assert.equal(inFlight, 1); // Never two writes at once.
+    await new Promise(resolve => setTimeout(resolve, 5));
+    if (songId === 'broken') { inFlight -= 1; throw Error('network'); }
+    log.push(`${on ? '+' : '-'}${songId}`);
+    inFlight -= 1;
+  },
+  resync: async () => { log.push('resync'); },
+  onError: () => { log.push('error'); },
+});
+queue.push('a', true);
+queue.push('b', true);
+await queue.push('a', false);
+assert.deepEqual(log, ['+a', '+b', '-a', 'resync']);
+log.length = 0;
+await queue.push('broken', true);
+assert.deepEqual(log, ['error', 'resync']); // A failed save still resyncs, which undoes it on screen.
+console.log('Preset boundaries, setlist ordering, voting recovery and vote queue checks passed');
