@@ -19,24 +19,30 @@ watch(preset, sendPreset);
 </script>
 
 <template>
-  <div class="relative left-12 inline-block mb-4">
-    <p class="text-grey uppercase font-light text-2xl">Amp preset:</p>
-    <p class="font-black uppercase text-3xl">{{ preset?.name || 'No preset scheduled' }}</p>
-    <label class="block text-sm mt-2">
-      MIDI output
-      <select :value="outputId" class="bg-black text-white border p-1 ml-2" @change="selectOutput(($event.target as HTMLSelectElement).value)">
+  <div class="rig-midi">
+    <p class="rig-field"><span>Amp preset</span></p>
+    <p class="rig-preset">{{ preset?.name || 'No preset scheduled' }}</p>
+    <label class="rig-field">
+      <span>Amp MIDI output</span>
+      <select :value="outputId" @change="selectOutput(($event.target as HTMLSelectElement).value)">
         <option value="">Select output</option>
         <option v-for="output in outputs" :key="output.id" :value="output.id">{{ output.name }}</option>
       </select>
     </label>
-    <label class="block text-sm mt-2">
-      Guitar MIDI input
-      <select :value="inputId" class="bg-black text-white border p-1 ml-2" @change="selectInput(($event.target as HTMLSelectElement).value)">
+    <label class="rig-field">
+      <span>Guitar MIDI input</span>
+      <select :value="inputId" @change="selectInput(($event.target as HTMLSelectElement).value)">
         <option value="">None</option>
         <option v-for="input in inputs" :key="input.id" :value="input.id">{{ input.name }}</option>
       </select>
     </label>
-    <p role="status" class="text-sm mt-1">{{ status }}</p>
-    <button v-if="!ready || !outputId" class="underline text-sm" @click="connect">Reconnect MIDI</button>
+    <p role="status" class="rig-status">{{ status }}</p>
+    <PixelButton v-if="!ready || !outputId" variant="secondary" @click="connect">Reconnect MIDI</PixelButton>
   </div>
 </template>
+
+<style>
+.rig-midi { display: grid; gap: 0.75rem; justify-items: start; }
+.rig-midi .rig-field { width: 100%; }
+.rig-preset { font-family: var(--font-pixel); font-size: 1.75rem; line-height: 1; margin-top: -0.5rem; }
+</style>

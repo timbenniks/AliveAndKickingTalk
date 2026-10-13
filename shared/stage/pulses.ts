@@ -32,6 +32,15 @@ export function bandLevels(freq: ArrayLike<number>, bins: LaneBins = LANE_BINS):
   })
 }
 
+// Loudest bin per zone. A note is a narrow peak; averaging a wide zone hides it.
+export function peakLevels(freq: ArrayLike<number>, bins: LaneBins): number[] {
+  return bins.map(([from, to]) => {
+    let peak = 0
+    for (let i = Math.max(0, from); i < Math.min(freq.length, to); i++) peak = Math.max(peak, freq[i] ?? 0)
+    return peak / 255
+  })
+}
+
 export function risingLanes(current: number[], baseline: number[], now: number, lastAt: number[], cooldown = 0.13): number[] {
   const hit: number[] = []
   for (let lane = 0; lane < current.length; lane++) {

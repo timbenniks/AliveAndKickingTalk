@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { activeCue, chapterMarks, presetCues } from '../shared/stage/timeline.ts';
-import { bandLevels, guitarLaneBins, risingLanes } from '../shared/stage/pulses.ts';
+import { bandLevels, guitarLaneBins, peakLevels, risingLanes } from '../shared/stage/pulses.ts';
 import { themeForPreset } from '../shared/stage/themes.ts';
 import { styleById } from '../shared/stage/styles.ts';
 import { LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
@@ -66,5 +66,10 @@ const lowE = new Array(2048).fill(0);
 lowE[Math.round(82 / (48000 / 4096))] = 255;
 assert.ok(bandLevels(lowE, zones)[0] > 0);
 assert.equal(bandLevels(lowE, zones)[5], 0);
+// A single note in a wide zone still reads at full strength.
+const highE = new Array(2048).fill(0);
+highE[Math.round(329.6 / (48000 / 4096))] = 255;
+assert.equal(peakLevels(highE, zones)[3], 1);
+assert.ok(bandLevels(highE, zones)[3] < 0.2);
 
 console.log('Stage cue, theme and six-lane pulse checks passed');

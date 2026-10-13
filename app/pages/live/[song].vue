@@ -13,9 +13,11 @@ await songStore.getConfigValues();
 
 const selectedSong = songStore.getSongById(song as string);
 if (!selectedSong) throw createError({ statusCode: 404, statusMessage: "Song not found" });
-await songStore.setConfigValue("active_song", song as string);
+// Only the host may move the show along. Anyone else still gets the stage.
+const isHost = await songStore.setConfigValue("active_song", song as string)
+  .then(() => true, () => { songStore.errorMessage = ""; return false; });
 
-if (spot) {
+if (spot && isHost) {
   await songStore.setPlayedSong(song as string, Number(spot));
 }
 
@@ -37,7 +39,11 @@ const mashupMode = computed(() => {
 
 <template>
   <div>
-  <p role="status" class="fixed top-2 right-2 z-50 bg-black/80 px-2 text-xs">{{ realtimeStatus }}</p>
-  <song-player :song="selectedSong" :mashup-mode="mashupMode" />
+    <p role="status" class="live-status">{{ realtimeStatus }}<template v-if="!isHost"> · Not signed in as host: this screen does not change the active song</template></p>
+    <stage-player :song="selectedSong" :mashup-mode="mashupMode" live />
   </div>
 </template>
+
+<style>
+.live-status { position: fixed; top: 0.5rem; right: 0.5rem; z-index: 50; font-family: var(--font-caps); font-size: 0.6rem; text-transform: uppercase; color: var(--color-dust); }
+</style>

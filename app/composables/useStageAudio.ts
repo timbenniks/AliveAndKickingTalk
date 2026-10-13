@@ -1,5 +1,5 @@
 import { stageClock } from '#shared/stage/clock';
-import { bandLevels, guitarLaneBins, risingLanes, type LaneBins } from '#shared/stage/pulses';
+import { bandLevels, guitarLaneBins, peakLevels, risingLanes, type LaneBins } from '#shared/stage/pulses';
 import type { AnalysisState, LaneSource } from '#shared/stage/types';
 
 // One engine per page: one AudioContext, one MediaElementSource for the song
@@ -30,6 +30,7 @@ let pulseFreq = new Uint8Array(0);
 let guitarFreq = new Uint8Array(0);
 let raf = 0;
 let users = 0;
+const tickHandlers = new Set<() => void>();
 let heardSignal = false;
 const baseline = [0, 0, 0, 0, 0, 0];
 const lastHit = [-10, -10, -10, -10, -10, -10];
@@ -140,6 +141,10 @@ async function startGuitar(deviceId = guitarDeviceId.value) {
     if (ctx.state === 'suspended') await ctx.resume();
     guitarSource = ctx.createMediaStreamSource(guitarStream);
     guitarAnalyser = analyser(ctx, 4096, 0.3);
+    // A narrow dB window: on the default -100 dB floor, FFT leakage from one
+    // note lights its neighbours too. A DI guitar sits well above -60 dB.
+    guitarAnalyser.minDecibels = -60;
+    guitarAnalyser.maxDecibels = -10;
     guitarSource.connect(guitarAnalyser);
     guitarFreq = new Uint8Array(guitarAnalyser.frequencyBinCount);
     guitarBins = guitarLaneBins(ctx.sampleRate, guitarAnalyser.fftSize);
@@ -223,13 +228,14 @@ function tick() {
     else if (audioTime > 3 && !heardSignal) setAnalysis('unavailable');
   } else if (guitarLive && guitarAnalyser) {
     guitarAnalyser.getByteFrequencyData(guitarFreq);
-    pushAudioHits(bandLevels(guitarFreq, guitarBins), now);
+    pushAudioHits(peakLevels(guitarFreq, guitarBins), now);
     setAnalysis('live');
   } else if (laneSource.value !== 'midi') {
     for (let i = 0; i < stageClock.lanes.length; i++) stageClock.lanes[i] = (stageClock.lanes[i] ?? 0) * 0.8;
   }
   // Nobody drained the queue (no stage mounted): keep it bounded.
   if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
+  for (const handler of tickHandlers) handler();
 
   raf = requestAnimationFrame(tick);
 }
@@ -253,6 +259,18 @@ function teardown() {
   setAnalysis('idle');
 }
 
+function seek(seconds: number) {
+  if (!songElement || !Number.isFinite(seconds)) return;
+  const max = Number.isFinite(songElement.duration) ? songElement.duration : seconds;
+  songElement.currentTime = Math.min(Math.max(0, seconds), max);
+}
+
+// Per-frame hook for HUD pieces that follow the clock without Vue reactivity.
+function onTick(handler: () => void) {
+  tickHandlers.add(handler);
+  onUnmounted(() => tickHandlers.delete(handler));
+}
+
 export function useStageAudio() {
   onMounted(() => {
     if (users++ > 0) return;
@@ -268,6 +286,6 @@ export function useStageAudio() {
 
   return {
     laneSource, analysis, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
-    registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote,
+    registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote, onTick, seek,
   };
 }
