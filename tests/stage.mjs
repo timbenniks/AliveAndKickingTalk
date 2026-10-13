@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import { activeCue, chapterMarks, presetCues } from '../shared/stage/timeline.ts';
+import { bandLevels, risingLanes } from '../shared/stage/pulses.ts';
+import { themeForPreset } from '../shared/stage/themes.ts';
+import { styleById } from '../shared/stage/styles.ts';
+import { LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
+
+const backInBlack = { songId: 'back_in_black', presets: [
+  { name: 'Stadium Rock', at: 0, pc: 2 }, { name: 'Face Bleeding Solo', at: 65, pc: 3 }, { name: 'Stadium Rock', at: 106, pc: 2 },
+] };
+const jungle = { songId: 'welcome_to_the_jungle', presets: [
+  { name: 'Top Hat Solo', at: 0, pc: 3 }, { name: 'Stadium Rock', at: 31.5, pc: 2 },
+  { name: 'Top Hat Solo', at: 65, pc: 3 }, { name: 'Stadium Rock', at: 83, pc: 2 },
+] };
+const trooper = { songId: 'the_trooper', presets: [
+  { name: 'Up the irons!', at: 0, pc: 4 }, { name: 'The Troops', at: 14, pc: 5 }, { name: 'Up the Irons!', at: 98, pc: 4 },
+] };
+
+// Cues follow the amp presets, including seeks and unsorted input.
+const cues = presetCues(backInBlack);
+assert.equal(activeCue(cues, -1), undefined);
+assert.equal(activeCue(cues, 0)?.presetName, 'Stadium Rock');
+assert.equal(activeCue(cues, 64.9)?.at, 0);
+assert.equal(activeCue(cues, 65)?.presetName, 'Face Bleeding Solo');
+assert.equal(activeCue(cues, 105)?.programChange, 3);
+assert.equal(activeCue([...cues].reverse(), 110)?.at, 106);
+assert.deepEqual(cues.map(cue => cue.theme), ['neon-stadium', 'fire-solo', 'neon-stadium']);
+assert.deepEqual(cues.map(cue => cue.style), ['stadium-smoke', 'solo-flames', 'stadium-smoke']);
+assert.deepEqual(chapterMarks({ cues, sections: [] }).map(mark => [mark.label, mark.at, mark.detail]), [
+  ['Stadium Rock', 0, 'Program 2'], ['Face Bleeding Solo', 65, 'Program 3'], ['Stadium Rock', 106, 'Program 2'],
+]);
+
+// Chapter overrides win over the preset name.
+const jungleCues = presetCues(jungle);
+assert.deepEqual(jungleCues.map(cue => cue.style), ['solo-flames', 'stadium-smoke', 'disco', 'iron-embers']);
+assert.deepEqual(jungleCues.map(cue => cue.theme), ['tophat-crimson', 'neon-stadium', 'funky-magenta', 'iron-march']);
+assert.ok(new Set(presetCues(trooper).map(cue => cue.theme)).size > 1);
+assert.equal(themeForPreset('Up the Irons!'), themeForPreset('Up the irons!'));
+assert.equal(themeForPreset('Not A Real Preset'), 'neon-stadium');
+
+// Six lanes, one per guitar string.
+assert.equal(LANE_X.length, 6);
+assert.equal(LANE_COLORS.length, 6);
+assert.equal(styleById('disco').gems.length, 6);
+
+// Lanes light from a rising band and stay quiet when nothing spikes.
+const freq = new Array(128).fill(0);
+for (let i = 1; i < 4; i++) freq[i] = 255;
+for (let i = 40; i < 90; i++) freq[i] = 200;
+const levels = bandLevels(freq);
+assert.equal(levels.length, 6);
+assert.ok(Math.abs(levels[0] - 1) < 0.01);
+assert.equal(levels[2], 0);
+assert.ok(levels[4] > 0.5);
+const last = [-10, -10, -10, -10, -10, -10];
+assert.deepEqual(risingLanes([0.5, 0.12, 0.12, 0.12, 0.12, 0.4], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, last), [0, 5]);
+assert.deepEqual(risingLanes([0.5, 0.12, 0.12, 0.12, 0.12, 0.4], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2.05, [2, -10, -10, -10, -10, 2]), []);
+assert.deepEqual(risingLanes([0.05, 0.05, 0.05, 0.05, 0.05, 0.05], [0, 0, 0, 0, 0, 0], 1, last), []);
+
+console.log('Stage cue, theme and six-lane pulse checks passed');

@@ -1,0 +1,55 @@
+{
+  "$comment": "Invented stage looks for the lab. Preset names and timestamps stay factual. The style on each chapter is art direction, not a verse or chorus label.",
+  "styles": {
+    "solo-flames": {
+      "effect": "flames",
+      "theme": "tophat-crimson",
+      "gems": ["#ffe14a", "#ff2d2d", "#ff8c1a", "#ff542b", "#fff1c9", "#ff4d8d"]
+    },
+    "stadium-smoke": {
+      "effect": "smoke",
+      "theme": "neon-stadium",
+      "gems": ["#7dffb3", "#5aa7ff", "#c23aff", "#d7f7ff", "#3877ff", "#f4f1e8"]
+    },
+    "disco": {
+      "effect": "disco",
+      "theme": "funky-magenta",
+      "gems": ["#ff2bd6", "#7af0ff", "#ffe14a", "#3dff45", "#ff8c1a", "#b026ff"]
+    },
+    "iron-embers": {
+      "effect": "embers",
+      "theme": "iron-march",
+      "gems": ["#ffd15c", "#ff2a2a", "#f2c14e", "#ff7a32", "#f4f1e8", "#ff542b"]
+    },
+    "ice-mist": {
+      "effect": "mist",
+      "theme": "soaring-ice",
+      "gems": ["#d7f7ff", "#9fd7ff", "#f4f1e8", "#6ecbff", "#c9e7ff", "#7af0ff"]
+    }
+  },
+  "presetStyles": {
+    "Top Hat Solo": "solo-flames",
+    "Stadium Rock": "stadium-smoke",
+    "Face Bleeding Solo": "solo-flames",
+    "Metal": "iron-embers",
+    "Billie's Thrash": "solo-flames",
+    "Thrash Pop": "disco",
+    "Up the Irons!": "iron-embers",
+    "The Troops": "stadium-smoke",
+    "Phil X On Fire": "solo-flames",
+    "Sambora Original": "iron-embers",
+    "Joe's Funky Tone": "disco",
+    "Soaring Lead": "ice-mist",
+    "Eddie's Tone": "disco",
+    "Chuck 2.0": "ice-mist",
+    "Boogie Woogie": "disco"
+  },
+  "chapters": {
+    "welcome_to_the_jungle": [
+      { "at": 0, "style": "solo-flames" },
+      { "at": 31.5, "style": "stadium-smoke" },
+      { "at": 65, "style": "disco" },
+      { "at": 83, "style": "iron-embers" }
+    ]
+  }
+}

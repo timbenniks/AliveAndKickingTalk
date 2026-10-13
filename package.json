@@ -11,27 +11,31 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types tests/contentstack.mjs && node --experimental-strip-types tests/performance.mjs && node --experimental-strip-types tests/images.mjs"
+    "test": "node --experimental-strip-types tests/contentstack.mjs && node --experimental-strip-types tests/performance.mjs && node --experimental-strip-types tests/images.mjs && node --experimental-strip-types tests/stage.mjs"
   },
   "devDependencies": {
-    "nuxt": "4.6.0",
-    "@nuxtjs/supabase": "2.0.10",
-    "@nuxt/fonts": "0.14.0",
     "@nuxt/eslint": "1.17.0",
+    "@nuxt/fonts": "0.14.0",
+    "@nuxtjs/supabase": "2.0.10",
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/three": "0.186.0",
     "eslint": "10.12.0",
-    "typescript": "~5.9.3",
-    "vue-tsc": "3.3.12",
+    "nuxt": "4.6.1",
     "tailwindcss": "^4.1.0",
-    "@tailwindcss/vite": "^4.1.0"
+    "typescript": "~5.9.3",
+    "vue-tsc": "3.3.12"
   },
   "dependencies": {
     "@cloudinary-util/url-loader": "6.3.2",
     "@pinia/nuxt": "1.0.2",
+    "@tresjs/core": "5.9.3",
+    "@tresjs/nuxt": "5.7.3",
+    "@vue/devtools-api": "^8.1.5",
     "pinia": "4.0.3",
+    "three": "0.186.1",
     "vue": "3.5.43",
     "vue3-carousel": "0.19.0",
-    "webmidi": "3.3.1",
-    "@vue/devtools-api": "^8.1.5"
+    "webmidi": "3.3.1"
   },
   "type": "module"
 }

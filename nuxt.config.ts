@@ -15,9 +15,9 @@ export default defineNuxtConfig({
     '/terms-of-service': { prerender: true },
     '/privacy-policy': { prerender: true },
   },
-  modules: ['@nuxtjs/supabase', '@pinia/nuxt', '@nuxt/fonts', '@nuxt/eslint'],
+  modules: ['@nuxtjs/supabase', '@pinia/nuxt', '@nuxt/fonts', '@nuxt/eslint', '@tresjs/nuxt'],
   css: ['~/assets/css/tailwind.css'],
-  vite: { plugins: [tailwindcss()] },
+  vite: { plugins: [tailwindcss()], optimizeDeps: { include: ['three'] } },
 
   supabase: {
     types: '~~/shared/types/database.ts',
