@@ -52,8 +52,8 @@ if (share?.mashup) {
 const { conference } = useRuntimeConfig().public;
 
 const seoOptions: Parameters<typeof useSeoMeta>[0] = {
-  description: "Alive and Kicking, a Vue into Rock & Roll",
-  ogDescription: "Alive and Kicking, a Vue into Rock & Roll",
+  description: "Alive and Kicking: Rock Anthem Edition. You vote, Tim plays.",
+  ogDescription: "Alive and Kicking: Rock Anthem Edition. You vote, Tim plays.",
   ogImage: url.value,
   ogImageWidth: 1920,
   ogImageHeight: 1080,
@@ -75,48 +75,60 @@ useSeoMeta(seoOptions);
 </script>
 
 <template>
-  <main class="max-w-7xl mx-auto p-12">
-    <h1
-      class="uppercase font-black text-4xl md:text-5xl mb-2 flowing-title inline-block"
-    >
-      I just voted for my favorite mashup!
+  <main class="share-page">
+    <p class="share-eyebrow">Alive and Kicking: Rock Anthem Edition</p>
+    <h1 class="share-title">
+      <template v-if="share?.mashup">I picked a mashup for the show</template>
+      <template v-else>I voted for {{ songTitle }}</template>
     </h1>
-    <h2 class="block uppercase font-light text-2xl md:text-3xl mb-4">
-      Alive and Kicking, a Vue into Rock & Roll
-    </h2>
 
     <img
       :src="url"
-      :alt="`This is my mashup at Tim Benniks' talk at ${conference}`"
-      class="w-full block fancy-image mb-4 aspect-video"
+      :alt="share?.mashup ? `My mashup picks for Tim Benniks' talk at ${conference}` : `My vote for ${songTitle} at Tim Benniks' talk at ${conference}`"
+      class="share-image px-frame"
       loading="eager"
       width="1920"
       height="1080"
     >
 
-    <article class="max-w-3xl text-xl">
-      <h3 class="uppercase font-black text-3xl mb-4 flowing-title inline-block">
-        Rock & Roll in the browser
-      </h3>
-      <p class="mb-4">
-        Get ready to rock out at your next tech conference! I've created an
-        electrifying browser-based karaoke experience tailored explicitly for
-        rock & roll guitar. Using the innovative power of Vue, Nuxt, and
-        webmidi, everything from the backing tracks to the guitar amp presets is
-        dynamically controlled.
-      </p>
-      <p class="mb-4">
-        And the best part? You, the audience, get to participate too! By logging
-        in with Twitter or Github, you can live-vote what songs I should play
-        next, making this a fully interactive and unforgettable experience.
-      </p>
-
+    <article class="share-copy">
+      <h2>Rock and roll in the browser</h2>
       <p>
-        Learn more about
-        <a href="https://timbenniks.dev/alive-and-kicking" target="_blank"
-          >this talk</a
-        >.
+        Alive and Kicking is a conference talk with a live soundtrack. The
+        audience votes on their phones, Tim plays guitar live, and the browser
+        runs everything else: backing tracks, amp changes and a voxel stage
+        built with Vue, Nuxt and three.js.
+      </p>
+      <p>
+        At the show you sign in with GitHub, Twitter or LinkedIn to vote, and
+        your profile picture dives into the crowd on the big screen.
+      </p>
+      <p>
+        <a href="https://timbenniks.dev/alive-and-kicking" target="_blank" rel="noopener noreferrer">
+          More about the talk <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span>
+        </a>
       </p>
     </article>
   </main>
 </template>
+
+<style>
+.share-page {
+  min-height: 100dvh;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  background: var(--color-night);
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+}
+.share-eyebrow { font-family: var(--font-caps); font-size: 0.7rem; text-transform: uppercase; color: var(--color-gold); margin-bottom: 0.75rem; }
+.share-title { font-family: var(--font-pixel); font-weight: 400; font-size: clamp(2.5rem, 8vw, 4.5rem); line-height: 0.9; margin-bottom: 1.75rem; }
+.share-image { --edge: var(--color-tolex-hi); display: block; width: calc(100% - 2 * var(--px)); height: auto; aspect-ratio: 16 / 9; margin-bottom: 2.5rem; }
+.share-copy { max-width: 42rem; display: grid; gap: 1rem; font-size: 1.15rem; line-height: 1.55; color: var(--color-dust); }
+.share-copy h2 { font-family: var(--font-pixel); font-weight: 400; font-size: 2.25rem; line-height: 1; color: var(--color-bone); }
+.share-copy a { color: var(--color-bone); text-underline-offset: 4px; }
+.share-copy a:hover { color: var(--color-gold); }
+.share-copy a:focus-visible { outline: var(--px) solid var(--color-fret-4); outline-offset: var(--px); }
+@media (min-width: 48rem) { .share-page { padding: 3rem 2rem 5rem; } }
+</style>

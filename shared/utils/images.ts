@@ -189,6 +189,9 @@ export async function createMashupImage(avatar: string, allSongs: Song[], songid
         cloudName: "dwfcofnrd",
       },
     },
+    // The SDK's analytics tag differs between server and browser, which broke
+    // hydration on the share page. Off keeps the URL identical everywhere.
+    analytics: false,
   });
 
   return url
@@ -275,6 +278,9 @@ export async function createShareImage(avatar: string, song: Song) {
         cloudName: "dwfcofnrd",
       },
     },
+    // The SDK's analytics tag differs between server and browser, which broke
+    // hydration on the share page. Off keeps the URL identical everywhere.
+    analytics: false,
   });
 
   return url

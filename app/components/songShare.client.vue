@@ -96,41 +96,41 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="share-vote text-left">
-    <div v-if="user && canShare" class="flex space-x-3">
-      <template v-if="url">
-        <button :class="buttonclass" @click="share()">
-          {{ nativecopy }}
-        </button>
-      </template>
-      <template v-else>
-        <loader />
-      </template>
+  <div class="share-vote">
+    <div v-if="user && canShare">
+      <PixelButton v-if="url" variant="secondary" :class="buttonclass" @click="share()">
+        {{ nativecopy }}
+      </PixelButton>
+      <loader v-else />
     </div>
     <div v-if="user && !canShare">
-      <template v-if="url">
-        <div class="flex space-x-2 max-w-[500px]">
-          <button
-            :class="buttonclass"
-            class="flex justify-center"
-            @click="shareNoneNative('twitter')"
-          >
-            <twitter class="w-5 mr-2" />
-            <template v-if="mashup">{{ nativecopy }}</template>
-          </button>
-          <button
-            :class="buttonclass"
-            class="flex justify-center"
-            @click="shareNoneNative('linkedin')"
-          >
-            <img src="/linkedin.png" class="w-5 mr-2" >
-            <template v-if="mashup">{{ nativecopy }}</template>
-          </button>
-        </div>
-      </template>
-      <template v-else>
-        <loader />
-      </template>
+      <div v-if="url" class="share-vote-row">
+        <PixelButton
+          variant="secondary"
+          :class="buttonclass"
+          :aria-label="mashup ? undefined : 'Share on Twitter'"
+          @click="shareNoneNative('twitter')"
+        >
+          <twitter class="share-vote-icon" />
+          <template v-if="mashup">{{ nativecopy }}</template>
+        </PixelButton>
+        <PixelButton
+          variant="secondary"
+          :class="buttonclass"
+          :aria-label="mashup ? undefined : 'Share on LinkedIn'"
+          @click="shareNoneNative('linkedin')"
+        >
+          <img src="/linkedin.png" alt="" class="share-vote-icon">
+          <template v-if="mashup">{{ nativecopy }}</template>
+        </PixelButton>
+      </div>
+      <loader v-else />
     </div>
   </div>
 </template>
+
+<style>
+.share-vote { text-align: left; }
+.share-vote-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.share-vote-icon { width: 1.1rem; height: 1.1rem; object-fit: contain; flex: none; }
+</style>

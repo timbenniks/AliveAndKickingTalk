@@ -1,16 +1,6 @@
 <template>
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="800"
-    height="800"
-    fill="none"
-    viewBox="0 0 24 24"
-  >
-    <path
-      fill="#fff"
-      fill-rule="evenodd"
-      d="M5.293 5.293a1 1 0 0 1 1.414 0L12 10.586l5.293-5.293a1 1 0 1 1 1.414 1.414L13.414 12l5.293 5.293a1 1 0 0 1-1.414 1.414L12 13.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L10.586 12 5.293 6.707a1 1 0 0 1 0-1.414Z"
-      clip-rule="evenodd"
-    />
+  <!-- A pixel-art cross on a 7x7 grid. -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 7" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">
+    <path d="M0 0h1v1H0zM1 1h1v1H1zM2 2h1v1H2zM3 3h1v1H3zM4 4h1v1H4zM5 5h1v1H5zM6 6h1v1H6zM6 0h1v1H6zM5 1h1v1H5zM4 2h1v1H4zM2 4h1v1H2zM1 5h1v1H1zM0 6h1v1H0z" />
   </svg>
 </template>

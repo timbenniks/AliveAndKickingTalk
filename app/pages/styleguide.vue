@@ -20,6 +20,16 @@ const colors = [
 ];
 const frets = ['Low E', 'A', 'D', 'G', 'B', 'High E'];
 
+// Screens: the real vote components on real songs. State is changed in this
+// tab's store only (nothing is written to Supabase): one vote on the second
+// song, and two mashup spots picked.
+const songStore = useSongStore();
+await songStore.getSongs();
+songStore.songs.forEach((song, index) => {
+  song.voted = index === 1;
+  song.mashupSpot = index === 3 ? 1 : index === 5 ? 2 : null;
+});
+
 // A fake meter so the strip can be seen moving.
 const levels = ref([0, 0, 0, 0, 0, 0]);
 let timer: ReturnType<typeof setInterval> | undefined;
@@ -108,6 +118,19 @@ onUnmounted(() => clearInterval(timer));
     </section>
 
     <section class="sg-section">
+      <h2>Screens</h2>
+      <p class="sg-note">The audience vote screens with real songs. Votes here are local to this tab and never saved.</p>
+      <h3>Song vote</h3>
+      <div class="sg-screen">
+        <regular-vote />
+      </div>
+      <h3>Mashup vote</h3>
+      <div class="sg-screen">
+        <mashup-vote />
+      </div>
+    </section>
+
+    <section class="sg-section">
       <h2>Fret strip</h2>
       <FretStrip />
       <p class="sg-note">Static: a divider that says "this is the rig".</p>
@@ -125,8 +148,8 @@ onUnmounted(() => clearInterval(timer));
   padding: 2.5rem max(1rem, calc((100% - 1080px) / 2)) 6rem;
   font-family: var(--font-sans);
 }
-.styleguide h2 { font-family: var(--font-pixel); font-weight: 400; font-size: 2.5rem; line-height: 1; margin-bottom: 1.25rem; }
-.styleguide h3 { font-family: var(--font-pixel); font-weight: 400; font-size: 1.75rem; line-height: 1; margin: 1.25rem 0 0.75rem; }
+.sg-section > h2 { font-family: var(--font-pixel); font-weight: 400; font-size: 2.5rem; line-height: 1; margin-bottom: 1.25rem; }
+.sg-section > h3 { font-family: var(--font-pixel); font-weight: 400; font-size: 1.75rem; line-height: 1; margin: 1.25rem 0 0.75rem; }
 .sg-mast { display: grid; gap: 1.25rem; margin-bottom: 3rem; }
 .sg-title { width: min(100%, 720px); height: auto; image-rendering: pixelated; }
 .sg-eyebrow, .sg-caps { font-family: var(--font-caps); text-transform: uppercase; color: var(--color-gold); font-size: 0.8rem; }
@@ -146,4 +169,6 @@ onUnmounted(() => clearInterval(timer));
 .sg-card img { aspect-ratio: 1; object-fit: cover; margin-bottom: 0.5rem; }
 .sg-card h3 { margin: 0; line-height: 1.1; }
 .sg-card p { color: var(--color-dust); margin-bottom: 0.75rem; }
+/* A screen-sized frame; transform contains the screens' fixed overlays. */
+.sg-screen { position: relative; overflow: hidden; transform: translateZ(0); height: 860px; overflow-y: auto; box-shadow: 0 0 0 var(--px) var(--color-tolex-hi); }
 </style>
