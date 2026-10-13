@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { activeCue, chapterMarks, presetCues } from '../shared/stage/timeline.ts';
-import { bandLevels, risingLanes } from '../shared/stage/pulses.ts';
+import { bandLevels, guitarLaneBins, risingLanes } from '../shared/stage/pulses.ts';
 import { themeForPreset } from '../shared/stage/themes.ts';
 import { styleById } from '../shared/stage/styles.ts';
 import { LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
@@ -56,5 +56,15 @@ const last = [-10, -10, -10, -10, -10, -10];
 assert.deepEqual(risingLanes([0.5, 0.12, 0.12, 0.12, 0.12, 0.4], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, last), [0, 5]);
 assert.deepEqual(risingLanes([0.5, 0.12, 0.12, 0.12, 0.12, 0.4], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2.05, [2, -10, -10, -10, -10, 2]), []);
 assert.deepEqual(risingLanes([0.05, 0.05, 0.05, 0.05, 0.05, 0.05], [0, 0, 0, 0, 0, 0], 1, last), []);
+
+// Guitar pitch zones are ordered, contiguous and cover the guitar's range.
+const zones = guitarLaneBins(48000, 4096);
+assert.equal(zones.length, 6);
+for (let i = 1; i < zones.length; i++) assert.equal(zones[i][0], zones[i - 1][1]);
+assert.ok(zones[0][0] * 48000 / 4096 <= 80 && zones[5][1] * 48000 / 4096 >= 1250);
+const lowE = new Array(2048).fill(0);
+lowE[Math.round(82 / (48000 / 4096))] = 255;
+assert.ok(bandLevels(lowE, zones)[0] > 0);
+assert.equal(bandLevels(lowE, zones)[5], 0);
 
 console.log('Stage cue, theme and six-lane pulse checks passed');

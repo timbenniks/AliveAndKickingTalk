@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-// https://github.com/WebDevSimplified/Guitar-Amp/blob/master/script.js
-import audioplayerVisualizer from "./audioplayer-visualizer.client.vue";
 import type { eventReturn, Song } from "../types";
 
 const props = defineProps<{
@@ -10,7 +8,7 @@ const props = defineProps<{
 
 const time = ref(0);
 const visualizerError = ref("");
-const vizualizer = ref<InstanceType<typeof audioplayerVisualizer>>();
+const { registerSong, connectSong } = useStageAudio();
 const emit = defineEmits(["onSongEnded"]);
 
 const { showVolume } = useRuntimeConfig().public;
@@ -20,12 +18,13 @@ const { autoplay } = route.query;
 
 function onPlayerPlay({ event, setPlaying }: eventReturn) {
   setPlaying(true);
+  void connectSong(event.target as HTMLAudioElement).catch(() => {
+    visualizerError.value = "The stage visualizer could not start. Check your audio output.";
+  });
+}
 
-  if (vizualizer.value) {
-    void vizualizer.value.init(event.target as HTMLAudioElement).catch(() => {
-      visualizerError.value = "The audio visualizer could not start. Check your audio output.";
-    });
-  }
+function onPlayerLoaded({ event }: eventReturn) {
+  registerSong(event.target as HTMLAudioElement);
 }
 
 function onPlayerPause({ setPlaying }: eventReturn) {
@@ -55,6 +54,7 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
     :controls="false"
     :loop="false"
     preload="auto"
+    @loadeddata="onPlayerLoaded"
     @play="onPlayerPlay"
     @pause="onPlayerPause"
     @ended="onPlayerEnded"
@@ -75,11 +75,6 @@ function onVolumeChange({ event, setVolume }: eventReturn) {
     >
       <p v-if="visualizerError" role="alert" class="relative z-30">{{ visualizerError }}</p>
       <midi :song="song" :time="time" />
-
-      <audioplayer-visualizer
-        ref="vizualizer"
-        class="absolute bottom-20 w-full"
-      />
 
       <audioplayer-play
         :playing="playing"

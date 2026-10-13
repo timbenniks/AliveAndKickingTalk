@@ -1,4 +1,4 @@
-import type { AnalysisState } from './types.ts'
+import type { AnalysisState, StagePulse } from './types.ts'
 
 export const HIGHWAY_SPEED = 16
 export const BOARD_TILT = -0.36
@@ -18,4 +18,6 @@ export const stageClock = {
   lanes: [0, 0, 0, 0, 0, 0],
   analysis: 'idle' as AnalysisState,
   reducedMotion: false,
+  // Lane hits from whichever source feeds the lanes. The highway drains this every frame.
+  events: [] as StagePulse[],
 }
