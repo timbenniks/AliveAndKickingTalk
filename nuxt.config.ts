@@ -22,7 +22,12 @@ export default defineNuxtConfig({
     { path: '~/components/stage', pathPrefix: false },
     '~/components',
   ],
-  vite: { plugins: [tailwindcss()], optimizeDeps: { include: ['three'] } },
+  vite: {
+    plugins: [tailwindcss()],
+    optimizeDeps: { include: ['three'] },
+    // three.js is one ~1 MB chunk, loaded only by the stage pages (/live, /practise).
+    build: { chunkSizeWarningLimit: 1100 },
+  },
 
   supabase: {
     types: '~~/shared/types/database.ts',

@@ -1,7 +1,7 @@
 {
   "private": true,
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "scripts": {
     "build": "nuxt build",
@@ -38,5 +38,8 @@
     "vue": "3.5.43",
     "webmidi": "3.3.1"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "esbuild": "0.28.2"
+  }
 }
