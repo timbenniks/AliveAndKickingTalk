@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useLoop, useTres } from '@tresjs/core'
 import { ACESFilmicToneMapping, Fog, PCFShadowMap, Vector3, type Scene } from 'three'
-import { INTRO_SECONDS, stageClock } from '#shared/stage/clock'
+import { advanceSolo, INTRO_SECONDS, stageClock } from '#shared/stage/clock'
 
 const props = defineProps<{
   background: string
@@ -63,9 +63,8 @@ onBeforeRender(({ elapsed, delta }) => {
   const live = stageClock.analysis === 'live' && stageClock.playing && !calm
   const drive = live ? stageClock.energy : 0
   const shake = calm ? 0 : props.shake * drive
-  // Solo push-in: ease over about a second and a half; pause holds it.
-  const target = props.solo && stageClock.playing && !calm ? 1 : 0
-  push += (target - push) * Math.min(1, delta * 1.6)
+  // Use the same entrance and release as the lights and beams; pause holds it.
+  push = advanceSolo(push, props.solo, delta)
   const ease = smooth(push)
 
   // Living camera: its own clock only runs while the song plays.
@@ -79,7 +78,7 @@ onBeforeRender(({ elapsed, delta }) => {
   const mix = framingAt ? smooth(Math.min(1, (showClock - framingAt) / BLEND_SECONDS)) : 1
   const frame = (key: keyof typeof to) => from[key] + (to[key] - from[key]) * mix
   // Less wandering while the solo push holds the shot.
-  const roam = calm ? 0 : 1 - ease * 0.7
+  const roam = calm ? 0 : 1 - ease * 0.9
   const drift = {
     x: (Math.sin(showClock * 0.21) * 0.32 + Math.sin(showClock * 0.53) * 0.08) * roam,
     y: Math.sin(showClock * 0.17 + 1.3) * 0.12 * roam,
@@ -89,7 +88,7 @@ onBeforeRender(({ elapsed, delta }) => {
   // A small dip on big hits, settling quickly.
   dip = Math.max(dip * Math.pow(0.02, delta), live ? Math.min(0.08, stageClock.onset * 0.6) : 0)
 
-  const playX = Math.sin(elapsed * 1.4) * 0.04 * shake + Math.sin(elapsed * 0.35) * 0.18 * ease + frame('x') * roam + drift.x
+  const playX = Math.sin(elapsed * 1.4) * 0.04 * shake + Math.sin(showClock * 0.35) * 0.08 * ease + frame('x') * roam + drift.x
   const playY = 1.4 + drive * 0.03 - 0.28 * ease + frame('y') * roam + drift.y - dip
   const playZ = -2.2 + 0.95 * ease + frame('z') * roam + drift.z
   const lookX = frame('lookX') * roam - drift.x * 0.3

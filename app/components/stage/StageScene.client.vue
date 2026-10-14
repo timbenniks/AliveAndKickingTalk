@@ -45,7 +45,7 @@ const emit = defineEmits<{ error: [] }>()
     @error="emit('error')"
   >
     <CameraRig :background="theme.background" :shake="theme.cameraShake" :rich="rich" :solo="solo" />
-    <StageLights :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
+    <StageLights :primary="theme.primary" :secondary="theme.secondary" :rich="rich" :solo="solo" />
     <StageSet :primary="theme.primary" :secondary="theme.secondary" />
     <StageLedWall :art="art" :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
     <StageBeams :solo="solo" :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />

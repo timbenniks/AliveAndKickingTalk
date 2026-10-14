@@ -13,6 +13,14 @@ export function frameDecay(keep: number, delta: number) {
   return Math.pow(keep, Math.max(0, delta) * 60)
 }
 
+// Camera, lights and beams enter/leave a solo together over 1.4 seconds.
+export function advanceSolo(level: number, solo: boolean, delta: number) {
+  if (stageClock.reducedMotion) return 0
+  if (!stageClock.playing) return level
+  const target = solo ? 1 : 0
+  return level + Math.sign(target - level) * Math.min(Math.abs(target - level), Math.max(0, Math.min(delta, 0.1)) / 1.4)
+}
+
 export const stageClock = {
   // Song position (pauses with the song).
   time: 0,

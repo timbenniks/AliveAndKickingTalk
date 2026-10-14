@@ -3,7 +3,7 @@ import { activeCue, chapterMarks, presetCues } from '../shared/stage/timeline.ts
 import { bandLevels, guitarLaneBins, peakLevels, risingLanes } from '../shared/stage/pulses.ts';
 import { themeForPreset } from '../shared/stage/themes.ts';
 import { styleById } from '../shared/stage/styles.ts';
-import { frameDecay, LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
+import { advanceSolo, frameDecay, LANE_COLORS, LANE_X, stageClock } from '../shared/stage/clock.ts';
 import { emitMoment, onMoment } from '../shared/stage/moments.ts';
 
 const backInBlack = { songId: 'back_in_black', presets: [
@@ -63,6 +63,26 @@ for (const hz of [30, 60, 120, 144]) {
 }
 assert.equal(frameDecay(0.84, 1 / 60), 0.84);
 assert.equal(frameDecay(0.84, 0), 1);
+
+// The solo entrance/release takes the same time on different screens.
+stageClock.playing = true;
+for (const hz of [30, 60, 120, 144]) {
+  let level = 0;
+  for (let frame = 0; frame < hz; frame++) level = advanceSolo(level, true, 1 / hz);
+  assert.ok(Math.abs(level - 1 / 1.4) < 1e-12);
+  for (let frame = 0; frame < hz; frame++) level = advanceSolo(level, true, 1 / hz);
+  assert.equal(level, 1);
+  for (let frame = 0; frame < hz; frame++) level = advanceSolo(level, false, 1 / hz);
+  assert.ok(Math.abs(level - (1 - 1 / 1.4)) < 1e-12);
+  for (let frame = 0; frame < hz; frame++) level = advanceSolo(level, false, 1 / hz);
+  assert.equal(level, 0);
+}
+stageClock.playing = false;
+assert.equal(advanceSolo(0.4, true, 1 / 60), 0.4);
+assert.equal(advanceSolo(0.4, false, 1 / 60), 0.4);
+stageClock.reducedMotion = true;
+assert.equal(advanceSolo(0.4, true, 1 / 60), 0);
+stageClock.reducedMotion = false;
 
 // Lanes light from a rising band and stay quiet when nothing spikes.
 const freq = new Array(128).fill(0);

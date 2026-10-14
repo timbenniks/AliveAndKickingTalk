@@ -2,7 +2,7 @@
 import { onBeforeUnmount, watch } from 'vue'
 import { useLoop } from '@tresjs/core'
 import { AdditiveBlending, Color, CylinderGeometry, DoubleSide, Group, Mesh, Quaternion, ShaderMaterial, Vector3 } from 'three'
-import { stageClock } from '#shared/stage/clock'
+import { advanceSolo, stageClock } from '#shared/stage/clock'
 import { CANS, TRUSS_Y, TRUSS_Z } from '#shared/stage/set'
 
 // Volumetric beams from the truss cans, only while a solo plays. Soft cones
@@ -12,7 +12,6 @@ const props = defineProps<{ solo: boolean, primary: string, secondary: string, r
 
 const LENGTH = 24
 const STRENGTH = 0.3
-const FADE_SECONDS = 0.6
 // Low quality keeps every other can.
 const cans = props.rich ? CANS : CANS.filter((_, i) => i % 2 === 0)
 
@@ -66,7 +65,7 @@ const beams = cans.map((x, i) => {
   mesh.renderOrder = 3
   group.add(mesh)
   // Aim down at the stage, splayed so the beams cross over the highway.
-  return { mesh, material, x, phase: i * 1.7, primary: i % 2 === 0 }
+  return { mesh, material, x, primary: i % 2 === 0 }
 })
 
 function paint() {
@@ -80,17 +79,18 @@ let clock = 0
 const { onBeforeRender } = useLoop()
 onBeforeRender(({ delta }) => {
   const dt = Math.min(delta, 0.05)
-  const target = props.solo && stageClock.playing ? 1 : 0
-  level += Math.sign(target - level) * Math.min(Math.abs(target - level), dt / FADE_SECONDS)
+  level = advanceSolo(level, props.solo, delta)
+  const focus = level * level * (3 - 2 * level)
   group.visible = level > 0.001
   if (!group.visible) return
-  if (!stageClock.reducedMotion) clock += dt
+  if (stageClock.playing && !stageClock.reducedMotion) clock += dt
+  const sweep = Math.sin(clock * 0.45)
   for (const beam of beams) {
-    const sweep = Math.sin(clock * 0.45 + beam.phase)
-    aim.set(-beam.x * 0.45 + sweep * 3.2, -(TRUSS_Y - 1.5), -(TRUSS_Z - 9) + Math.cos(clock * 0.3 + beam.phase) * 2).normalize()
+    // One slow fan sweep, rather than every can wandering independently.
+    aim.set(-beam.x * 0.55 + sweep * 1.5, -(TRUSS_Y - 1.5), -(TRUSS_Z - 9) + Math.cos(clock * 0.3) * 0.8).normalize()
     turn.setFromUnitVectors(down, aim)
     beam.mesh.quaternion.copy(turn)
-    beam.material.uniforms.strength!.value = level * STRENGTH
+    beam.material.uniforms.strength!.value = focus * STRENGTH
   }
 })
 

@@ -8,8 +8,11 @@ import {
   BufferGeometry,
   CanvasTexture,
   Color,
+  DynamicDrawUsage,
   Group,
   InstancedMesh,
+  Line,
+  LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -21,7 +24,7 @@ import {
   Vector3,
 } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
-import { BOARD_TILT, frameDecay, HIGHWAY_SPEED, LANE_COLORS, LANE_X, stageClock } from '#shared/stage/clock'
+import { BOARD_TILT, frameDecay, HIGHWAY_SPEED, LANE_COLORS, LANE_X, NECK_LENGTH, stageClock } from '#shared/stage/clock'
 import { shadeFaces } from '#shared/stage/formShade'
 
 // Visualizer only: pulses come from stageClock.events, fed by the song, the
@@ -259,6 +262,25 @@ function commitHighway() {
 }
 
 const flashLevel = Array.from({ length: LANE_X.length }, () => 0)
+const pickWhite = new Color('#fff3d2')
+// A short-lived glint over each existing string; only struck lanes are drawn.
+const stringGlints = LANE_X.map((x) => {
+  const geometry = new BufferGeometry()
+  const positions = new Float32Array(33 * 3)
+  for (let i = 0; i < 33; i++) {
+    positions[i * 3] = x
+    positions[i * 3 + 1] = 0.115
+    positions[i * 3 + 2] = i / 32 * NECK_LENGTH
+  }
+  geometry.setAttribute('position', new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage))
+  const material = new LineBasicMaterial({ color: '#fff3d2', transparent: true, depthWrite: false })
+  materials.push(material)
+  const line = new Line(geometry, material)
+  line.visible = false
+  group.add(line)
+  return line
+})
+let stringTime = 0
 const frets = LANE_X.map((x, lane) => {
   const color = laneColor(lane)
   const ringMat = paintMaterial(color, 0.22)
@@ -421,19 +443,19 @@ function emitSmoke(x: number, y: number, z: number, lane: number) {
 
 function emitSparks(lane: number) {
   if (stageClock.reducedMotion) return
-  sparkColor.set(laneColor(lane))
-  let left = 8
+  sparkColor.set(laneColor(lane)).lerp(pickWhite, 0.3)
+  let left = 4
   for (const spark of sparks) {
     if (spark.alive) continue
     spark.alive = true
     spark.age = 0
-    spark.life = 0.55 + Math.random() * 0.35
+    spark.life = 0.18 + Math.random() * 0.12
     spark.x = (LANE_X[lane] ?? 0) + (Math.random() - 0.5) * 0.22
     spark.y = 0.28
     spark.z = 1.2
-    spark.vx = (Math.random() - 0.5) * 1.4
-    spark.vy = 0.7 + Math.random() * 1.6
-    spark.vz = 9 + Math.random() * 6
+    spark.vx = (Math.random() - 0.5) * 1.6
+    spark.vy = 0.9 + Math.random() * 1.2
+    spark.vz = 1.5 + Math.random() * 2.5
     spark.r = sparkColor.r
     spark.g = sparkColor.g
     spark.b = sparkColor.b
@@ -479,6 +501,7 @@ function syncLook() {
 const { onBeforeRender } = useLoop()
 onBeforeRender(({ delta: renderDelta }) => {
   syncLook()
+  stringTime += renderDelta
   const time = stageClock.flow
   const delta = time - previous
   const continuous = delta >= 0 && delta < 0.25
@@ -531,14 +554,29 @@ onBeforeRender(({ delta: renderDelta }) => {
   commitHighway()
   frets.forEach(({ mesh, cap }, lane) => {
     const level = flashLevel[lane] ?? 0
+    const attack = stageClock.reducedMotion ? 0 : level ** 3
     const ring = mesh.material as MeshStandardMaterial
     const center = cap.material as MeshStandardMaterial
-    ring.emissiveIntensity = 0.22 + level * 1.8
-    center.emissiveIntensity = 0.28 + level * 2.2
-    const scale = 1 + level * 0.16
+    ring.emissiveIntensity = 0.22 + level * 0.9 + attack * 1.5
+    center.emissive.set(laneColor(lane)).lerp(pickWhite, attack * 0.55)
+    center.emissiveIntensity = 0.28 + level * 1.2 + attack * 2.4
+    const scale = 1 + level * 0.08 + attack * 0.08
     mesh.scale.set(scale, 1, scale)
     cap.scale.set(scale, 1, scale)
-    flashLevel[lane] = level * frameDecay(0.84, renderDelta)
+    cap.position.y = 0.07 + attack * 0.04
+    flashLevel[lane] = level * frameDecay(0.9, renderDelta)
+    const string = stringGlints[lane]!
+    string.visible = !stageClock.reducedMotion && level > 0.02
+    if (string.visible) {
+      string.material.opacity = level * 0.65
+      const position = string.geometry.getAttribute('position')
+      for (let i = 0; i < position.count; i++) {
+        const z = position.getZ(i)
+        const sway = Math.sin(z * 2.1 - stringTime * 95) * Math.sin(Math.PI * z / NECK_LENGTH)
+        position.setX(i, LANE_X[lane]! + sway * level * 0.045)
+      }
+      position.needsUpdate = true
+    }
     const glow = fretGlows[lane]
     if (glow) {
       const mat = glow.material as MeshBasicMaterial
@@ -603,6 +641,7 @@ onBeforeRender(({ delta: renderDelta }) => {
 
 function clearPulses() {
   pulses.length = 0
+  flashLevel.fill(0)
   stageClock.events.length = 0
   previous = stageClock.flow
 }
@@ -616,6 +655,7 @@ onBeforeUnmount(() => {
   haloGeo.dispose()
   trailGeo.dispose()
   fretGlowGeo.dispose()
+  for (const string of stringGlints) string.geometry.dispose()
   sparkGeo.dispose()
   sparkTexture.dispose()
   smokeGeo.dispose()
