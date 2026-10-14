@@ -7,7 +7,9 @@ import {
   Color,
   Group,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
+  PlaneGeometry,
   NearestFilter,
   RepeatWrapping,
   SRGBColorSpace,
@@ -76,13 +78,37 @@ const panelMap = pixelTexture(16, 16, (ctx) => {
   ctx.fillRect(0, 7, 16, 2)
 }, [16, 4])
 
-// Speaker grille cloth: a fine dark weave.
+// Speaker grille cloth: a basket weave with a little sheen, like the real thing.
 const grilleMap = pixelTexture(8, 8, (ctx) => {
-  ctx.fillStyle = '#2c2348'
+  ctx.fillStyle = '#241c36'
   ctx.fillRect(0, 0, 8, 8)
-  ctx.fillStyle = '#1e1733'
-  for (let i = 0; i < 8; i += 2) { ctx.fillRect(i, 0, 1, 8); ctx.fillRect(0, i, 8, 1) }
-}, [3, 2])
+  ctx.fillStyle = '#4a4058'
+  for (let y = 0; y < 8; y += 2) for (let x = 0; x < 8; x += 2) ctx.fillRect(x + (y % 4 ? 1 : 0), y, 1, 1)
+  ctx.fillStyle = '#14080c'
+  for (let i = 0; i < 8; i += 4) { ctx.fillRect(i + 3, 0, 1, 8) }
+}, [6, 5])
+
+// A cream script nameplate in the style of a classic British amp logo,
+// drawn small and scaled up with hard pixels.
+const logoCanvas = document.createElement('canvas')
+logoCanvas.width = 96
+logoCanvas.height = 32
+{
+  const ctx = logoCanvas.getContext('2d')!
+  ctx.font = 'italic bold 22px "Snell Roundhand", "Brush Script MT", "Segoe Script", cursive'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = '#14080c'
+  ctx.fillText('Benniks', 49, 18)
+  ctx.fillStyle = '#efe6d0'
+  ctx.fillText('Benniks', 48, 17)
+}
+const logoMap = track(new CanvasTexture(logoCanvas))
+logoMap.colorSpace = SRGBColorSpace
+logoMap.magFilter = logoMap.minFilter = NearestFilter
+logoMap.generateMipmaps = false
+// Toned like the rest of the set so the script reads without blooming.
+const logoMat = track(new MeshBasicMaterial({ map: logoMap, transparent: true, color: '#bdb5a2', fog: false }))
 
 const tolex = material('#1a1430', 0.3)
 const deckMat = material('#ffffff', 0.25, panelMap)
@@ -100,8 +126,15 @@ add([box(34.2, 0.25, 0.3, 0, DECK_TOP, DECK_FRONT - 0.05)], metal)
 // boards so the HTML boards never cover them.
 const amps: BoxGeometry[] = []
 const grilles: BoxGeometry[] = []
-const logos: BoxGeometry[] = []
+const piping: BoxGeometry[] = []
 const panels: BoxGeometry[] = []
+const logos: PlaneGeometry[] = []
+function logoAt(width: number, x: number, y: number, z: number) {
+  const plane = new PlaneGeometry(width, width / 3)
+  plane.rotateY(Math.PI)
+  plane.translate(x, y, z)
+  logos.push(plane)
+}
 for (const side of [-1, 1]) {
   for (const [slot, x] of [11.3, 13.5].entries()) {
     const z = DECK_FRONT + 1.4 + slot * 0.3
@@ -110,18 +143,30 @@ for (const side of [-1, 1]) {
       const y = DECK_TOP + 0.9 + cab * 1.85
       amps.push(box(2.1, 1.8, 1.1, cx, y, z))
       grilles.push(box(1.8, 1.45, 0.06, cx, y, z - 0.56))
-      logos.push(box(0.5, 0.14, 0.05, cx - 0.55, y + 0.55, z - 0.6))
+      // Gold piping round the grille.
+      piping.push(
+        box(1.88, 0.05, 0.05, cx, y + 0.75, z - 0.6),
+        box(1.88, 0.05, 0.05, cx, y - 0.75, z - 0.6),
+        box(0.05, 1.5, 0.05, cx - 0.92, y, z - 0.6),
+        box(0.05, 1.5, 0.05, cx + 0.92, y, z - 0.6),
+      )
+      logoAt(1.2, cx - 0.3, y + 0.42, z - 0.62)
     }
     const head = DECK_TOP + 0.9 + 2 * 1.85 - 0.45
     amps.push(box(2.1, 0.8, 1.0, cx, head, z))
-    panels.push(box(1.8, 0.22, 0.05, cx, head - 0.05, z - 0.52))
-    logos.push(box(0.6, 0.14, 0.05, cx, head + 0.22, z - 0.52))
+    panels.push(box(1.8, 0.22, 0.05, cx, head - 0.2, z - 0.52))
+    logoAt(1.5, cx, head + 0.12, z - 0.54)
   }
 }
 add(amps, tolex)
 add(grilles, grille)
-add(logos, gold)
+add(piping, gold)
 add(panels, bone)
+{
+  const geometry = mergeGeometries(logos)
+  for (const part of logos) part.dispose()
+  if (geometry) group.add(new Mesh(track(geometry), logoMat))
+}
 
 // Drum riser with a simple kit, centred behind the end of the highway.
 const riserZ = DECK_FRONT + 6
