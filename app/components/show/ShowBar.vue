@@ -31,6 +31,14 @@ const mode = computed(() => {
 });
 watch(mode, (next) => { if (next !== "encore") joinedEncore.value = false; });
 
+// Tell anything else fixed to the bottom (the picks nudge) to sit above us.
+if (import.meta.client) {
+  watch(mode, (next) => {
+    document.documentElement.style.setProperty("--show-bar", next ? "7.5rem" : "0px");
+  }, { immediate: true });
+  onUnmounted(() => document.documentElement.style.removeProperty("--show-bar"));
+}
+
 function rock() {
   if (!limiter.allow(Date.now())) return;
   if (!channel.send("tap")) return;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { createMashupImage, createShareImage } from "#shared/utils/images";
+import { createMashupImage, createPicksImage, createShareImage } from "#shared/utils/images";
 import type { Database, Song } from "~/types";
 
 const client = useSupabaseClient<Database>();
@@ -18,6 +18,7 @@ const url = ref();
 const selectedSong = ref();
 const artist = ref();
 const songTitle = ref();
+const picks = ref<Song[]>([]);
 
 const { data: share } = await client
   .from("shares")
@@ -38,6 +39,11 @@ if (share?.mashup) {
     allSongs.value,
     share.songids
   );
+} else if (share.songids.includes(",")) {
+  // "My picks": every song the voter picked in regular voting.
+  const ids = share.songids.split(",");
+  picks.value = allSongs.value.filter(song => ids.includes(song.songId));
+  url.value = await createPicksImage(share.user_avatar, allSongs.value, ids);
 } else {
   selectedSong.value = songStore.getSongById(share?.songids as string);
   url.value = await createShareImage(
@@ -65,6 +71,11 @@ if (share?.mashup) {
   seoOptions.title = `This is my mashup at Tim Benniks' talk at ${conference}`;
   seoOptions.ogTitle = `This is my mashup at Tim Benniks' talk at ${conference}`;
   seoOptions.twitterTitle = `This is my mashup at Tim Benniks' talk at ${conference}`;
+} else if (picks.value.length) {
+  const list = picks.value.map(song => song.song).join(", ");
+  seoOptions.title = `My picks for Tim Benniks' talk at ${conference}: ${list}`;
+  seoOptions.ogTitle = seoOptions.title;
+  seoOptions.twitterTitle = seoOptions.title;
 } else {
   seoOptions.title = `I just voted for ${songTitle.value} by ${artist.value} at Tim Benniks' talk at ${conference}`;
   seoOptions.ogTitle = `I just voted for ${songTitle.value} by ${artist.value} at Tim Benniks' talk at ${conference}`;
@@ -79,12 +90,14 @@ useSeoMeta(seoOptions);
     <p class="share-eyebrow">Alive and Kicking: Rock Anthem Edition</p>
     <h1 class="share-title">
       <template v-if="share?.mashup">I picked a mashup for the show</template>
+      <template v-else-if="picks.length">My picks for the show</template>
       <template v-else>I voted for {{ songTitle }}</template>
     </h1>
+    <p v-if="picks.length" class="share-picks">{{ picks.map(song => `${song.song} · ${song.artist}`).join(" / ") }}</p>
 
     <img
       :src="url"
-      :alt="share?.mashup ? `My mashup picks for Tim Benniks' talk at ${conference}` : `My vote for ${songTitle} at Tim Benniks' talk at ${conference}`"
+      :alt="share?.mashup ? `My mashup picks for Tim Benniks' talk at ${conference}` : picks.length ? `My picks for Tim Benniks' talk at ${conference}` : `My vote for ${songTitle} at Tim Benniks' talk at ${conference}`"
       class="share-image px-frame"
       loading="eager"
       width="1920"
@@ -131,4 +144,5 @@ useSeoMeta(seoOptions);
 .share-copy a:hover { color: var(--color-gold); }
 .share-copy a:focus-visible { outline: var(--px) solid var(--color-fret-4); outline-offset: var(--px); }
 @media (min-width: 48rem) { .share-page { padding: 3rem 2rem 5rem; } }
+.share-picks { color: var(--color-dust); font-size: 1.05rem; line-height: 1.4; margin: -0.5rem 0 1rem; }
 </style>

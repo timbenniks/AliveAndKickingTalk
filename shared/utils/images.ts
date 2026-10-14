@@ -285,3 +285,11 @@ export async function createShareImage(avatar: string, song: Song) {
 
   return url
 }
+// "My picks" share image: the four-cover layout once there are four or more
+// picks (first four in setlist order), else the single-song image of the first.
+export async function createPicksImage(avatar: string, allSongs: Song[], songIds: string[]) {
+  const picks = allSongs.filter(song => songIds.includes(song.songId));
+  if (!picks.length) throw new Error('A picks image needs at least one song');
+  if (picks.length >= 4) return createMashupImage(avatar, allSongs, picks.slice(0, 4).map(song => song.songId).join(','));
+  return createShareImage(avatar, picks[0]!);
+}

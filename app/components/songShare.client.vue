@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { createMashupImage, createShareImage } from "#shared/utils/images";
+import { createMashupImage, createPicksImage, createShareImage } from "#shared/utils/images";
 import type { Database, Song } from "~/types";
 import { storeToRefs } from "pinia";
 
 const user = useSupabaseUser();
 const client = useSupabaseClient<Database>();
-const props = defineProps<{ song?: Song; nativecopy: string; buttonclass?: string; mashup: boolean }>();
+// `picks`: share every song this voter picked as one link (regular voting).
+const props = defineProps<{ song?: Song; picks?: Song[]; nativecopy: string; buttonclass?: string; mashup: boolean; primary?: boolean }>();
 const songStore = useSongStore();
 const { allSongs } = storeToRefs(songStore);
 const { conference } = useRuntimeConfig().public;
@@ -37,14 +38,16 @@ if (props.mashup) {
     allSongs.value,
     songids as string
   );
+} else if (props.picks?.length) {
+  imgUrl.value = await createPicksImage(avatar as string, allSongs.value, props.picks.map(song => song.songId));
 } else if (props.song) {
   imgUrl.value = await createShareImage(avatar as string, props.song);
 }
 
 function shareText() {
-  return props.mashup
-    ? `I just voted for my favorite mashup at ${conference} @timbenniks`
-    : `I just voted for ${props.song?.song} by ${props.song?.artist} at ${conference} @timbenniks`;
+  if (props.mashup) return `I just voted for my favorite mashup at ${conference} @timbenniks`;
+  if (props.picks?.length) return `My picks for tonight's show at ${conference}: ${props.picks.map(song => song.song).join(', ')} @timbenniks`;
+  return `I just voted for ${props.song?.song} by ${props.song?.artist} at ${conference} @timbenniks`;
 }
 
 // Saves the share and returns its link, or null. The store sets the error
@@ -54,7 +57,7 @@ async function shareLink() {
     user.value?.sub as string,
     avatar as string,
     props.mashup,
-    !props.mashup ? props.song?.songId : undefined
+    props.mashup ? undefined : props.picks?.length ? props.picks.map(song => song.songId).join(",") : props.song?.songId
   );
   return id ? `https://aliveandkicking.dev/share/${id}` : null;
 }
@@ -101,7 +104,7 @@ onMounted(() => {
 <template>
   <div class="share-vote">
     <div v-if="user && canShare">
-      <PixelButton v-if="url" variant="secondary" :class="buttonclass" @click="share()">
+      <PixelButton v-if="url" :variant="primary ? 'primary' : 'secondary'" :class="buttonclass" @click="share()">
         {{ nativecopy }}
       </PixelButton>
       <loader v-else />
@@ -109,16 +112,16 @@ onMounted(() => {
     <div v-if="user && !canShare">
       <div v-if="url" class="share-vote-row">
         <PixelButton
-          variant="secondary"
+          :variant="primary ? 'primary' : 'secondary'"
           :class="buttonclass"
-          :aria-label="mashup ? undefined : 'Share on Twitter'"
+          :aria-label="mashup ? undefined : 'Share on X'"
           @click="shareNoneNative('twitter')"
         >
           <twitter class="share-vote-icon" />
           <template v-if="mashup">{{ nativecopy }}</template>
         </PixelButton>
         <PixelButton
-          variant="secondary"
+          :variant="primary ? 'primary' : 'secondary'"
           :class="buttonclass"
           :aria-label="mashup ? undefined : 'Share on LinkedIn'"
           @click="shareNoneNative('linkedin')"
