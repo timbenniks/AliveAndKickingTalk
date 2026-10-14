@@ -112,10 +112,11 @@ stage.onTick(() => {
   }
 });
 
-// Artwork plates cross-fade behind the stage.
-const plates = computed(() => props.song.artwork ?? []);
-const artIndex = ref(0);
-let artTimer: ReturnType<typeof setInterval> | undefined;
+// The song's artwork plays on the LED wall at the back of the stage.
+const art = computed(() => {
+  const plates = (props.song.artwork ?? []).map(layer => layer.bg).filter(Boolean);
+  return plates.length ? plates : [props.song.cover];
+});
 
 // Motion and quality.
 const prefersReduced = ref(false);
@@ -127,7 +128,7 @@ const baseDpr = ref(1.25);
 const reduced = computed(() => prefersReduced.value || forceReduced.value);
 const rich = computed(() => !lowQuality.value && !reduced.value);
 const dpr = computed(() => rich.value ? baseDpr.value : 1);
-const sceneKey = computed(() => `${rich.value ? "high" : "low"}-${plates.value.length ? "art" : "plain"}`);
+const sceneKey = computed(() => (rich.value ? "high" : "low"));
 watch(reduced, value => { stageClock.reducedMotion = value; }, { immediate: true });
 
 let media: MediaQueryList | null = null;
@@ -159,13 +160,8 @@ onMounted(() => {
   baseDpr.value = Math.min(devicePixelRatio || 1, 1.5);
   webglOk.value = hasWebGL();
   surfaceReady.value = true;
-  artTimer = setInterval(() => {
-    if (reduced.value || plates.value.length < 2) return;
-    artIndex.value = (artIndex.value + 1) % plates.value.length;
-  }, 7000);
 });
 onUnmounted(() => {
-  clearInterval(artTimer);
   clearTimeout(toastTimer);
   stageClock.arrivals.length = 0;
   media?.removeEventListener("change", onMotion);
@@ -174,23 +170,11 @@ onUnmounted(() => {
 
 <template>
   <main class="stage-page" :class="{ 'stage-live': live }">
-    <div v-if="plates.length" class="song-art" aria-hidden="true">
-      <img
-        v-for="(layer, index) in plates"
-        :key="`${song.songId}-${index}`"
-        class="plate"
-        :class="{ on: reduced ? index === 0 : index === artIndex }"
-        :src="layer.bg"
-        alt=""
-        :style="{ objectPosition: `${layer.x || '50%'} ${layer.y || '50%'}` }"
-      >
-    </div>
-
-    <div class="stage-canvas" :style="{ background: plates.length ? 'transparent' : theme.background }">
+    <div class="stage-canvas" :style="{ background: theme.background }">
       <StageScene
         v-if="surfaceReady && webglOk"
         :key="sceneKey"
-        :transparent="plates.length > 0"
+        :art="art"
         :marks="marks"
         :reset-key="song.songId"
         :theme="theme"
@@ -273,9 +257,6 @@ onUnmounted(() => {
 
 <style>
 .stage-page { min-height: 100dvh; background: var(--color-night); color: var(--color-bone); font-family: var(--font-sans); overflow: hidden; }
-.song-art { position: fixed; inset: 0; z-index: 0; background: var(--color-night); pointer-events: none; }
-.song-art .plate { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.1s linear; }
-.song-art .plate.on { opacity: 0.42; }
 .stage-canvas { position: fixed; inset: 0; z-index: 1; }
 .stage-canvas canvas { display: block; width: 100%; height: 100%; }
 .vote-toast {
@@ -332,7 +313,6 @@ onUnmounted(() => {
   .stage-live { --side: 0px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .song-art .plate { transition: none; }
   .vote-toast-enter-active, .vote-toast-leave-active { transition: none; }
 }
 </style>

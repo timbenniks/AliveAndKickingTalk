@@ -10,6 +10,8 @@ import StageParticles from './StageParticles.vue'
 import StageSides from './StageSides.vue'
 import StageMoments from './StageMoments.vue'
 import StageCrowd from './StageCrowd.vue'
+import StageSet from './StageSet.vue'
+import StageLedWall from './StageLedWall.vue'
 import type { Fan } from '#shared/stage/types'
 import type { StageEffect } from '#shared/stage/styles'
 import { BloomPmndrs, EffectComposerPmndrs, VignettePmndrs } from '@tresjs/post-processing'
@@ -21,7 +23,8 @@ defineProps<{
   effect: StageEffect
   gems: string[]
   dpr: number
-  transparent: boolean
+  // The song's artwork, shown on the LED wall.
+  art: string[]
   rich: boolean
   solo: boolean
   pyroKey: number
@@ -35,16 +38,15 @@ const emit = defineEmits<{ error: [] }>()
 
 <template>
   <TresCanvas
-    :alpha="transparent"
-    :clear-alpha="transparent ? 0 : 1"
     :clear-color="'#000000'"
-    :premultiplied-alpha="true"
     :dpr="dpr"
     antialias
     @error="emit('error')"
   >
-    <CameraRig :background="theme.background" :shake="theme.cameraShake" :transparent="transparent" :rich="rich" :solo="solo" />
+    <CameraRig :background="theme.background" :shake="theme.cameraShake" :rich="rich" :solo="solo" />
     <StageLights :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
+    <StageSet :primary="theme.primary" :secondary="theme.secondary" />
+    <StageLedWall :art="art" :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
     <StageEnvironment />
     <StageSides :effect="effect" :primary="theme.primary" :secondary="theme.secondary" />
     <NoteHighway :reset-key="resetKey" :gems="gems" />

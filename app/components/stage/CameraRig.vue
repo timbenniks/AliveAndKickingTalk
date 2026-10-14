@@ -6,7 +6,6 @@ import { stageClock } from '#shared/stage/clock'
 const props = defineProps<{
   background: string
   shake: number
-  transparent: boolean
   rich: boolean
   // Show moment: the camera leans in on the fretboard while a solo cue runs.
   solo: boolean
@@ -52,10 +51,7 @@ onBeforeRender(({ elapsed, delta }) => {
       if (props.rich) shadows.needsUpdate = true
     }
   }
-  if ('setClearColor' in tres.renderer) {
-    if (props.transparent) tres.renderer.setClearColor(0x000000, 0)
-    else tres.renderer.setClearColor(CELLAR, 1)
-  }
+  if ('setClearColor' in tres.renderer) tres.renderer.setClearColor(CELLAR, 1)
 })
 </script>
 
