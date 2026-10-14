@@ -14,6 +14,7 @@ const { allSongs, allPlayedSongs } = storeToRefs(songStore);
 const stage = useStageAudio();
 const { marks, duration, theme, stageStyle, solo } = useStageCues(() => props.song);
 const { crowd, toast, simulateVote } = useStageCrowd(() => !!props.live);
+useStageIntro(() => props.song);
 
 const upNext = computed(() => {
   if (props.mashupMode) return mergePlayedSongsWithAllSongs(allSongs, allPlayedSongs);

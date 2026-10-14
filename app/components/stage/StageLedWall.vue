@@ -15,7 +15,7 @@ import {
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { stageClock } from '#shared/stage/clock'
 import { shadeFaces } from '#shared/stage/formShade'
-import { onMoment } from '#shared/stage/moments'
+import { onMoment, recentTitle } from '#shared/stage/moments'
 import { drawPixel, measurePixel, wrapPixel } from '#shared/stage/pixelFont'
 import { LED_CENTER, LED_COLS, LED_HEIGHT, LED_ROWS, LED_WIDTH } from '#shared/stage/set'
 
@@ -185,12 +185,15 @@ function repaint() {
   if (plate) paint(plate, null, 0)
 }
 
-const stopTitles = onMoment((moment) => {
-  if (moment.kind !== 'title') return
+function showTitle(moment: { lines: string[], seconds: number, color?: string }) {
   const lines = moment.lines.flatMap(line => wrapPixel(line, 20))
   title = { lines, color: moment.color ?? '#f3ead6', seconds: moment.seconds, until: null }
   repaint()
-})
+}
+const stopTitles = onMoment((moment) => { if (moment.kind === 'title') showTitle(moment) })
+// The scene mounts after the page: pick up a title fired just before.
+const pending = recentTitle()
+if (pending) showTitle(pending)
 
 // Cross-fade between plates. Low quality and reduced motion hold the first.
 const { onBeforeRender } = useLoop()

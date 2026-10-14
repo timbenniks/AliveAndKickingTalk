@@ -24,6 +24,15 @@ function chooseSource(id: LaneSource) {
   if (id === "guitar") void stage.startGuitar();
 }
 
+// Show moments Tim can fire by hand.
+const moments = [
+  { label: "Pyro", moment: { kind: "pyro" } },
+  { label: "Confetti", moment: { kind: "confetti" } },
+  { label: "Crowd surf", moment: { kind: "surf" } },
+  { label: "Pit jump", moment: { kind: "jump" } },
+  { label: "Replay intro", moment: { kind: "intro" } },
+] as const;
+
 const debugText = ref<HTMLElement | null>(null);
 const signalOpen = ref(false);
 stage.onTick(() => {
@@ -67,7 +76,10 @@ if (isDev) {
     <PixelButton variant="secondary" :aria-pressed="reduced" @click="forceReduced = !forceReduced">{{ reduced ? 'Motion reduced' : 'Reduce motion' }}</PixelButton>
     <PixelButton variant="secondary" :aria-pressed="lowQuality" @click="lowQuality = !lowQuality">{{ lowQuality ? 'Low quality' : 'High quality' }}</PixelButton>
   </div>
-  <!-- Show controls go here. -->
+  <fieldset class="rig-show">
+    <legend class="rig-field"><span>Show</span></legend>
+    <PixelButton v-for="item in moments" :key="item.label" variant="secondary" @click="emitMoment(item.moment)">{{ item.label }}</PixelButton>
+  </fieldset>
   <PixelButton v-if="isDev && live" variant="secondary" @click="emit('simulateVote')">Simulate a vote</PixelButton>
   <details class="rig-debug" @toggle="signalOpen = ($event.target as HTMLDetailsElement).open">
     <summary class="rig-field"><span>Signal</span></summary>
@@ -80,5 +92,7 @@ if (isDev) {
 .rig-source { display: flex; gap: 0.5rem; align-items: center; font-size: 1.05rem; cursor: pointer; }
 .rig-source input { accent-color: var(--color-gold); }
 .rig-toggles { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.rig-show { display: flex; flex-wrap: wrap; gap: 0.75rem; border: 0; padding: 0; margin: 0; }
+.rig-show legend { margin-bottom: 0.5rem; }
 .rig-debug pre { font-family: var(--font-caps); font-size: 0.65rem; white-space: pre-wrap; color: var(--color-dust); margin-top: 0.5rem; }
 </style>

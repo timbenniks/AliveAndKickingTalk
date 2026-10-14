@@ -26,6 +26,8 @@ export const stageClock = {
   lanes: [0, 0, 0, 0, 0, 0],
   analysis: 'idle' as AnalysisState,
   reducedMotion: false,
+  // Wall-clock second (performance.now() / 1000) the song intro fly-in started; 0 when none.
+  introAt: 0,
   // Lane hits from whichever source feeds the lanes. The highway drains this every frame.
   events: [] as StagePulse[],
   // New votes waiting to drop into the mosh pit. The crowd drains this.

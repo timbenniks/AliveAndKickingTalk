@@ -23,6 +23,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { LANE_COLORS, stageClock } from '#shared/stage/clock'
 import type { Fan } from '#shared/stage/types'
 import { shadeFaces } from '#shared/stage/formShade'
+import { onMoment } from '#shared/stage/moments'
 
 // The mosh pit: one voxel fan per voter, standing in the dark either side of
 // the highway so the fretboard runs through the crowd. Heads wear the voter's
@@ -57,13 +58,16 @@ type Dive = {
   t: number, duration: number, x: number, y: number, z: number,
   apex: number, flips: number, axis: 'x' | 'z', twirl: number
 }
+// A crowd surf: lifted flat over the heads, carried out along the wedge and
+// back to the same spot.
+type Surf = { t: number, duration: number, reach: number, roll: number }
 type Seat = {
   userid: string, used: boolean, boost: number,
-  phase: number, rate: number, shirt: number, since: number, dive: Dive | null
+  phase: number, rate: number, shirt: number, since: number, dive: Dive | null, surf: Surf | null
 }
 const seats: Seat[] = slots.map((_, i) => ({
   userid: '', used: false, boost: 0,
-  phase: (i * 2.399) % (Math.PI * 2), rate: 5.5 + ((i * 37) % 10) / 10 * 2.5, shirt: i % LANE_COLORS.length, since: 0, dive: null,
+  phase: (i * 2.399) % (Math.PI * 2), rate: 5.5 + ((i * 37) % 10) / 10 * 2.5, shirt: i % LANE_COLORS.length, since: 0, dive: null, surf: null,
 }))
 
 // Avatar atlas: 16x8 cells of 16px, one per seat.
@@ -219,11 +223,40 @@ function catchDiver(index: number) {
   })
 }
 
+// One surfer at a time, picked from the newest voters.
+function startSurf() {
+  if (seats.some(seat => seat.surf)) return
+  const ready = seats
+    .map((seat, i) => ({ seat, i }))
+    .filter(({ seat }) => seat.used && !seat.dive)
+    // Newest first; among equals (the seeded crowd) the front rows, nearest the camera.
+    .sort((a, b) => b.seat.since - a.seat.since || a.i - b.i)
+    .slice(0, 8)
+  if (!ready.length) return
+  const { seat, i } = pick(ready)
+  const side = Math.sign(slots[i]!.x)
+  seat.surf = {
+    t: 0,
+    duration: between(4.5, 5.5),
+    // Out toward the far edge of the wedge.
+    reach: side * Math.max(1.5, 9.6 - Math.abs(slots[i]!.x)),
+    roll: stageClock.reducedMotion ? 0 : between(0.15, 0.3) * (Math.random() < 0.5 ? -1 : 1),
+  }
+}
+
+let nextSurfIn = between(15, 20)
+const stopMoments = onMoment((moment) => {
+  if (moment.kind === 'surf') startSurf()
+  if (moment.kind === 'jump') seats.forEach((seat) => { if (seat.used) seat.boost = 1 })
+})
+
 const pivotUp = new Matrix4().makeTranslation(0, 0.55, 0)
 const pivotDown = new Matrix4().makeTranslation(0, -0.55, 0)
 const headOffset = new Matrix4().makeTranslation(0, 1.1, 0)
 const spin = new Matrix4()
 const twirl = new Matrix4()
+const lie = new Matrix4()
+const roll = new Matrix4()
 const bodyMatrix = new Matrix4()
 const headMatrix = new Matrix4()
 
@@ -250,6 +283,7 @@ function seatFor(fan: Fan, drop: boolean) {
   seat.since = clock
   seat.boost = 0
   seat.dive = drop ? launch(slots[index]!) : null
+  seat.surf = null
   drawAvatar(index, fan.avatar)
   filled = MAX
   bodies.count = heads.count = MAX
@@ -272,6 +306,15 @@ onBeforeRender(({ delta }) => {
 
   const calm = stageClock.reducedMotion
   const drive = stageClock.playing ? stageClock.bass : 0
+  // Someone goes crowd surfing every 15 to 20 seconds while the song plays.
+  // Real seconds (not the animation-capped dt), so slow renderers keep pace.
+  if (stageClock.playing && !calm) {
+    nextSurfIn -= Math.min(delta, 0.25)
+    if (nextSurfIn <= 0) {
+      startSurf()
+      nextSurfIn = between(15, 20)
+    }
+  }
   for (let i = 0; i < filled; i++) {
     const seat = seats[i]!
     const spot = slots[i]!
@@ -305,6 +348,30 @@ onBeforeRender(({ delta }) => {
         seat.dive = null
         catchDiver(i)
       }
+    } else if (seat.surf) {
+      const surf = seat.surf
+      surf.t += dt
+      const p = Math.min(1, surf.t / surf.duration)
+      // Lift, carry out and back, set down.
+      const up = Math.min(1, p / 0.12, (1 - p) / 0.12)
+      const lift = up * up * (3 - 2 * up)
+      const out = Math.sin(Math.PI * Math.min(1, Math.max(0, (p - 0.08) / 0.84)))
+      const x = spot.x + surf.reach * out
+      const z = spot.z + Math.sin(p * Math.PI * 3) * 0.25 * lift
+      dummy.position.set(x, GROUND + lift * (1.2 + Math.sin(clock * 6) * 0.06), z)
+      dummy.rotation.set(0, Math.PI, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      // Tip back to lie flat as they go up, rocking a little on the hands.
+      lie.makeRotationX(-Math.PI / 2 * lift)
+      roll.makeRotationZ(Math.sin(clock * 3) * surf.roll * lift)
+      bodyMatrix.copy(dummy.matrix).multiply(pivotUp).multiply(roll).multiply(lie).multiply(pivotDown)
+      // Arms up underneath as the surfer passes.
+      seats.forEach((other, j) => {
+        const below = slots[j]!
+        if (j !== i && other.used && Math.hypot(below.x - x, below.z - z) < 1.1) other.boost = Math.max(other.boost, 0.6)
+      })
+      if (p >= 1) seat.surf = null
     } else {
       // Bounce with the bass while the song plays; a gentle sway otherwise.
       const beat = Math.max(0, Math.sin(clock * seat.rate + seat.phase))
@@ -324,6 +391,7 @@ onBeforeRender(({ delta }) => {
 })
 
 onBeforeUnmount(() => {
+  stopMoments()
   for (const part of riserParts) part.dispose()
   for (const item of [deckMat, lipMat, tileMap]) item.dispose()
   bodyGeo.dispose()

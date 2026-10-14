@@ -12,6 +12,7 @@ import StageMoments from './StageMoments.vue'
 import StageCrowd from './StageCrowd.vue'
 import StageSet from './StageSet.vue'
 import StageLedWall from './StageLedWall.vue'
+import StageBeams from './StageBeams.vue'
 import type { Fan } from '#shared/stage/types'
 import type { StageEffect } from '#shared/stage/styles'
 import { BloomPmndrs, EffectComposerPmndrs, VignettePmndrs } from '@tresjs/post-processing'
@@ -45,6 +46,7 @@ const emit = defineEmits<{ error: [] }>()
     <StageLights :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
     <StageSet :primary="theme.primary" :secondary="theme.secondary" />
     <StageLedWall :art="art" :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
+    <StageBeams :solo="solo" :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
     <StageEnvironment />
     <StageSides :effect="effect" :primary="theme.primary" :secondary="theme.secondary" />
     <NoteHighway :reset-key="resetKey" :gems="gems" />
