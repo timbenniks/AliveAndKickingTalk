@@ -12,7 +12,8 @@ const { conference } = useRuntimeConfig().public;
 
 const canShare = ref();
 const url = ref();
-const avatar = (
+// Prefer our stored copy of the avatar: provider URLs expire.
+const avatar = songStore.stableAvatar || (
   user.value?.user_metadata?.picture || user.value?.user_metadata?.avatar_url || ''
 ).replace("_normal", "");
 
@@ -21,7 +22,7 @@ const imgUrl = ref("");
 if (props.mashup) {
   const { data: votes } = await client
     .from("votes")
-    .select("*")
+    .select("songid")
     .eq("userid", user?.value?.sub as string)
     .order("mashup_spot");
 
@@ -40,48 +41,50 @@ if (props.mashup) {
   imgUrl.value = await createShareImage(avatar as string, props.song);
 }
 
-async function share() {
-  const shareSavedData = await songStore.saveShare(
+function shareText() {
+  return props.mashup
+    ? `I just voted for my favorite mashup at ${conference} @timbenniks`
+    : `I just voted for ${props.song?.song} by ${props.song?.artist} at ${conference} @timbenniks`;
+}
+
+// Saves the share and returns its link, or null. The store sets the error
+// banner on failure, so a link without an id is never built.
+async function shareLink() {
+  const id = await songStore.saveShare(
     user.value?.sub as string,
     avatar as string,
     props.mashup,
     !props.mashup ? props.song?.songId : undefined
   );
+  return id ? `https://aliveandkicking.dev/share/${id}` : null;
+}
 
-  const title = `Alive and Kicking by Tim Benniks at ${conference}`;
-  const text = props.mashup
-    ? `I just voted for my favorite mashup at ${conference} @timbenniks`
-    : `I just voted for ${props.song?.song} by ${props.song?.artist} at ${conference} @timbenniks`;
-  const url = `https://aliveandkicking.dev/share/${shareSavedData?.id}`;
-  await navigator.share({ title, text, url });
+async function share() {
+  const url = await shareLink();
+  if (!url) return;
+  try {
+    await navigator.share({ title: `Alive and Kicking by Tim Benniks at ${conference}`, text: shareText(), url });
+  } catch {
+    // Closing the share sheet is not an error.
+  }
 }
 
 async function shareNoneNative(which: "twitter" | "linkedin") {
-  let shareUrl = "";
-
-  const shareSavedData = await songStore.saveShare(
-    user.value?.sub as string,
-    avatar as string,
-    props.mashup,
-    !props.mashup ? props.song?.songId : undefined
-  );
-
-  const text = props.mashup
-    ? `I just voted for my favorite mashup at ${conference} @timbenniks`
-    : `I just voted for ${props.song?.song} by ${props.song?.artist} at ${conference} @timbenniks`;
-  const url = `https://aliveandkicking.dev/share/${shareSavedData?.id}`;
-
-  if (which === "linkedin") {
-    shareUrl = `https://www.linkedin.com/feed/?shareActive=true?&text=${encodeURIComponent(
-      `${text} ${url}`
-    )}`;
-  } else {
-    shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `${text} ${url}`
-    )}`;
+  // Open the tab inside the tap, before any await, or phones block the popup.
+  const tab = window.open("", "_blank");
+  const url = await shareLink();
+  if (!url) {
+    tab?.close();
+    return;
   }
 
-  window.open(shareUrl);
+  const message = encodeURIComponent(`${shareText()} ${url}`);
+  const shareUrl = which === "linkedin"
+    ? `https://www.linkedin.com/feed/?shareActive=true&text=${message}`
+    : `https://twitter.com/intent/tweet?text=${message}`;
+
+  if (tab) tab.location.href = shareUrl;
+  else window.open(shareUrl);
 }
 
 onMounted(() => {

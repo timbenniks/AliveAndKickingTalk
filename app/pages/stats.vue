@@ -25,7 +25,7 @@ const { data, refresh } = await useAsyncData("stats", async () => {
 
   const { count: votesCount } = await client
     .from("votes")
-    .select("*", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true });
 
   const users = await $fetch("/api/users");
 

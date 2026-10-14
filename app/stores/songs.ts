@@ -5,6 +5,12 @@ import { log } from '../helpers'
 
 let voteQueue: ReturnType<typeof createVoteQueue> | null = null
 
+const SHARE_ERROR = 'Your share link could not be made. Check your connection and try again.'
+
+function providerAvatar(user: ReturnType<typeof useSupabaseUser>['value']) {
+  return String(user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '')
+}
+
 async function getSongs() {
   return await $fetch<Song[]>('/api/songs')
 }
@@ -21,7 +27,10 @@ export const useSongStore = defineStore('song-store', {
       savingVotes: false,
       config: [] as ConfigValue[],
       errorMessage: "",
-      latestVote: [] as LatestVote[]
+      latestVote: [] as LatestVote[],
+      // The voter's avatar copied to our own storage (see /api/avatar). Empty
+      // until it is ready, in which case the provider URL is used instead.
+      stableAvatar: ""
     }
   },
   actions: {
@@ -163,7 +172,7 @@ export const useSongStore = defineStore('song-store', {
       const { error } = await client.from('votes').insert({
         userid: user.value.sub,
         email: user.value.email || null,
-        user_avatar: user.value.user_metadata?.avatar_url || user.value.user_metadata?.picture || '',
+        user_avatar: this.stableAvatar || providerAvatar(user.value),
         songid: songId,
       });
       if (error) throw error;
@@ -173,72 +182,42 @@ export const useSongStore = defineStore('song-store', {
       return performVote(this, async () => {
         log('[async][action] mashupVote', songId, spot)
 
-
-
         const client = useSupabaseClient<Database>()
         const user = useSupabaseUser();
 
         if (!user.value) {
-
-
           this.errorMessage = 'Error [async][action] mashupVote: no user'
           throw createError('[async][action] mashupVote: no user')
         }
 
-        const { data: existingVote, error: existingError } = await client
-          .from('votes')
-          .select('userid, mashup_spot')
-          .eq('userid', user.value?.sub)
-          .eq('mashup_spot', spot)
-          .maybeSingle()
+        const avatar = this.stableAvatar || providerAvatar(user.value)
 
-        if (existingError) {
-          this.errorMessage = 'Error [async][action] mashupVote: existingError'
-          throw createError('[async][action] mashupVote: existingError')
-        }
+        // One transaction in the database: the spot (and this song in any other
+        // spot) is replaced, or nothing changes.
+        const { error: rpcError } = await client.rpc('mashup_vote', { p_songid: songId, p_spot: spot, p_avatar: avatar })
 
-        if (existingVote) {
+        // PGRST202: the function does not exist yet (migration not applied).
+        if (rpcError?.code === 'PGRST202') {
           const { error: deletionError } = await client
             .from('votes')
             .delete()
-            .eq('userid', user.value?.sub)
+            .eq('userid', user.value.sub)
             .eq('mashup_spot', spot)
-
-          if (deletionError) {
-            this.errorMessage = 'Error [async][action] mashupVote: deletionError'
-            throw createError('[async][action] mashupVote: deletionError')
-          }
+          if (deletionError) throw deletionError
 
           const { error: insertedVoteError } = await client
             .from('votes')
             .insert({
-              userid: user.value?.sub,
-              email: user.value?.email || null,
-              user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata?.picture || '',
+              userid: user.value.sub,
+              email: user.value.email || null,
+              user_avatar: avatar,
               songid: songId,
               mashup_spot: spot
             })
-
-          if (insertedVoteError) {
-            this.errorMessage = 'Error [async][action] mashupVote: insertedVoteError'
-            throw createError('[async][action] mashupVote: insertedVoteError')
-          }
+          if (insertedVoteError) throw insertedVoteError
         }
-        else {
-          const { error: insertedVoteError } = await client
-            .from('votes')
-            .insert({
-              userid: user.value?.sub,
-              email: user.value?.email || null,
-              user_avatar: (user.value?.user_metadata?.avatar_url) ? user.value?.user_metadata?.avatar_url : user.value?.user_metadata?.picture || '',
-              songid: songId,
-              mashup_spot: spot
-            })
-
-          if (insertedVoteError) {
-            this.errorMessage = 'Error [async][action] mashupVote: insertedVoteError'
-            throw createError('[async][action] mashupVote: insertedVoteError')
-          }
+        else if (rpcError) {
+          throw rpcError
         }
 
         await this.setVotedState();
@@ -331,41 +310,42 @@ export const useSongStore = defineStore('song-store', {
       }
     },
 
-    async saveShare(userid: string, avatar: string, mashup: boolean, songId?: string) {
+    // Returns the new share's id, or null (with errorMessage set) when the share
+    // could not be saved, so a link is never built without an id.
+    async saveShare(userid: string, avatar: string, mashup: boolean, songId?: string): Promise<number | null> {
       const client = useSupabaseClient<Database>()
-      let result: Database['public']['Tables']['shares']['Row'] | null
+      let songids = songId || ''
 
-      if (!mashup) {
-        const { data } = await client
-          .from('shares')
-          .insert({
-            userid: userid as string,
-            user_avatar: avatar as string,
-            mashup: mashup as boolean,
-            songids: songId as string
-          }).select().single()
+      if (mashup) {
+        const { data: votes, error: votesError } = await client
+          .from('votes')
+          .select('songid')
+          .eq('userid', userid)
+          .order('mashup_spot');
 
-        result = data
-
-      } else {
-        const { data: votes } = await client
-          .from("votes")
-          .select("*")
-          .eq("userid", userid as string)
-          .order("mashup_spot");
-
-        const { data } = await client
-          .from('shares')
-          .insert({
-            userid: userid as string,
-            user_avatar: avatar as string,
-            mashup: mashup as boolean,
-            songids: votes?.map(vote => { return vote.songid }).join(',') as string
-          }).select().single()
-
-        result = data
+        if (votesError) {
+          this.errorMessage = SHARE_ERROR
+          return null
+        }
+        songids = (votes || []).map(vote => vote.songid).join(',')
       }
-      return result
+
+      if (!userid || !songids) {
+        this.errorMessage = SHARE_ERROR
+        return null
+      }
+
+      const { data, error } = await client
+        .from('shares')
+        .insert({ userid, user_avatar: this.stableAvatar || avatar, mashup, songids })
+        .select('id')
+        .single()
+
+      if (error || !data?.id) {
+        this.errorMessage = SHARE_ERROR
+        return null
+      }
+      return data.id
     }
   },
   getters: {

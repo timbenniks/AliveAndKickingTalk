@@ -122,7 +122,15 @@ export interface Database {
       }
     }
     Functions: {
-      [_ in never]: never
+      // supabase/migrations/20261014_rock_anthem_safety.sql
+      mashup_vote: {
+        Args: {
+          p_songid: string
+          p_spot: number
+          p_avatar?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
