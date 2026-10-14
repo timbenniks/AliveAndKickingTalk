@@ -94,3 +94,24 @@ Not tested against real Supabase:
 - the storage bucket insert and avatar upload (needs the real storage schema and a signed-in user)
 - PostgREST error codes
 - the realtime effect of the email clean-up
+
+## Show phase (20261015_show_phase.sql)
+
+Audience participation (the crowd power meter and the encore vote) needs phones to know what the host's live screen is doing. This migration adds one config row, `show_phase`, with the value `idle`, `playing` or `encore:<ISO end time>`.
+
+- Only the host can change it: the existing admin-only RLS on `config` applies. Phones read it through realtime (`config` is already in the publication).
+- Additive and safe to run twice. It only inserts the row if it is missing.
+- The classic talk (`talk-2024`) reads config by key only, so the extra row is invisible to it. Its band page refetches on any config update, which is harmless.
+- Until this is applied the app treats a missing row as `idle`: phones never show the meter or encore buttons, and the host's phase writes fail quietly.
+
+**Apply:** paste `supabase/migrations/20261015_show_phase.sql` into the SQL editor and run it. Check with:
+
+```sql
+select key, val from public.config where key = 'show_phase';
+```
+
+**Roll back:**
+
+```sql
+delete from public.config where key = 'show_phase';
+```
