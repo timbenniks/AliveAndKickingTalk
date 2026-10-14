@@ -266,9 +266,15 @@ let clock = 0
 function seatFor(fan: Fan, drop: boolean) {
   const known = seats.findIndex(seat => seat.used && seat.userid === fan.userid)
   if (known >= 0) {
-    // A fan who votes again jumps for it.
-    seats[known]!.boost = 1
-    return
+    // The seed lists each voter once. A live vote always earns a stage dive,
+    // even from a fan already in the pit: they leave their spot and dive into
+    // the front rows, where the room can see it.
+    if (!drop) return
+    const old = seats[known]!
+    old.used = false
+    old.userid = ''
+    old.dive = null
+    old.surf = null
   }
   // Live votes take the free spot nearest the stage; the seed fills from the
   // back, so the front rows stay open for the people voting right now.

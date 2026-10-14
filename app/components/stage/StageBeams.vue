@@ -37,8 +37,11 @@ varying float vAlong;
 varying vec3 vNormalView;
 varying vec3 vViewDir;
 void main() {
-  float edge = pow(abs(dot(vNormalView, vViewDir)), 1.6);
-  float along = pow(1.0 - vAlong, 1.15) * smoothstep(0.0, 0.04, vAlong);
+  // Clamp before pow(): a negative base is NaN on real GPUs (Metal), and the
+  // bloom pass spreads NaN pixels until the whole stage renders black.
+  float a = clamp(vAlong, 0.0, 1.0);
+  float edge = pow(clamp(abs(dot(vNormalView, vViewDir)), 0.0, 1.0), 1.6);
+  float along = pow(1.0 - a, 1.15) * smoothstep(0.0, 0.04, a);
   gl_FragColor = vec4(color * edge * along * strength, 1.0);
 }`
 
