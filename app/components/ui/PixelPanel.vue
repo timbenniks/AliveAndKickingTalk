@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// A tolex panel. `fret` tints the frame with a lane color when the panel stands for a song or lane.
+// A tolex panel. Its .pixel-panel style lives in tailwind.css so plain elements can use it.
+// `fret` tints the frame with a lane color when the panel stands for a song or lane.
 const props = withDefaults(defineProps<{ fret?: number, tag?: string }>(), { fret: 0, tag: 'section' });
 const edge = computed(() => props.fret ? `var(--color-fret-${props.fret})` : 'var(--color-tolex-hi)');
 </script>
@@ -9,11 +10,3 @@ const edge = computed(() => props.fret ? `var(--color-fret-${props.fret})` : 'va
     <slot />
   </component>
 </template>
-
-<style>
-.pixel-panel {
-  background: var(--color-tolex);
-  color: var(--color-bone);
-  padding: 1rem;
-}
-</style>

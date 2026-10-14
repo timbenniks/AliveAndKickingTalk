@@ -159,6 +159,9 @@ function remaining(duration: number) {
 .dock-rig summary { list-style: none; }
 .dock-rig summary::-webkit-details-marker { display: none; }
 .dock-rig-panel {
+  /* Solid, so the stage never shows through the controls. */
+  background: var(--color-night);
+  padding: 1.5rem;
   position: absolute;
   right: 0;
   bottom: calc(100% + 1rem);

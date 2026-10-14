@@ -82,6 +82,15 @@
   :focus-visible { outline: var(--px) solid var(--color-fret-4); outline-offset: var(--px); }
 }
 
+/* Tolex panels (PixelPanel, or any element that needs the surface). */
+@layer components {
+.pixel-panel {
+  background: var(--color-tolex);
+  color: var(--color-bone);
+  padding: 1rem;
+}
+}
+
 /* Stompbox buttons (PixelButton, or any link that needs to look like one). */
 @layer components {
 .stompbox {
