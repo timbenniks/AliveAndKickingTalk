@@ -45,20 +45,23 @@ export function createVoteQueue(handlers: {
   async function drain() {
     handlers.onBusy?.(true)
     let failed = false
-    while (pending.length) {
-      const { songId, on } = pending.shift()!
-      try {
-        await handlers.write(songId, on)
-      } catch (error) {
-        failed = true
-        handlers.onError(error)
+    do {
+      while (pending.length) {
+        const { songId, on } = pending.shift()!
+        try {
+          await handlers.write(songId, on)
+        } catch (error) {
+          failed = true
+          handlers.onError(error)
+        }
       }
-    }
-    try {
-      await handlers.resync()
-    } catch (error) {
-      if (!failed) handlers.onError(error)
-    }
+      try {
+        await handlers.resync()
+      } catch (error) {
+        if (!failed) handlers.onError(error)
+      }
+      // Taps can arrive while the database snapshot is loading.
+    } while (pending.length)
     running = null
     handlers.onBusy?.(false)
   }

@@ -8,6 +8,7 @@ import type { AnalysisState, LaneSource } from '#shared/stage/types';
 
 const SOURCE_KEY = 'alive-lane-source';
 const DEVICE_KEY = 'alive-guitar-input';
+const OFFSET_KEY = 'alive-visual-offset';
 
 const laneSource = ref<LaneSource>('song');
 const analysis = ref<AnalysisState>('idle');
@@ -24,6 +25,7 @@ let songPulses: AnalyserNode | null = null;
 let guitarStream: MediaStream | null = null;
 let guitarSource: MediaStreamAudioSourceNode | null = null;
 let guitarAnalyser: AnalyserNode | null = null;
+let guitarRequest = 0;
 let guitarBins: LaneBins = [];
 let songFreq = new Uint8Array(0);
 let pulseFreq = new Uint8Array(0);
@@ -115,8 +117,10 @@ async function listGuitarDevices() {
 }
 
 function stopGuitar() {
+  guitarRequest++;
   guitarStream?.getTracks().forEach(track => track.stop());
   guitarSource?.disconnect();
+  guitarAnalyser?.disconnect();
   guitarStream = null;
   guitarSource = null;
   guitarAnalyser = null;
@@ -132,14 +136,21 @@ async function startGuitar(deviceId = guitarDeviceId.value) {
     return;
   }
   stopGuitar();
+  const request = guitarRequest;
   try {
-    guitarStream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         deviceId: deviceId ? { exact: deviceId } : undefined,
         echoCancellation: false, noiseSuppression: false, autoGainControl: false,
       },
     });
-    if (ctx.state === 'suspended') await ctx.resume();
+    if (request !== guitarRequest || ctx !== context) {
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
+    guitarStream = stream;
+    // Not awaited: after a page load there is no gesture yet, and play resumes it.
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
     guitarSource = ctx.createMediaStreamSource(guitarStream);
     guitarAnalyser = analyser(ctx, 4096, 0.3);
     // A narrow dB window: on the default -100 dB floor, FFT leakage from one
@@ -156,6 +167,7 @@ async function startGuitar(deviceId = guitarDeviceId.value) {
     // Labels are only exposed after permission is granted.
     await listGuitarDevices();
   } catch {
+    if (request !== guitarRequest) return;
     stopGuitar();
     guitarStatus.value = 'Guitar input was blocked or is unavailable. Allow microphone access and retry.';
   }
@@ -280,12 +292,17 @@ function onTick(handler: () => void) {
   onUnmounted(() => tickHandlers.delete(handler));
 }
 
+watch(offsetMs, value => write(OFFSET_KEY, String(value)));
+
 export function useStageAudio() {
   onMounted(() => {
     if (users++ > 0) return;
     laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar', 'midi']) || 'song';
     guitarDeviceId.value = read(DEVICE_KEY);
+    offsetMs.value = Number(read(OFFSET_KEY)) || 0;
     if (laneSource.value === 'midi') setAnalysis('live');
+    // Songs load as new pages: pick the guitar back up where it was.
+    if (laneSource.value === 'guitar') void startGuitar();
     void listGuitarDevices();
     raf = requestAnimationFrame(tick);
   });

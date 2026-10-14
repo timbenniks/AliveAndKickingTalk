@@ -3,6 +3,7 @@ import { stageClock } from '#shared/stage/clock';
 import { emitMoment } from '#shared/stage/moments';
 import { createTapTally } from '#shared/show/taps';
 import { createPowerMeter } from '#shared/show/meter';
+import { createShowPhaseSync } from '#shared/show/phase';
 import { createEncoreWindow, encoreHref, pickEncoreSong, type EncoreState } from '#shared/show/encore';
 
 // The live screen's side of audience participation: phone taps fill the crowd
@@ -23,7 +24,14 @@ export function useStageShow(options: { host: () => boolean; songId: () => strin
   const encoreSong = ref<string | null>(null);
   let localEncore = false;
   let lastTitle = 0;
-  let wasPlaying = false;
+  let encoreEndsAt = 0;
+  const phaseError = ref(false);
+  const phaseSync = createShowPhaseSync(phase => store.setShowPhase(phase), failed => { phaseError.value = failed; });
+
+  function syncPhase(now = Date.now()) {
+    if (!options.host() || (encore && localEncore)) return;
+    phaseSync.tick(encore ? { kind: 'encore', endsAt: encoreEndsAt } : { kind: stageClock.playing ? 'playing' : 'idle' }, now);
+  }
 
   const offTap = channel.on('tap', (uid) => {
     if (!stageClock.playing || encore) return;
@@ -41,11 +49,12 @@ export function useStageShow(options: { host: () => boolean; songId: () => strin
 
   function openEncore(seconds = 15, local = false) {
     const endsAt = Date.now() + seconds * 1000;
+    encoreEndsAt = endsAt;
     encore = createEncoreWindow({ endsAt, audience: channel.audience.value });
     encoreSong.value = null;
     localEncore = local;
     stageClock.meterMode = 'encore';
-    if (options.host() && !local) void store.setShowPhase({ kind: 'encore', endsAt });
+    syncPhase();
   }
 
   function closeEncore(state: EncoreState) {
@@ -60,8 +69,6 @@ export function useStageShow(options: { host: () => boolean; songId: () => strin
     } else {
       emitMoment({ kind: 'title', lines: ['MAYBE NEXT TIME'], seconds: 4 });
     }
-    wasPlaying = stageClock.playing;
-    if (options.host() && !localEncore) void store.setShowPhase({ kind: stageClock.playing ? 'playing' : 'idle' });
   }
 
   stage.onTick(() => {
@@ -77,14 +84,10 @@ export function useStageShow(options: { host: () => boolean; songId: () => strin
         lastTitle = now;
         emitMoment({ kind: 'title', lines: [`ENCORE? ${state.taps}/${state.threshold}`], seconds: 1, color: '#ffc531' });
       }
-      return;
+    } else {
+      stageClock.meter = meter.tick(now).level;
     }
-    stageClock.meter = meter.tick(now).level;
-    // The host keeps phones in step: the meter button shows while the song plays.
-    if (options.host() && stageClock.playing !== wasPlaying) {
-      wasPlaying = stageClock.playing;
-      void store.setShowPhase({ kind: wasPlaying ? 'playing' : 'idle' });
-    }
+    syncPhase(now);
   });
 
   const encoreLink = computed(() => {
@@ -105,8 +108,9 @@ export function useStageShow(options: { host: () => boolean; songId: () => strin
     stageClock.meter = 0;
     stageClock.meterMode = 'power';
     if (import.meta.dev) delete (window as unknown as { __openEncore?: unknown }).__openEncore;
-    if (options.host()) void store.setShowPhase({ kind: 'idle' });
+    const settled = phaseSync.stop();
+    if (options.host()) void settled.then(() => store.setShowPhase({ kind: 'idle' }));
   });
 
-  return { audience: channel.audience, encoreState, encoreLink, encoreTitle, openEncore };
+  return { audience: channel.audience, encoreState, encoreLink, encoreTitle, openEncore, phaseError };
 }

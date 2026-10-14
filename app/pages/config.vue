@@ -58,6 +58,13 @@ function removeVotes() {
         </div>
       </PixelPanel>
 
+      <PixelPanel class="config-group config-rig">
+        <h2>Rig</h2>
+        <p class="config-note">Saved in this browser, so set it on the stage laptop. Every song picks it up.</p>
+        <midi />
+        <StageRigSetup />
+      </PixelPanel>
+
       <p role="status" class="config-status">
         <template v-if="loading"><loader /> Working…</template>
         <template v-else>{{ status }}</template>
@@ -90,4 +97,6 @@ function removeVotes() {
 .config-note, .config-status { color: var(--color-dust); font-size: 1.1rem; }
 .config-status { display: flex; gap: 0.5rem; align-items: center; min-height: 2rem; }
 .config-row { display: flex; flex-wrap: wrap; gap: 1rem; }
+.config-rig { display: grid; gap: 1rem; justify-items: start; }
+.config-rig .rig-field { width: 100%; }
 </style>

@@ -46,8 +46,7 @@ const art = computed(() => {
 
 // Motion and quality.
 const prefersReduced = ref(false);
-const forceReduced = ref(false);
-const lowQuality = ref(false);
+const { forceReduced, lowQuality } = useRigDisplay();
 const webglOk = ref(false);
 const surfaceReady = ref(false);
 const baseDpr = ref(1.25);
@@ -128,8 +127,6 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
     <player :song="song" :countdown="mashupMode ? 10 : undefined" @on-song-ended="mashupMode && findNextSong()">
       <template #rig>
         <StageRig
-          v-model:force-reduced="forceReduced"
-          v-model:low-quality="lowQuality"
           :live="live"
           :host="host"
           :reduced="reduced"

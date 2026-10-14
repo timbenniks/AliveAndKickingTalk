@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createTapLimiter, createTapTally } from '../shared/show/taps.ts';
 import { createPowerMeter } from '../shared/show/meter.ts';
 import { createEncoreWindow, encoreThreshold, pickEncoreSong, encoreHref } from '../shared/show/encore.ts';
-import { formatShowPhase, parseShowPhase } from '../shared/show/phase.ts';
+import { createShowPhaseSync, formatShowPhase, parseShowPhase } from '../shared/show/phase.ts';
 
 // Phone limiter: N taps per rolling second.
 const limiter = createTapLimiter(3);
@@ -86,5 +86,82 @@ for (const junk of [null, undefined, '', 'party', 'encore:', 'encore:not-a-date'
 // The encore link: the song page, or the next mashup spot.
 assert.equal(encoreHref('the_trooper'), '/live/the_trooper');
 assert.equal(encoreHref('the_trooper', 4), '/live/the_trooper?spot=5&autoplay=true');
+
+// Failed phase writes retry without another playback transition. A confirmed
+// phase does not flood the database, and a changed phase skips a stale retry.
+const flush = () => new Promise(resolve => setImmediate(resolve));
+const attempts = [];
+const failures = [];
+let succeeds = false;
+const sync = createShowPhaseSync(async phase => {
+  attempts.push(formatShowPhase(phase));
+  return succeeds;
+}, failed => failures.push(failed));
+sync.tick({ kind: 'playing' }, 0);
+await flush();
+assert.deepEqual(failures, [true]);
+sync.tick({ kind: 'playing' }, 1999);
+assert.deepEqual(attempts, ['playing']);
+succeeds = true;
+sync.tick({ kind: 'playing' }, 2000);
+await flush();
+assert.deepEqual(attempts, ['playing', 'playing']);
+assert.equal(failures.at(-1), false);
+sync.tick({ kind: 'playing' }, 3000);
+assert.equal(attempts.length, 2);
+succeeds = false;
+sync.tick(encorePhase, 4000);
+await flush();
+succeeds = true;
+sync.tick({ kind: 'idle' }, 4001);
+await flush();
+assert.equal(attempts.at(-1), 'idle');
+assert.equal(failures.at(-1), false);
+
+// One write at a time; an old acknowledgement must not confirm the new phase.
+let releasePhase;
+let activeWrites = 0;
+const serialAttempts = [];
+const serial = createShowPhaseSync(async phase => {
+  assert.equal(++activeWrites, 1);
+  serialAttempts.push(phase.kind);
+  await new Promise(resolve => { releasePhase = resolve; });
+  activeWrites--;
+  return true;
+}, assert.fail);
+serial.tick({ kind: 'playing' }, 0);
+serial.tick(encorePhase, 1);
+serial.tick({ kind: 'idle' }, 2);
+assert.deepEqual(serialAttempts, ['playing']);
+releasePhase();
+await flush();
+serial.tick({ kind: 'idle' }, 3);
+assert.deepEqual(serialAttempts, ['playing', 'idle']);
+const stopping = serial.stop();
+let settled = false;
+void stopping.then(() => { settled = true; });
+await flush();
+assert.equal(settled, false);
+releasePhase();
+await stopping;
+serial.tick({ kind: 'playing' }, 4000);
+assert.equal(serialAttempts.length, 2);
+
+// Rejections also retry, and disposal prevents a late failure updating the HUD.
+let rejections = 0;
+const rejected = createShowPhaseSync(async () => { rejections++; throw Error('offline'); }, failed => failures.push(failed));
+rejected.tick({ kind: 'playing' }, 0);
+await flush();
+assert.equal(failures.at(-1), true);
+rejected.tick({ kind: 'playing' }, 2000);
+await flush();
+assert.equal(rejections, 2);
+await rejected.stop();
+let failLate;
+const disposed = createShowPhaseSync(() => new Promise((_, reject) => { failLate = reject; }), assert.fail);
+disposed.tick({ kind: 'playing' }, 0);
+const drained = disposed.stop();
+failLate(Error('offline'));
+await drained;
 
 console.log('Tap limits, power meter, encore window and show phase checks passed');

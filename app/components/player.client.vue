@@ -171,9 +171,6 @@ function remaining(duration: number) {
   display: grid;
   gap: 1rem;
 }
-.rig-field { display: grid; gap: 0.25rem; font-family: var(--font-caps); font-size: 0.7rem; text-transform: uppercase; color: var(--color-dust); }
-.rig-field select, .rig-field input[type="range"] { font-family: var(--font-sans); font-size: 1rem; text-transform: none; color: var(--color-bone); background: var(--color-night); padding: 0.25rem; accent-color: var(--color-gold); }
-.rig-status { font-size: 0.9rem; color: var(--color-dust); }
 
 .dock-bigplay {
   position: fixed;

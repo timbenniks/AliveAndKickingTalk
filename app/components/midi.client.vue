@@ -2,11 +2,12 @@
 import type { Song } from '~/types';
 import { presetAtTime } from '#shared/utils/performance';
 
-const props = defineProps<{ song: Song; time: number }>();
+// Without a song (/config) it only picks the ports.
+const props = defineProps<{ song?: Song; time?: number }>();
 const { midiNote } = useStageAudio();
 const { ready, outputs, inputs, outputId, inputId, status, connect, selectInput, selectOutput, sendProgramChange } = useMidi(midiNote);
 let selectedPreset: number | null = null;
-const preset = computed(() => presetAtTime(props.song.presets, props.time));
+const preset = computed(() => props.song ? presetAtTime(props.song.presets, props.time ?? 0) : undefined);
 
 function sendPreset() {
   if (!preset.value || selectedPreset === preset.value.pc) return;
@@ -20,8 +21,10 @@ watch(preset, sendPreset);
 
 <template>
   <div class="rig-midi">
-    <p class="rig-field"><span>Amp preset</span></p>
-    <p class="rig-preset">{{ preset?.name || 'No preset scheduled' }}</p>
+    <template v-if="song">
+      <p class="rig-field"><span>Amp preset</span></p>
+      <p class="rig-preset">{{ preset?.name || 'No preset scheduled' }}</p>
+    </template>
     <label class="rig-field">
       <span>Amp MIDI output</span>
       <select :value="outputId" @change="selectOutput(($event.target as HTMLSelectElement).value)">

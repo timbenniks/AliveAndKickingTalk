@@ -47,4 +47,35 @@ assert.deepEqual(log, ['+a', '+b', '-a', 'resync']);
 log.length = 0;
 await queue.push('broken', true);
 assert.deepEqual(log, ['error', 'resync']); // A failed save still resyncs, which undoes it on screen.
+
+// A tap during resync must be written before either caller reports completion.
+let releaseResync;
+let resyncStarted;
+const syncing = new Promise(resolve => { resyncStarted = resolve; });
+const duringResync = [];
+const busy = [];
+let snapshots = 0;
+const racingQueue = createVoteQueue({
+  write: async (id, on) => { duringResync.push([id, on]); },
+  resync: async () => {
+    snapshots++;
+    if (snapshots === 1) {
+      resyncStarted();
+      await new Promise(resolve => { releaseResync = resolve; });
+    }
+  },
+  onBusy: value => busy.push(value),
+  onError: assert.fail,
+});
+const firstSave = racingQueue.push('first', true);
+await syncing;
+const secondSave = racingQueue.push('second', true);
+const removeFirst = racingQueue.push('first', false);
+releaseResync();
+await Promise.all([firstSave, secondSave, removeFirst]);
+assert.deepEqual(duringResync, [['first', true], ['second', true], ['first', false]]);
+assert.equal(snapshots, 2);
+assert.deepEqual(busy, [true, false]);
+await racingQueue.push('third', true);
+assert.deepEqual(duringResync.at(-1), ['third', true]);
 console.log('Preset boundaries, setlist ordering, voting recovery and vote queue checks passed');

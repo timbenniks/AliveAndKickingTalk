@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { LaneSource } from "#shared/stage/types";
 import { stageClock } from "#shared/stage/clock";
 import { emitMoment } from "#shared/stage/moments";
 
-// The Rig drawer: what feeds the lanes, timing, motion and quality, and (dev)
-// a vote simulator and a signal readout.
+// The Rig drawer: the settings that stick (StageRigSetup), show moments, the crowd,
+// and (dev) a vote simulator and a signal readout.
 const props = defineProps<{
   live?: boolean;
   host?: boolean;
@@ -13,23 +12,10 @@ const props = defineProps<{
   // Live screen: phone taps and the encore vote.
   show?: ReturnType<typeof useStageShow> | null;
 }>();
-const forceReduced = defineModel<boolean>("forceReduced", { required: true });
-const lowQuality = defineModel<boolean>("lowQuality", { required: true });
 const emit = defineEmits<{ simulateVote: [] }>();
 
 const stage = useStageAudio();
 const isDev = import.meta.dev;
-
-const sources: Array<{ id: LaneSource; label: string }> = [
-  { id: "song", label: "Backing track" },
-  { id: "guitar", label: "Guitar input" },
-  { id: "midi", label: "MIDI pickup" },
-];
-
-function chooseSource(id: LaneSource) {
-  stage.setLaneSource(id);
-  if (id === "guitar") void stage.startGuitar();
-}
 
 // Show moments Tim can fire by hand.
 const moments = [
@@ -59,39 +45,14 @@ if (isDev) {
 </script>
 
 <template>
-  <fieldset class="rig-sources">
-    <legend class="rig-field"><span>Lanes follow</span></legend>
-    <label v-for="source in sources" :key="source.id" class="rig-source">
-      <input type="radio" name="lane-source" :checked="stage.laneSource.value === source.id" @change="chooseSource(source.id)">
-      {{ source.label }}
-    </label>
-  </fieldset>
-  <template v-if="stage.laneSource.value === 'guitar'">
-    <label class="rig-field">
-      <span>Guitar input</span>
-      <select :value="stage.guitarDeviceId.value" @change="stage.startGuitar(($event.target as HTMLSelectElement).value)">
-        <option value="">Default input</option>
-        <option v-for="device in stage.guitarDevices.value" :key="device.deviceId" :value="device.deviceId">{{ device.label || 'Audio input' }}</option>
-      </select>
-    </label>
-    <p role="status" class="rig-status">{{ stage.guitarStatus.value }}</p>
-    <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
-  </template>
-  <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Pick the pickup under Guitar MIDI input. Channels 1 to 6 light lanes 1 to 6.</p>
-  <label class="rig-field">
-    <span>Visual offset {{ stage.offsetMs.value }} ms</span>
-    <input v-model.number="stage.offsetMs.value" type="range" min="-200" max="200" step="5">
-  </label>
-  <div class="rig-toggles">
-    <PixelButton variant="secondary" :aria-pressed="reduced" @click="forceReduced = !forceReduced">{{ reduced ? 'Motion reduced' : 'Reduce motion' }}</PixelButton>
-    <PixelButton variant="secondary" :aria-pressed="lowQuality" @click="lowQuality = !lowQuality">{{ lowQuality ? 'Low quality' : 'High quality' }}</PixelButton>
-  </div>
+  <StageRigSetup :reduced="reduced" />
   <fieldset class="rig-show">
     <legend class="rig-field"><span>Show</span></legend>
     <PixelButton v-for="item in moments" :key="item.label" variant="secondary" @click="emitMoment(item.moment)">{{ item.label }}</PixelButton>
   </fieldset>
   <fieldset v-if="show" class="rig-show">
     <legend class="rig-field"><span>Crowd · {{ show.audience.value }} {{ show.audience.value === 1 ? 'phone' : 'phones' }} connected</span></legend>
+    <p v-if="host && show.phaseError.value" role="status" class="rig-status">Show updates could not reach phones. Retrying…</p>
     <PixelButton v-if="host" :disabled="encoreOpen" @click="show.openEncore()">Open encore vote (15 s)</PixelButton>
     <PixelButton v-if="isDev" variant="secondary" :disabled="encoreOpen" @click="show.openEncore(15, true)">Local encore vote (dev)</PixelButton>
     <p v-if="encore" role="status" class="rig-status">
@@ -109,10 +70,6 @@ if (isDev) {
 </template>
 
 <style>
-.rig-sources { display: grid; gap: 0.25rem; border: 0; padding: 0; margin: 0; }
-.rig-source { display: flex; gap: 0.5rem; align-items: center; font-size: 1.05rem; cursor: pointer; }
-.rig-source input { accent-color: var(--color-gold); }
-.rig-toggles { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .rig-show { display: flex; flex-wrap: wrap; gap: 0.75rem; border: 0; padding: 0; margin: 0; }
 .rig-show legend { margin-bottom: 0.5rem; }
 .rig-debug pre { font-family: var(--font-caps); font-size: 0.65rem; white-space: pre-wrap; color: var(--color-dust); margin-top: 0.5rem; }

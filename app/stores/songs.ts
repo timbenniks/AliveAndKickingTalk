@@ -293,16 +293,20 @@ export const useSongStore = defineStore('song-store', {
       }
     },
 
-    // The host's live screen tells phones what the show is doing. Only the host
-    // passes RLS; anyone else's write is ignored, so this never surfaces an error.
+    // Return whether the host's phase was saved, so the stage can retry failures.
     async setShowPhase(phase: ShowPhase) {
       const val = formatShowPhase(phase)
-      if (this.config.find(item => item.key === 'show_phase')?.val === val) return
       try {
-        await this.setConfigValue('show_phase', val)
+        const { error, data } = await useSupabaseClient<Database>()
+          .from('config').update({ val }).eq('key', 'show_phase').select('key')
+        if (error || !data?.length) return false
+        const row = this.config.find(item => item.key === 'show_phase')
+        if (row) row.val = val
+        else this.config.push({ key: 'show_phase', val })
+        return true
       } catch {
-        this.errorMessage = ''
         log('[async][action] setShowPhase: not saved', val)
+        return false
       }
     },
 
