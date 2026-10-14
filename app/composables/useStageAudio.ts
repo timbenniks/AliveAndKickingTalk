@@ -1,4 +1,4 @@
-import { stageClock } from '#shared/stage/clock';
+import { frameDecay, stageClock } from '#shared/stage/clock';
 import { bandLevels, guitarLaneBins, peakLevels, risingLanes, type LaneBins } from '#shared/stage/pulses';
 import type { AnalysisState, LaneSource } from '#shared/stage/types';
 
@@ -49,8 +49,9 @@ function write(key: string, value: string) {
   try { localStorage.setItem(key, value); } catch { /* Private mode: settings are per session. */ }
 }
 
-function smooth(current: number, next: number) {
-  return current * 0.82 + next * 0.18;
+function smooth(current: number, next: number, delta: number) {
+  const keep = frameDecay(0.82, delta);
+  return current * keep + next * (1 - keep);
 }
 
 function band(data: Uint8Array, from: number, to: number) {
@@ -190,9 +191,9 @@ function midiNote(lane: number, velocity: number, on: boolean) {
   if (on) stageClock.events.push({ lane, strength: velocity });
 }
 
-function pushAudioHits(levels: number[], now: number) {
+function pushAudioHits(levels: number[], now: number, delta: number) {
   for (let i = 0; i < stageClock.lanes.length; i++) stageClock.lanes[i] = levels[i] ?? 0;
-  for (const lane of risingLanes(stageClock.lanes, baseline, now, lastHit)) {
+  for (const lane of risingLanes(stageClock.lanes, baseline, now, lastHit, 0.13, delta)) {
     lastHit[lane] = now;
     stageClock.events.push({ lane, strength: stageClock.lanes[lane] ?? 0 });
   }
@@ -211,7 +212,8 @@ function tick() {
   // pulses, and runs while the lane source is live, so a guitar still flows
   // over a paused track. Wall-clock deltas, capped so a hidden tab cannot jump.
   const wall = performance.now() / 1000;
-  if (pulsing && lastWall) stageClock.flow += Math.min(0.1, wall - lastWall);
+  const delta = lastWall ? Math.min(0.1, Math.max(0, wall - lastWall)) : 1 / 60;
+  if (pulsing && lastWall) stageClock.flow += delta;
   lastWall = wall;
   const now = stageClock.flow;
 
@@ -229,29 +231,30 @@ function tick() {
     const treble = band(songFreq, 40, 90);
     const energy = bass * 0.5 + mid * 0.35 + treble * 0.15;
     stageClock.onset = Math.max(0, energy - stageClock.energy);
-    stageClock.bass = smooth(stageClock.bass, bass);
-    stageClock.mid = smooth(stageClock.mid, mid);
-    stageClock.treble = smooth(stageClock.treble, treble);
-    stageClock.energy = smooth(stageClock.energy, energy);
+    stageClock.bass = smooth(stageClock.bass, bass, delta);
+    stageClock.mid = smooth(stageClock.mid, mid, delta);
+    stageClock.treble = smooth(stageClock.treble, treble, delta);
+    stageClock.energy = smooth(stageClock.energy, energy, delta);
   } else {
-    stageClock.bass = smooth(stageClock.bass, 0);
-    stageClock.mid = smooth(stageClock.mid, 0);
-    stageClock.treble = smooth(stageClock.treble, 0);
-    stageClock.energy = smooth(stageClock.energy, 0);
+    stageClock.bass = smooth(stageClock.bass, 0, delta);
+    stageClock.mid = smooth(stageClock.mid, 0, delta);
+    stageClock.treble = smooth(stageClock.treble, 0, delta);
+    stageClock.energy = smooth(stageClock.energy, 0, delta);
     stageClock.onset = 0;
   }
 
   if (laneSource.value === 'song' && songPlaying && songPulses) {
     songPulses.getByteFrequencyData(pulseFreq);
-    pushAudioHits(bandLevels(pulseFreq), now);
+    pushAudioHits(bandLevels(pulseFreq), now, delta);
     if (stageClock.energy > 0.04) { heardSignal = true; setAnalysis('live'); }
     else if (audioTime > 3 && !heardSignal) setAnalysis('unavailable');
   } else if (guitarLive && guitarAnalyser) {
     guitarAnalyser.getByteFrequencyData(guitarFreq);
-    pushAudioHits(peakLevels(guitarFreq, guitarBins), now);
+    pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
     setAnalysis('live');
   } else if (laneSource.value !== 'midi') {
-    for (let i = 0; i < stageClock.lanes.length; i++) stageClock.lanes[i] = (stageClock.lanes[i] ?? 0) * 0.8;
+    const keep = frameDecay(0.8, delta);
+    for (let i = 0; i < stageClock.lanes.length; i++) stageClock.lanes[i] = (stageClock.lanes[i] ?? 0) * keep;
   }
   // Nobody drained the queue (no stage mounted): keep it bounded.
   if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
@@ -273,6 +276,7 @@ function teardown() {
   songPulses = null;
   songElement = null;
   heardSignal = false;
+  lastWall = 0;
   stageClock.playing = false;
   stageClock.pulsing = false;
   stageClock.lanes.fill(0);

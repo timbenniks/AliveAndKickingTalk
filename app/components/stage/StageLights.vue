@@ -9,7 +9,7 @@ import {
   PointLight,
   SpotLight,
 } from 'three'
-import { stageClock } from '#shared/stage/clock'
+import { frameDecay, stageClock } from '#shared/stage/clock'
 
 const deckY = (z: number) => z * Math.tan(0.36)
 
@@ -81,7 +81,7 @@ let chase = 0
 let cooldown = 0
 
 const { onBeforeRender } = useLoop()
-onBeforeRender(() => {
+onBeforeRender(({ delta }) => {
   const live = stageClock.analysis === 'live' && stageClock.playing
   const drive = live ? stageClock.energy : 0.08
   const bass = live ? stageClock.bass : 0
@@ -93,7 +93,7 @@ onBeforeRender(() => {
   key.intensity = 3.5 + drive * 2.5 + bass * 1.5
   bulb.intensity = 2 + (live ? stageClock.mid : 0) * 2
 
-  cooldown = Math.max(0, cooldown - 0.016)
+  cooldown = Math.max(0, cooldown - delta)
   const onset = live ? stageClock.onset : 0
   const kick = onset > 0.06 && cooldown === 0
   if (kick) {
@@ -101,7 +101,7 @@ onBeforeRender(() => {
     chase = (chase + 1) % heads.length
     cooldown = 0.55
   } else {
-    beat *= 0.985
+    beat *= frameDecay(0.985, delta)
   }
 
   const time = stageClock.time
@@ -116,7 +116,7 @@ onBeforeRender(() => {
     const aimZ = head.z - 0.2 + Math.cos(time * 0.22 + head.phase) * (stageClock.reducedMotion ? 0 : 0.8)
     const aimY = deckY(aimZ) + 0.25
     head.spot.target.position.set(aimX, aimY, aimZ)
-    head.spot.color.lerp(flashColor, 0.04)
+    head.spot.color.lerp(flashColor, 1 - frameDecay(0.96, delta))
     head.spot.intensity = live ? 1.4 + pulse * 5 : 0.7
   })
 

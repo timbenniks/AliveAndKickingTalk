@@ -14,12 +14,15 @@ registerHooks({
 });
 const mounted = [];
 const unmounted = [];
+let renderFrame;
+let wall = 1000;
 Object.assign(globalThis, {
   ref, shallowRef, watch,
   onMounted: callback => mounted.push(callback),
   onUnmounted: callback => unmounted.push(callback),
-  requestAnimationFrame: () => 1,
+  requestAnimationFrame: callback => { renderFrame = callback; return 1; },
   cancelAnimationFrame: () => {},
+  performance: { now: () => wall },
   localStorage: { getItem: () => null, setItem: () => {} },
 });
 
@@ -52,6 +55,20 @@ function stream(id) {
 const { useStageAudio } = await import('../app/composables/useStageAudio.ts');
 const audio = useStageAudio();
 mounted.forEach(callback => callback());
+
+// Exercise the real audio tick at different rates, with no sound or devices.
+const { stageClock } = await import('../shared/stage/clock.ts');
+for (const hz of [30, 60, 120, 144]) {
+  wall += 1000;
+  renderFrame();
+  stageClock.bass = stageClock.mid = stageClock.treble = stageClock.energy = 1;
+  stageClock.lanes.fill(1);
+  for (let frame = 0; frame < hz; frame++) { wall += 1000 / hz; renderFrame(); }
+  for (const value of [stageClock.bass, stageClock.mid, stageClock.treble, stageClock.energy]) {
+    assert.ok(Math.abs(value - Math.pow(0.82, 60)) < 1e-12);
+  }
+  assert.ok(stageClock.lanes.every(value => Math.abs(value - Math.pow(0.8, 60)) < 1e-12));
+}
 
 // Switching away while permission is pending must stop the returned stream.
 audio.setLaneSource('guitar');

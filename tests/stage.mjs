@@ -3,7 +3,7 @@ import { activeCue, chapterMarks, presetCues } from '../shared/stage/timeline.ts
 import { bandLevels, guitarLaneBins, peakLevels, risingLanes } from '../shared/stage/pulses.ts';
 import { themeForPreset } from '../shared/stage/themes.ts';
 import { styleById } from '../shared/stage/styles.ts';
-import { LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
+import { frameDecay, LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
 import { emitMoment, onMoment } from '../shared/stage/moments.ts';
 
 const backInBlack = { songId: 'back_in_black', presets: [
@@ -43,6 +43,26 @@ assert.equal(themeForPreset('Not A Real Preset'), 'neon-stadium');
 assert.equal(LANE_X.length, 6);
 assert.equal(LANE_COLORS.length, 6);
 assert.equal(styleById('disco').gems.length, 6);
+
+// The same second produces the same fade, smoothing and lane baseline at each rate.
+for (const hz of [30, 60, 120, 144]) {
+  for (const keep of [0.8, 0.82, 0.84, 0.96, 0.985]) {
+    let faded = 1;
+    let smoothed = 0;
+    for (let frame = 0; frame < hz; frame++) {
+      const decay = frameDecay(keep, 1 / hz);
+      faded *= decay;
+      smoothed = smoothed * decay + (1 - decay);
+    }
+    assert.ok(Math.abs(faded - Math.pow(keep, 60)) < 1e-12);
+    assert.ok(Math.abs(smoothed - (1 - Math.pow(keep, 60))) < 1e-12);
+  }
+  const baseline = [0];
+  for (let frame = 0; frame < hz; frame++) risingLanes([1], baseline, frame / hz, [0], 0.13, 1 / hz);
+  assert.ok(Math.abs(baseline[0] - (1 - Math.pow(0.86, 60))) < 1e-12);
+}
+assert.equal(frameDecay(0.84, 1 / 60), 0.84);
+assert.equal(frameDecay(0.84, 0), 1);
 
 // Lanes light from a rising band and stay quiet when nothing spikes.
 const freq = new Array(128).fill(0);

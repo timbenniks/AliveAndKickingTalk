@@ -1,3 +1,5 @@
+import { frameDecay } from './clock.ts'
+
 export const LANE_BINS = [
   [1, 4],
   [4, 10],
@@ -41,13 +43,14 @@ export function peakLevels(freq: ArrayLike<number>, bins: LaneBins): number[] {
   })
 }
 
-export function risingLanes(current: number[], baseline: number[], now: number, lastAt: number[], cooldown = 0.13): number[] {
+export function risingLanes(current: number[], baseline: number[], now: number, lastAt: number[], cooldown = 0.13, delta = 1 / 60): number[] {
   const hit: number[] = []
+  const keep = frameDecay(0.86, delta)
   for (let lane = 0; lane < current.length; lane++) {
     const value = current[lane] ?? 0
     const base = baseline[lane] ?? 0
     if (value > 0.2 && value > base + 0.07 && now - (lastAt[lane] ?? -10) >= cooldown) hit.push(lane)
-    baseline[lane] = base * 0.86 + value * 0.14
+    baseline[lane] = base * keep + value * (1 - keep)
   }
   return hit.sort((a, b) => (current[b] ?? 0) - (current[a] ?? 0)).slice(0, 3)
 }

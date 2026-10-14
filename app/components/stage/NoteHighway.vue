@@ -21,7 +21,7 @@ import {
   Vector3,
 } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
-import { BOARD_TILT, HIGHWAY_SPEED, LANE_COLORS, LANE_X, stageClock } from '#shared/stage/clock'
+import { BOARD_TILT, frameDecay, HIGHWAY_SPEED, LANE_COLORS, LANE_X, stageClock } from '#shared/stage/clock'
 import { shadeFaces } from '#shared/stage/formShade'
 
 // Visualizer only: pulses come from stageClock.events, fed by the song, the
@@ -477,7 +477,7 @@ function syncLook() {
 }
 
 const { onBeforeRender } = useLoop()
-onBeforeRender(() => {
+onBeforeRender(({ delta: renderDelta }) => {
   syncLook()
   const time = stageClock.flow
   const delta = time - previous
@@ -538,7 +538,7 @@ onBeforeRender(() => {
     const scale = 1 + level * 0.16
     mesh.scale.set(scale, 1, scale)
     cap.scale.set(scale, 1, scale)
-    flashLevel[lane] = level * 0.84
+    flashLevel[lane] = level * frameDecay(0.84, renderDelta)
     const glow = fretGlows[lane]
     if (glow) {
       const mat = glow.material as MeshBasicMaterial
