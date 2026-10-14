@@ -145,7 +145,7 @@ add([
 ], gold)
 
 // Lighting truss: a square voxel lattice on two towers.
-const TRUSS_Y = 22.5
+const TRUSS_Y = 23.6
 const TRUSS_Z = DECK_FRONT + 4
 const truss: BoxGeometry[] = []
 const SPAN = 15.5

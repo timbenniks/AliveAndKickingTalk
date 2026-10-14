@@ -21,12 +21,13 @@ import { shadeFaces } from '#shared/stage/formShade'
 // competes with the highway; artwork plates cross-fade every seven seconds.
 const props = defineProps<{ art: string[], primary: string, secondary: string, rich: boolean }>()
 
-const COLS = 96
-const ROWS = 54
+const COLS = 128
+const ROWS = 72
 const DOT = 4
-const WIDTH = 24
+const WIDTH = 22.5
 const HEIGHT = WIDTH * ROWS / COLS
-const CENTER = { y: 9.4 + HEIGHT / 2, z: 33 }
+// Close behind the truss and high enough that the art clears the amp boards.
+const CENTER = { y: 10.2 + HEIGHT / 2, z: 28 }
 const HOLD = 7
 const FADE = 1.2
 
@@ -134,8 +135,8 @@ watch(() => [props.primary, props.secondary], () => {
 })
 
 const group = new Group()
-// Unlit and dim: present, but quieter than anything on the highway.
-const screenMat = new MeshBasicMaterial({ map: texture, color: '#6e6a78', fog: false, toneMapped: false })
+// Unlit and bright enough to read as the band's screen, still under the highway.
+const screenMat = new MeshBasicMaterial({ map: texture, color: '#cfcad8', fog: false, toneMapped: false })
 const wall = new Mesh(new PlaneGeometry(WIDTH, HEIGHT), screenMat)
 wall.position.set(0, CENTER.y, CENTER.z)
 // The camera looks down +z, so the wall turns to face it.
