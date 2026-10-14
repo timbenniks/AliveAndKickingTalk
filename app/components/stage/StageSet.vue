@@ -144,7 +144,8 @@ const cabMap = track(new CanvasTexture(cabCanvas))
 cabMap.colorSpace = SRGBColorSpace
 cabMap.magFilter = cabMap.minFilter = NearestFilter
 cabMap.generateMipmaps = false
-const cabFace = material('#ffffff', 0.3, cabMap)
+// Dimmer than the stacks on the deck: a backdrop for the crowd, not a feature.
+const cabFace = material('#6f6a7c', 0.12, cabMap)
 
 const COLS = 16
 const ROWS = 5
