@@ -1,4 +1,5 @@
 import { createVoteQueue, performVote } from '#shared/utils/performance'
+import { formatShowPhase, type ShowPhase } from '#shared/show/phase'
 import { defineStore } from 'pinia'
 import type { Song, Database, ConfigValue, PlayedSong, LatestVote } from '../types'
 import { log } from '../helpers'
@@ -262,15 +263,18 @@ export const useSongStore = defineStore('song-store', {
 
       const client = useSupabaseClient<Database>()
 
-      const { error: setConfigValueError } = await client
+      // Row security drops a non-host's update without an error, so ask for the
+      // updated row back: no row means this account may not change the show.
+      const { error: setConfigValueError, data: updated } = await client
         .from('config')
         .update({
           key,
           val: String(val)
         })
         .eq('key', key)
+        .select('key')
 
-      if (setConfigValueError) {
+      if (setConfigValueError || !updated?.length) {
         this.errorMessage = 'Error [async][action] setConfigValue: setConfigValueError'
         throw createError('[async][action] setConfigValue: setConfigValueError')
       }
@@ -286,6 +290,19 @@ export const useSongStore = defineStore('song-store', {
 
       if (data) {
         this.config = data as ConfigValue[];
+      }
+    },
+
+    // The host's live screen tells phones what the show is doing. Only the host
+    // passes RLS; anyone else's write is ignored, so this never surfaces an error.
+    async setShowPhase(phase: ShowPhase) {
+      const val = formatShowPhase(phase)
+      if (this.config.find(item => item.key === 'show_phase')?.val === val) return
+      try {
+        await this.setConfigValue('show_phase', val)
+      } catch {
+        this.errorMessage = ''
+        log('[async][action] setShowPhase: not saved', val)
       }
     },
 

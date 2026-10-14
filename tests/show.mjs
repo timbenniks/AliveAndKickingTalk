@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createTapLimiter, createTapTally } from '../shared/show/taps.ts';
 import { createPowerMeter } from '../shared/show/meter.ts';
-import { createEncoreWindow, encoreThreshold, pickEncoreSong } from '../shared/show/encore.ts';
+import { createEncoreWindow, encoreThreshold, pickEncoreSong, encoreHref } from '../shared/show/encore.ts';
 import { formatShowPhase, parseShowPhase } from '../shared/show/phase.ts';
 
 // Phone limiter: N taps per rolling second.
@@ -82,5 +82,9 @@ assert.deepEqual(parseShowPhase(formatShowPhase(encorePhase)), encorePhase);
 for (const junk of [null, undefined, '', 'party', 'encore:', 'encore:not-a-date']) {
   assert.deepEqual(parseShowPhase(junk), { kind: 'idle' });
 }
+
+// The encore link: the song page, or the next mashup spot.
+assert.equal(encoreHref('the_trooper'), '/live/the_trooper');
+assert.equal(encoreHref('the_trooper', 4), '/live/the_trooper?spot=5&autoplay=true');
 
 console.log('Tap limits, power meter, encore window and show phase checks passed');

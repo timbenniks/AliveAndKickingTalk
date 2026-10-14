@@ -45,3 +45,8 @@ export function pickEncoreSong(songs: Pick<Song, 'songId' | 'votes'>[], played: 
   }
   return best?.songId ?? null
 }
+
+// Where the encore button goes. In mashup mode the encore is the next spot.
+export function encoreHref(songId: string, spot?: number) {
+  return spot ? `/live/${songId}?spot=${spot + 1}&autoplay=true` : `/live/${songId}`
+}

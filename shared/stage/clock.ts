@@ -28,6 +28,9 @@ export const stageClock = {
   reducedMotion: false,
   // Wall-clock second (performance.now() / 1000) the song intro fly-in started; 0 when none.
   introAt: 0,
+  // The crowd meter under the truss, 0..1: the power meter, or encore progress.
+  meter: 0,
+  meterMode: 'power' as 'power' | 'encore',
   // Lane hits from whichever source feeds the lanes. The highway drains this every frame.
   events: [] as StagePulse[],
   // New votes waiting to drop into the mosh pit. The crowd drains this.

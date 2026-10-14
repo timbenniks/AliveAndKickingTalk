@@ -20,6 +20,9 @@ const mashupMode = computed(() => {
 </script>
 
 <template>
-  <mashup-vote v-if="mashupMode" />
-  <regular-vote v-else />
+  <div>
+    <mashup-vote v-if="mashupMode" />
+    <regular-vote v-else />
+    <ShowBar />
+  </div>
 </template>

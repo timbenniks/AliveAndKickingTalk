@@ -13,6 +13,7 @@ import StageCrowd from './StageCrowd.vue'
 import StageSet from './StageSet.vue'
 import StageLedWall from './StageLedWall.vue'
 import StageBeams from './StageBeams.vue'
+import StageMeter from './StageMeter.vue'
 import type { Fan } from '#shared/stage/types'
 import type { StageEffect } from '#shared/stage/styles'
 import { BloomPmndrs, EffectComposerPmndrs, VignettePmndrs } from '@tresjs/post-processing'
@@ -28,8 +29,9 @@ defineProps<{
   art: string[]
   rich: boolean
   solo: boolean
-  // Live screen only: the voters who form the mosh pit.
+  // Live screen only: the voters who form the mosh pit, and the crowd meter.
   crowd?: Fan[]
+  meter?: boolean
 }>()
 
 const emit = defineEmits<{ error: [] }>()
@@ -54,6 +56,7 @@ const emit = defineEmits<{ error: [] }>()
     <StageParticles :primary="theme.primary" :particles="theme.particles" />
     <StageMoments />
     <StageCrowd v-if="crowd" :seed="crowd" />
+    <StageMeter v-if="meter" />
     <!-- High quality only. Bloom is thresholded so only the lit parts glow:
          gems, frets, strings and light heads, never the board or the art. -->
     <Suspense v-if="rich">

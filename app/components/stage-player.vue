@@ -15,6 +15,8 @@ const stage = useStageAudio();
 const { marks, duration, theme, stageStyle, solo } = useStageCues(() => props.song);
 const { crowd, toast, simulateVote } = useStageCrowd(() => !!props.live);
 useStageIntro(() => props.song);
+// Phone taps and the encore vote: live screen only.
+const show = props.live ? useStageShow({ host: () => !!props.host, songId: () => props.song.songId }) : null;
 
 const upNext = computed(() => {
   if (props.mashupMode) return mergePlayedSongsWithAllSongs(allSongs, allPlayedSongs);
@@ -92,6 +94,7 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
         :rich="rich"
         :solo="solo"
         :crowd="crowd"
+        :meter="live"
         @error="webglOk = false"
       />
     </div>
@@ -131,6 +134,7 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
           :host="host"
           :reduced="reduced"
           :theme-id="theme.id"
+          :show="show"
           @simulate-vote="simulateVote"
         />
       </template>

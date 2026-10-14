@@ -5,7 +5,14 @@ import { emitMoment } from "#shared/stage/moments";
 
 // The Rig drawer: what feeds the lanes, timing, motion and quality, and (dev)
 // a vote simulator and a signal readout.
-const props = defineProps<{ live?: boolean; host?: boolean; reduced: boolean; themeId: string }>();
+const props = defineProps<{
+  live?: boolean;
+  host?: boolean;
+  reduced: boolean;
+  themeId: string;
+  // Live screen: phone taps and the encore vote.
+  show?: ReturnType<typeof useStageShow> | null;
+}>();
 const forceReduced = defineModel<boolean>("forceReduced", { required: true });
 const lowQuality = defineModel<boolean>("lowQuality", { required: true });
 const emit = defineEmits<{ simulateVote: [] }>();
@@ -32,6 +39,9 @@ const moments = [
   { label: "Pit jump", moment: { kind: "jump" } },
   { label: "Replay intro", moment: { kind: "intro" } },
 ] as const;
+
+const encore = computed(() => props.show?.encoreState.value ?? null);
+const encoreOpen = computed(() => !!encore.value && !encore.value.result);
 
 const debugText = ref<HTMLElement | null>(null);
 const signalOpen = ref(false);
@@ -79,6 +89,17 @@ if (isDev) {
   <fieldset class="rig-show">
     <legend class="rig-field"><span>Show</span></legend>
     <PixelButton v-for="item in moments" :key="item.label" variant="secondary" @click="emitMoment(item.moment)">{{ item.label }}</PixelButton>
+  </fieldset>
+  <fieldset v-if="show" class="rig-show">
+    <legend class="rig-field"><span>Crowd · {{ show.audience.value }} {{ show.audience.value === 1 ? 'phone' : 'phones' }} connected</span></legend>
+    <PixelButton v-if="host" :disabled="encoreOpen" @click="show.openEncore()">Open encore vote (15 s)</PixelButton>
+    <PixelButton v-if="isDev" variant="secondary" :disabled="encoreOpen" @click="show.openEncore(15, true)">Local encore vote (dev)</PixelButton>
+    <p v-if="encore" role="status" class="rig-status">
+      <template v-if="encoreOpen">{{ encore.taps }} of {{ encore.threshold }} fans in · {{ Math.ceil(encore.remainingMs / 1000) }} s left</template>
+      <template v-else-if="encore.result === 'won'">The room wants an encore.</template>
+      <template v-else>Not enough fans joined in this time.</template>
+    </p>
+    <PixelButton v-if="show.encoreLink.value" :to="show.encoreLink.value">Play encore: {{ show.encoreTitle.value }}</PixelButton>
   </fieldset>
   <PixelButton v-if="isDev && live" variant="secondary" @click="emit('simulateVote')">Simulate a vote</PixelButton>
   <details class="rig-debug" @toggle="signalOpen = ($event.target as HTMLDetailsElement).open">
