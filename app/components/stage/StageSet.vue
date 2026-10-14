@@ -117,10 +117,60 @@ const gold = material('#c99a24', 0.5)
 const bone = material('#cfc6b2', 0.25)
 const metal = material('#4b4f5c', 0.3)
 
-// The deck: its front wall sits under the end of the highway and gives the
-// crowd a dark, even backdrop.
+// The deck: its front is a wall of stacked cabinets behind the crowd.
 add([box(34, DECK_TOP + 0.6, 12, 0, (DECK_TOP - 0.6) / 2, DECK_FRONT + 6)], deckMat)
 add([box(34.2, 0.25, 0.3, 0, DECK_TOP, DECK_FRONT - 0.05)], metal)
+
+// One cabinet face, drawn once: tolex border, gold piping, basket weave and
+// the script nameplate. Every cab in the wall shows it.
+const cabCanvas = document.createElement('canvas')
+cabCanvas.width = 96
+cabCanvas.height = 80
+{
+  const ctx = cabCanvas.getContext('2d')!
+  ctx.fillStyle = '#1a1430'
+  ctx.fillRect(0, 0, 96, 80)
+  ctx.fillStyle = '#c99a24'
+  ctx.fillRect(5, 5, 86, 70)
+  ctx.fillStyle = '#241c36'
+  ctx.fillRect(7, 7, 82, 66)
+  ctx.fillStyle = '#4a4058'
+  for (let y = 7; y < 73; y += 2) for (let x = 7; x < 89; x += 2) if ((x + y) % 4 === 0) ctx.fillRect(x, y, 1, 1)
+  ctx.fillStyle = '#14080c'
+  for (let x = 10; x < 89; x += 8) ctx.fillRect(x, 7, 1, 66)
+  ctx.drawImage(logoCanvas, 0, 0, 96, 32, 6, 6, 60, 20)
+}
+const cabMap = track(new CanvasTexture(cabCanvas))
+cabMap.colorSpace = SRGBColorSpace
+cabMap.magFilter = cabMap.minFilter = NearestFilter
+cabMap.generateMipmaps = false
+const cabFace = material('#ffffff', 0.3, cabMap)
+
+const COLS = 16
+const ROWS = 5
+const CAB_W = 34 / COLS
+const CAB_H = (DECK_TOP + 0.6) / ROWS
+const wallCabs: BoxGeometry[] = []
+const wallFaces: PlaneGeometry[] = []
+for (let row = 0; row < ROWS; row++) {
+  for (let col = 0; col < COLS; col++) {
+    const x = -17 + CAB_W * (col + 0.5)
+    // The neck of the highway runs onto the deck here; leave room for it.
+    if (Math.abs(x) < 2.4) continue
+    const y = -0.6 + CAB_H * (row + 0.5)
+    wallCabs.push(box(CAB_W - 0.06, CAB_H - 0.06, 0.5, x, y, DECK_FRONT - 0.2))
+    const face = new PlaneGeometry(CAB_W - 0.1, CAB_H - 0.1)
+    face.rotateY(Math.PI)
+    face.translate(x, y, DECK_FRONT - 0.46)
+    wallFaces.push(face)
+  }
+}
+add(wallCabs, tolex)
+{
+  const geometry = mergeGeometries(wallFaces)
+  for (const part of wallFaces) part.dispose()
+  if (geometry) group.add(new Mesh(track(geometry), cabFace))
+}
 
 // Amp stacks: two cabinets and a head, two per side, outside the amp-cue
 // boards so the HTML boards never cover them.
