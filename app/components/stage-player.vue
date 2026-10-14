@@ -14,7 +14,7 @@ const { allSongs, allPlayedSongs } = storeToRefs(songStore);
 const stage = useStageAudio();
 const { marks, duration, theme, stageStyle, solo } = useStageCues(() => props.song);
 const { crowd, toast, simulateVote } = useStageCrowd(() => !!props.live);
-useStageIntro(() => props.song);
+const { flying } = useStageIntro(() => props.song);
 // Phone taps and the encore vote: live screen only.
 const show = props.live ? useStageShow({ host: () => !!props.host, songId: () => props.song.songId }) : null;
 
@@ -117,7 +117,7 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
         <p v-if="surfaceReady && !webglOk" class="stage-alert">This browser cannot draw the 3D stage. The track still plays.</p>
       </header>
 
-      <ChapterRail v-if="marks.length > 1" ref="chapters" :marks="marks" :duration="duration" @seek="stage.seek($event)" />
+      <ChapterRail v-if="marks.length > 1" ref="chapters" :class="{ 'is-intro': flying }" :marks="marks" :duration="duration" @seek="stage.seek($event)" />
 
       <aside v-if="live" class="stage-upnext">
         <mashup-upnext v-if="mashupMode" :current-song="song" :songs="upNext" />
@@ -176,6 +176,8 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
 .stage-page { --side: 0px; }
 .stage-live { --side: min(20vw, 280px); }
 /* Equal insets on both sides keep the amp board centred over the highway. */
+.stage-page .chapters { transition: opacity 0.8s ease; }
+.stage-page .chapters.is-intro { opacity: 0; pointer-events: none; transition: none; }
 .stage-page .chapters { position: absolute; top: 43%; left: var(--side); right: var(--side); width: auto; transform: translateY(-100%); }
 
 .stage-upnext {

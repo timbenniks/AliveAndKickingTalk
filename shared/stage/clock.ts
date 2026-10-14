@@ -1,5 +1,7 @@
 import type { AnalysisState, Fan, StagePulse } from './types.ts'
 
+// Length of the song-intro crane shot, in seconds.
+export const INTRO_SECONDS = 6
 export const HIGHWAY_SPEED = 16
 export const BOARD_TILT = -0.36
 export const NECK_LENGTH = 24
