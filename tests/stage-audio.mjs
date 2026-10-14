@@ -28,6 +28,8 @@ Object.assign(globalThis, {
 
 const requests = [];
 const connected = [];
+let guitarAnalyser;
+let inputDb = -72;
 class FakeAudioContext {
   state = 'running';
   sampleRate = 48000;
@@ -35,7 +37,19 @@ class FakeAudioContext {
     connected.push(stream);
     return { connect() {}, disconnect() {} };
   }
-  createAnalyser() { return { frequencyBinCount: 2048, connect() {}, disconnect() {} }; }
+  createAnalyser() {
+    guitarAnalyser = {
+      frequencyBinCount: 2048, connect() {}, disconnect() {},
+      getByteFrequencyData(data) {
+        data.fill(0);
+        // Simulate one low E peak using the analyser's configured dB window.
+        data[7] = Math.max(0, Math.min(255, Math.round(
+          255 * (inputDb - this.minDecibels) / (this.maxDecibels - this.minDecibels),
+        )));
+      },
+    };
+    return guitarAnalyser;
+  }
   async close() { this.state = 'closed'; }
 }
 globalThis.AudioContext = FakeAudioContext;
@@ -109,6 +123,31 @@ staleFailure.reject(Error('permission denied'));
 await failing;
 assert.equal(latest.track.stopped, false);
 assert.equal(audio.guitarStatus.value, 'Listening to latest');
+
+// Quiet single notes trigger without song playback; noise and sustain do not flood.
+assert.equal(guitarAnalyser.minDecibels, -75);
+assert.equal(guitarAnalyser.maxDecibels, -25);
+stageClock.events.length = 0;
+for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+assert.equal(stageClock.events.length, 0);
+inputDb = -62;
+wall += 1000 / 60;
+renderFrame();
+assert.equal(stageClock.events.length, 1);
+assert.equal(stageClock.events[0].lane, 0);
+stageClock.events.length = 0;
+for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+// The existing detector can emit another pulse during the attack, then settles.
+assert.ok(stageClock.events.length <= 1);
+stageClock.events.length = 0;
+for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+assert.equal(stageClock.events.length, 0);
+inputDb = -72;
+for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+inputDb = -62;
+wall += 1000 / 60;
+renderFrame();
+assert.equal(stageClock.events.length, 1);
 
 // Teardown invalidates outstanding requests as well as stopping active tracks.
 const leaving = audio.startGuitar('leaving');

@@ -154,13 +154,14 @@ async function startGuitar(deviceId = guitarDeviceId.value) {
     if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
     guitarSource = ctx.createMediaStreamSource(guitarStream);
     guitarAnalyser = analyser(ctx, 4096, 0.3);
-    // A narrow dB window: on the default -100 dB floor, FFT leakage from one
-    // note lights its neighbours too. A DI guitar sits well above -60 dB.
-    guitarAnalyser.minDecibels = -60;
-    guitarAnalyser.maxDecibels = -10;
+    // Keep the narrow window, but include quiet single notes from a DI input.
+    guitarAnalyser.minDecibels = -75;
+    guitarAnalyser.maxDecibels = -25;
     guitarSource.connect(guitarAnalyser);
     guitarFreq = new Uint8Array(guitarAnalyser.frequencyBinCount);
     guitarBins = guitarLaneBins(ctx.sampleRate, guitarAnalyser.fftSize);
+    baseline.fill(0);
+    lastHit.fill(-10);
     const track = guitarStream.getAudioTracks()[0];
     guitarDeviceId.value = track?.getSettings().deviceId || deviceId;
     write(DEVICE_KEY, guitarDeviceId.value);
@@ -180,6 +181,8 @@ function setLaneSource(source: LaneSource) {
   heardSignal = false;
   stageClock.lanes.fill(0);
   stageClock.events.length = 0;
+  baseline.fill(0);
+  lastHit.fill(-10);
   if (source !== 'guitar') stopGuitar();
   setAnalysis(source === 'midi' ? 'live' : 'idle');
 }
