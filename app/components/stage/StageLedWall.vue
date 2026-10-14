@@ -15,19 +15,21 @@ import {
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { stageClock } from '#shared/stage/clock'
 import { shadeFaces } from '#shared/stage/formShade'
+import { onMoment } from '#shared/stage/moments'
+import { drawPixel, measurePixel, wrapPixel } from '#shared/stage/pixelFont'
+import { LED_CENTER, LED_COLS, LED_HEIGHT, LED_ROWS, LED_WIDTH } from '#shared/stage/set'
 
 // The LED wall behind the drum riser: the song's artwork at 96x54 LEDs, with
 // dark gaps between LEDs and seams between panels. Dimmed so it never
 // competes with the highway; artwork plates cross-fade every seven seconds.
 const props = defineProps<{ art: string[], primary: string, secondary: string, rich: boolean }>()
 
-const COLS = 128
-const ROWS = 72
+const COLS = LED_COLS
+const ROWS = LED_ROWS
 const DOT = 4
-const WIDTH = 22.5
-const HEIGHT = WIDTH * ROWS / COLS
-// Close behind the truss and high enough that the art clears the amp boards.
-const CENTER = { y: 10.2 + HEIGHT / 2, z: 28 }
+const WIDTH = LED_WIDTH
+const HEIGHT = LED_HEIGHT
+const CENTER = LED_CENTER
 const HOLD = 7
 const FADE = 1.2
 
@@ -87,6 +89,27 @@ function loadPlate(url: string) {
   })
 }
 
+// A title card (band name, ENCORE!) laid over the art in pixel letters, so it
+// becomes LEDs like everything else on the wall.
+// The countdown starts on the first rendered frame, so a title fired while the
+// scene is still loading (the song intro) is not over before it is seen.
+let title: { lines: string[], color: string, seconds: number, until: number | null } | null = null
+
+function drawTitle() {
+  if (!title) return
+  // Largest scale that fits, never larger than 3 LEDs per font pixel.
+  let scale = 3
+  let size = measurePixel(title.lines, scale)
+  while (scale > 1 && (size.width > COLS - 8 || size.height > ROWS - 8)) size = measurePixel(title.lines, --scale)
+  const x = Math.round((COLS - size.width) / 2)
+  const y = Math.round((ROWS - size.height) / 2)
+  mix.globalAlpha = 0.72
+  mix.fillStyle = '#06040a'
+  mix.fillRect(0, y - 4, COLS, size.height + 8)
+  mix.globalAlpha = 1
+  drawPixel(mix, title.lines, x, y, scale, title.color)
+}
+
 // Paint LEDs: each source pixel becomes a dot with a dark gap, panels every 12.
 function paint(from: HTMLCanvasElement, to: HTMLCanvasElement | null, amount: number) {
   mix.globalAlpha = 1
@@ -95,6 +118,8 @@ function paint(from: HTMLCanvasElement, to: HTMLCanvasElement | null, amount: nu
     mix.globalAlpha = amount
     mix.drawImage(to, 0, 0)
   }
+  mix.globalAlpha = 1
+  drawTitle()
   const pixels = mix.getImageData(0, 0, COLS, ROWS).data
   ink.fillStyle = '#06040a'
   ink.fillRect(0, 0, screen.width, screen.height)
@@ -155,9 +180,29 @@ const frameGeo = mergeGeometries(frameParts)!
 for (const part of frameParts) part.dispose()
 group.add(new Mesh(frameGeo, frameMat))
 
+function repaint() {
+  const plate = plates[current]
+  if (plate) paint(plate, null, 0)
+}
+
+const stopTitles = onMoment((moment) => {
+  if (moment.kind !== 'title') return
+  const lines = moment.lines.flatMap(line => wrapPixel(line, 20))
+  title = { lines, color: moment.color ?? '#f3ead6', seconds: moment.seconds, until: null }
+  repaint()
+})
+
 // Cross-fade between plates. Low quality and reduced motion hold the first.
 const { onBeforeRender } = useLoop()
 onBeforeRender(({ delta }) => {
+  if (title) {
+    const now = performance.now() / 1000
+    title.until ??= now + title.seconds
+    if (now >= title.until) {
+      title = null
+      repaint()
+    }
+  }
   if (plates.length < 2 || !props.rich || stageClock.reducedMotion) return
   elapsed += delta
   if (elapsed < HOLD) return
@@ -171,6 +216,7 @@ onBeforeRender(({ delta }) => {
 })
 
 onBeforeUnmount(() => {
+  stopTitles()
   token++
   texture.dispose()
   screenMat.dispose()

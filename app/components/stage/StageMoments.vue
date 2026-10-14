@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, watch } from 'vue'
+import { onBeforeUnmount } from 'vue'
 import { useLoop } from '@tresjs/core'
 import { BoxGeometry, Color, DynamicDrawUsage, InstancedMesh, MeshBasicMaterial, Object3D } from 'three'
 import { LANE_COLORS, stageClock } from '#shared/stage/clock'
+import { onMoment } from '#shared/stage/moments'
 
-// Show moments: voxel pyro beside the highway when a solo starts, and a
-// confetti finale at the end of a song. Each bump of a key fires once.
-const props = defineProps<{ pyroKey: number, confettiKey: number }>()
+// Show moments: voxel pyro beside the highway and a confetti finale, fired
+// through the moment bus.
 
 const COUNT = 420
 const PYRO = ['#fff3c4', '#ffc531', '#ff8c1a', '#ff2d2d']
@@ -85,8 +85,11 @@ function confetti() {
   })
 }
 
-watch(() => props.pyroKey, () => { if (!stageClock.reducedMotion) pyro() })
-watch(() => props.confettiKey, () => { if (!stageClock.reducedMotion) confetti() })
+const stopMoments = onMoment((moment) => {
+  if (stageClock.reducedMotion) return
+  if (moment.kind === 'pyro') pyro()
+  else if (moment.kind === 'confetti') confetti()
+})
 
 const { onBeforeRender } = useLoop()
 onBeforeRender(({ delta }) => {
@@ -121,6 +124,7 @@ onBeforeRender(({ delta }) => {
 })
 
 onBeforeUnmount(() => {
+  stopMoments()
   geometry.dispose()
   material.dispose()
 })

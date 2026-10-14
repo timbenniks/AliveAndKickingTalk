@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { mergePlayedSongsWithAllSongs } from "~/helpers";
-import type { Database, Song } from "~/types";
-import type { Fan, LaneSource } from "#shared/stage/types";
+import type { Song } from "~/types";
 import { stageClock } from "#shared/stage/clock";
-import { styleById } from "#shared/stage/styles";
-import { lookFor } from "#shared/stage/themes";
-import { activeCue, chapterMarks, lengthToSeconds, presetCues } from "#shared/stage/timeline";
 
-// The Rock Anthem stage: song artwork, the 3D highway, and a pixel HUD.
-// `live` adds the up-next column; practise mode leaves it out.
-const props = defineProps<{ song: Song; mashupMode?: boolean; live?: boolean; backTo?: string }>();
+// The Rock Anthem stage: the 3D scene, a pixel HUD and the Rig drawer.
+// `live` adds the up-next column and the mosh pit; practise leaves them out.
+const props = defineProps<{ song: Song; mashupMode?: boolean; live?: boolean; host?: boolean; backTo?: string }>();
 
 const route = useRoute();
 const songStore = useSongStore();
-const { allSongs, allPlayedSongs, theLatestVotes } = storeToRefs(songStore);
+const { allSongs, allPlayedSongs } = storeToRefs(songStore);
 const stage = useStageAudio();
+const { marks, duration, theme, stageStyle, solo } = useStageCues(() => props.song);
+const { crowd, toast, simulateVote } = useStageCrowd(() => !!props.live);
 
 const upNext = computed(() => {
   if (props.mashupMode) return mergePlayedSongsWithAllSongs(allSongs, allPlayedSongs);
@@ -34,83 +32,8 @@ async function findNextSong() {
   }
 }
 
-// The mosh pit (live screen only): seeded with everyone who has voted, newest
-// first, one fan per voter. New votes drop in and get a short toast.
-const crowd = shallowRef<Fan[] | undefined>();
-const toast = shallowRef<{ avatar: string; song: string; key: number } | null>(null);
-let toastTimer: ReturnType<typeof setTimeout> | undefined;
-
-async function seedCrowd() {
-  const { data } = await useSupabaseClient<Database>()
-    .from("votes").select("userid, songid, user_avatar").order("id", { ascending: false }).limit(500);
-  const seen = new Set<string>();
-  crowd.value = (data || []).filter(vote => !seen.has(vote.userid) && seen.add(vote.userid))
-    .map(vote => ({ userid: vote.userid, avatar: vote.user_avatar || "", songId: vote.songid }));
-}
-
-watch(theLatestVotes, (votes) => {
-  if (!props.live) return;
-  for (const vote of votes) {
-    stageClock.arrivals.push({ userid: vote.userid, avatar: vote.user_avatar, songId: vote.songid });
-    const song = allSongs.value.find(item => item.songId === vote.songid)?.song;
-    if (song) toast.value = { avatar: vote.user_avatar, song, key: Date.now() };
-  }
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toast.value = null; }, 4000);
-});
-
-// Dev only: send a pretend vote down the same path the realtime channel uses.
-const isDev = import.meta.dev;
-function simulateVote() {
-  const faces = (crowd.value || []).map(fan => fan.avatar).filter(src => /githubusercontent|twimg/.test(src));
-  const song = allSongs.value[Math.floor(Math.random() * allSongs.value.length)];
-  if (!song) return;
-  songStore.latestVote = [{
-    userid: `simulated-${Date.now()}`,
-    songid: song.songId,
-    user_avatar: faces[Math.floor(Math.random() * faces.length)] || "",
-  }];
-}
-
-const cues = computed(() => presetCues(props.song));
-const marks = computed(() => chapterMarks({ cues: cues.value, sections: [] }));
-const duration = computed(() => lengthToSeconds(props.song.length) ?? 0);
-const theme = shallowRef(lookFor("neon-stadium"));
-const stageStyle = shallowRef(styleById("stadium-smoke"));
-let lastCueId = "-";
-
-// Show moments. A solo is a cue styled as one or an amp preset named for one.
-const solo = ref(false);
-const pyroKey = ref(0);
-const confettiKey = ref(0);
-let finaleFired = false;
-
 const chapters = ref<{ render: (time: number) => void } | null>(null);
-const debugText = ref<HTMLElement | null>(null);
-const rigOpen = ref(false);
-
-stage.onTick(() => {
-  const cue = activeCue(cues.value, stageClock.time);
-  if ((cue?.id ?? "") !== lastCueId) {
-    lastCueId = cue?.id ?? "";
-    theme.value = lookFor(cue?.theme);
-    stageStyle.value = styleById(cue?.style);
-    const isSolo = cue?.style === "solo-flames" || /solo/i.test(cue?.presetName ?? "");
-    // Pyro only when a solo starts during playback, not on load or on a seek while paused.
-    if (isSolo && !solo.value && stageClock.playing) pyroKey.value += 1;
-    solo.value = isSolo;
-  }
-  // Confetti in the last two seconds; seeking back re-arms it.
-  const left = stageClock.duration - stageClock.audioTime;
-  if (stageClock.duration && stageClock.playing && left < 2 && !finaleFired) {
-    finaleFired = true;
-    confettiKey.value += 1;
-  } else if (left > 3) finaleFired = false;
-  chapters.value?.render(stageClock.time);
-  if (rigOpen.value && debugText.value) {
-    debugText.value.textContent = `lanes ${stageClock.lanes.map(l => l.toFixed(2)).join(" ")}\nenergy ${stageClock.energy.toFixed(2)} · ${stageClock.analysis}\ntheme ${theme.value.id}`;
-  }
-});
+stage.onTick(() => chapters.value?.render(stageClock.time));
 
 // The song's artwork plays on the LED wall at the back of the stage.
 const art = computed(() => {
@@ -141,19 +64,7 @@ function hasWebGL() {
   } catch { return false; }
 }
 
-const sources: Array<{ id: LaneSource; label: string }> = [
-  { id: "song", label: "Backing track" },
-  { id: "guitar", label: "Guitar input" },
-  { id: "midi", label: "MIDI pickup" },
-];
-
-function chooseSource(id: LaneSource) {
-  stage.setLaneSource(id);
-  if (id === "guitar") void stage.startGuitar();
-}
-
 onMounted(() => {
-  if (props.live) void seedCrowd();
   media = matchMedia("(prefers-reduced-motion: reduce)");
   onMotion();
   media.addEventListener("change", onMotion);
@@ -161,11 +72,7 @@ onMounted(() => {
   webglOk.value = hasWebGL();
   surfaceReady.value = true;
 });
-onUnmounted(() => {
-  clearTimeout(toastTimer);
-  stageClock.arrivals.length = 0;
-  media?.removeEventListener("change", onMotion);
-});
+onUnmounted(() => media?.removeEventListener("change", onMotion));
 </script>
 
 <template>
@@ -183,8 +90,6 @@ onUnmounted(() => {
         :dpr="dpr"
         :rich="rich"
         :solo="solo"
-        :pyro-key="pyroKey"
-        :confetti-key="confettiKey"
         :crowd="crowd"
         @error="webglOk = false"
       />
@@ -218,38 +123,15 @@ onUnmounted(() => {
 
     <player :song="song" :countdown="mashupMode ? 10 : undefined" @on-song-ended="mashupMode && findNextSong()">
       <template #rig>
-        <fieldset class="rig-sources">
-          <legend class="rig-field"><span>Lanes follow</span></legend>
-          <label v-for="source in sources" :key="source.id" class="rig-source">
-            <input type="radio" name="lane-source" :checked="stage.laneSource.value === source.id" @change="chooseSource(source.id)">
-            {{ source.label }}
-          </label>
-        </fieldset>
-        <template v-if="stage.laneSource.value === 'guitar'">
-          <label class="rig-field">
-            <span>Guitar input</span>
-            <select :value="stage.guitarDeviceId.value" @change="stage.startGuitar(($event.target as HTMLSelectElement).value)">
-              <option value="">Default input</option>
-              <option v-for="device in stage.guitarDevices.value" :key="device.deviceId" :value="device.deviceId">{{ device.label || 'Audio input' }}</option>
-            </select>
-          </label>
-          <p role="status" class="rig-status">{{ stage.guitarStatus.value }}</p>
-          <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
-        </template>
-        <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Pick the pickup under Guitar MIDI input. Channels 1 to 6 light lanes 1 to 6.</p>
-        <label class="rig-field">
-          <span>Visual offset {{ stage.offsetMs.value }} ms</span>
-          <input v-model.number="stage.offsetMs.value" type="range" min="-200" max="200" step="5">
-        </label>
-        <div class="rig-toggles">
-          <PixelButton variant="secondary" :aria-pressed="reduced" @click="forceReduced = !forceReduced">{{ reduced ? 'Motion reduced' : 'Reduce motion' }}</PixelButton>
-          <PixelButton variant="secondary" :aria-pressed="lowQuality" @click="lowQuality = !lowQuality">{{ lowQuality ? 'Low quality' : 'High quality' }}</PixelButton>
-        </div>
-        <PixelButton v-if="isDev && live" variant="secondary" @click="simulateVote">Simulate a vote</PixelButton>
-        <details class="rig-debug" @toggle="rigOpen = ($event.target as HTMLDetailsElement).open">
-          <summary class="rig-field"><span>Signal</span></summary>
-          <pre ref="debugText" />
-        </details>
+        <StageRig
+          v-model:force-reduced="forceReduced"
+          v-model:low-quality="lowQuality"
+          :live="live"
+          :host="host"
+          :reduced="reduced"
+          :theme-id="theme.id"
+          @simulate-vote="simulateVote"
+        />
       </template>
     </player>
   </main>
@@ -300,12 +182,6 @@ onUnmounted(() => {
   overflow-y: auto;
   pointer-events: auto;
 }
-
-.rig-sources { display: grid; gap: 0.25rem; border: 0; padding: 0; margin: 0; }
-.rig-source { display: flex; gap: 0.5rem; align-items: center; font-size: 1.05rem; cursor: pointer; }
-.rig-source input { accent-color: var(--color-gold); }
-.rig-toggles { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-.rig-debug pre { font-family: var(--font-caps); font-size: 0.65rem; white-space: pre-wrap; color: var(--color-dust); margin-top: 0.5rem; }
 
 @media (max-width: 900px) {
   .stage-bill { max-width: 60vw; }

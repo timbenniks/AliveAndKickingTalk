@@ -40,7 +40,7 @@ const mashupMode = computed(() => {
 <template>
   <div>
     <p role="status" class="live-status">{{ realtimeStatus }}<template v-if="!isHost"> · Not signed in as host: this screen does not change the active song</template></p>
-    <stage-player :song="selectedSong" :mashup-mode="mashupMode" live />
+    <stage-player :song="selectedSong" :mashup-mode="mashupMode" :host="isHost" live />
   </div>
 </template>
 

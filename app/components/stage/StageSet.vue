@@ -17,14 +17,13 @@ import {
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { stageClock } from '#shared/stage/clock'
 import { shadeFaces } from '#shared/stage/formShade'
+import { CANS, DECK_FRONT, DECK_TOP, TRUSS_SPAN, TRUSS_Y, TRUSS_Z } from '#shared/stage/set'
 
 // The stage behind the highway: a deck the neck runs up onto, amp stacks,
 // a drum riser and a lighting truss with par cans. It is a backdrop, so it
 // stays dark and still; only the can lenses swell gently with the bass.
 const props = defineProps<{ primary: string, secondary: string }>()
 
-const DECK_TOP = 8.2
-const DECK_FRONT = 22
 const group = new Group()
 const disposables: Array<{ dispose: () => void }> = []
 const track = <T extends { dispose: () => void }>(item: T) => { disposables.push(item); return item }
@@ -241,10 +240,8 @@ add([
 ], gold)
 
 // Lighting truss: a square voxel lattice on two towers.
-const TRUSS_Y = 23.6
-const TRUSS_Z = DECK_FRONT + 4
 const truss: BoxGeometry[] = []
-const SPAN = 15.5
+const SPAN = TRUSS_SPAN
 for (const dy of [-0.35, 0.35]) {
   for (const dz of [-0.35, 0.35]) truss.push(box(SPAN * 2, 0.12, 0.12, 0, TRUSS_Y + dy, TRUSS_Z + dz))
 }
@@ -263,7 +260,6 @@ for (const side of [-1, 1]) {
 add(truss, metal)
 
 // Par cans hanging under the truss. Lenses take the theme colors.
-const CANS = [-11, -7.5, -4, -1.2, 1.2, 4, 7.5, 11]
 add(CANS.map(x => box(0.55, 0.7, 0.55, x, TRUSS_Y - 0.85, TRUSS_Z - 0.2)), tolex)
 const lensGeo = track(new BoxGeometry(0.42, 0.42, 0.06))
 const lenses = CANS.map((x, index) => {

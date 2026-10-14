@@ -4,6 +4,7 @@ import { bandLevels, guitarLaneBins, peakLevels, risingLanes } from '../shared/s
 import { themeForPreset } from '../shared/stage/themes.ts';
 import { styleById } from '../shared/stage/styles.ts';
 import { LANE_COLORS, LANE_X } from '../shared/stage/clock.ts';
+import { emitMoment, onMoment } from '../shared/stage/moments.ts';
 
 const backInBlack = { songId: 'back_in_black', presets: [
   { name: 'Stadium Rock', at: 0, pc: 2 }, { name: 'Face Bleeding Solo', at: 65, pc: 3 }, { name: 'Stadium Rock', at: 106, pc: 2 },
@@ -72,4 +73,17 @@ highE[Math.round(329.6 / (48000 / 4096))] = 255;
 assert.equal(peakLevels(highE, zones)[3], 1);
 assert.ok(bandLevels(highE, zones)[3] < 0.2);
 
-console.log('Stage cue, theme and six-lane pulse checks passed');
+// The moment bus reaches every listener until it unsubscribes.
+const heardA = [];
+const heardB = [];
+const stopA = onMoment(moment => heardA.push(moment.kind));
+const stopB = onMoment(moment => heardB.push(moment.kind));
+emitMoment({ kind: 'pyro' });
+stopA();
+emitMoment({ kind: 'title', lines: ['Encore!'], seconds: 3 });
+stopB();
+emitMoment({ kind: 'confetti' });
+assert.deepEqual(heardA, ['pyro']);
+assert.deepEqual(heardB, ['pyro', 'title']);
+
+console.log('Stage cue, theme and six-lane pulse and moment bus checks passed');

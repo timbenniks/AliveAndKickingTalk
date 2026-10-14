@@ -27,8 +27,6 @@ defineProps<{
   art: string[]
   rich: boolean
   solo: boolean
-  pyroKey: number
-  confettiKey: number
   // Live screen only: the voters who form the mosh pit.
   crowd?: Fan[]
 }>()
@@ -52,7 +50,7 @@ const emit = defineEmits<{ error: [] }>()
     <NoteHighway :reset-key="resetKey" :gems="gems" />
     <ChapterGates :marks="marks" />
     <StageParticles :primary="theme.primary" :particles="theme.particles" />
-    <StageMoments :pyro-key="pyroKey" :confetti-key="confettiKey" />
+    <StageMoments />
     <StageCrowd v-if="crowd" :seed="crowd" />
     <!-- High quality only. Bloom is thresholded so only the lit parts glow:
          gems, frets, strings and light heads, never the board or the art. -->
