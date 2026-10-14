@@ -145,7 +145,7 @@ cabMap.colorSpace = SRGBColorSpace
 cabMap.magFilter = cabMap.minFilter = NearestFilter
 cabMap.generateMipmaps = false
 // Dimmer than the stacks on the deck: a backdrop for the crowd, not a feature.
-const cabFace = material('#6f6a7c', 0.12, cabMap)
+const cabFace = material('#9a94a8', 0.2, cabMap)
 
 const COLS = 16
 const ROWS = 5
