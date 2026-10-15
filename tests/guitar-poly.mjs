@@ -129,9 +129,70 @@ gated.process(quiet, 0, -45);
 assert.deepEqual(gated.process(quiet, 0.04, -45).notes, [], 'noise gate rejects quiet input');
 gated.process(quiet, 0.08, -85);
 assert.deepEqual(gated.process(quiet, 0.12, -85).notes, [40], 'lower gate admits quiet notes');
+// Research failures: propose continuous pitches from partials, including an
+// absent root, rather than only asking whether a fixed semitone template fits.
+for (const sampleRate of [44100, 48000]) {
+  for (const note of [40, 45, 52, 55, 64, 69, 76]) {
+    for (const cents of [-35, -25, 0, 15, 25, 35]) {
+      for (const fundamental of [0, 0.05, 1]) {
+        const detector = new GuitarPolyDetector(sampleRate, 4096);
+        const hits = [];
+        for (let frame = 0; frame < 5; frame++) {
+          const out = detector.process(spectrum([note], { sampleRate, cents,
+            harmonicGains: [fundamental], time: frame / 60 }), frame / 60);
+          if (frame > 0) assert.deepEqual(out.notes, [note], `pitch ${note}, ${cents} cents, root ${fundamental}, ${sampleRate} Hz`);
+          hits.push(...out.hits);
+        }
+        assert.equal(hits.length, 1, 'weak/detuned sustained notes create one gem');
+      }
+    }
+  }
+  const chordDetector = new GuitarPolyDetector(sampleRate, 4096);
+  const hits = [];
+  for (let frame = 0; frame < 12; frame++) {
+    const out = chordDetector.process(spectrum([52, 55], { sampleRate, time: frame / 60,
+      harmonicGains: [1, 2, 1, 1.6, 1, 1.2, 1, 1, 1, 1] }), frame / 60);
+    if (frame > 0) assert.deepEqual(out.notes, [52, 55], 'mixed chords do not bypass octave suppression');
+    hits.push(...out.hits);
+  }
+  assert.equal(hits.length, 2, 'bright E/G produces two attacks, not four');
+}
+for (const voices of [
+  [{ note: 52, cents: -28 }, { note: 55, cents: 32 }],
+  [{ note: 45, cents: 31 }, { note: 60, cents: -25 }, { note: 64, cents: 22 }],
+  [{ note: 52 }, { note: 64, amplitude: 0.02 }],
+]) {
+  const detector = new GuitarPolyDetector(48000, 4096);
+  for (let frame = 0; frame < 8; frame++) {
+    const out = detector.process(spectrum(voices, { time: frame / 60 }), frame / 60, -65, 0);
+    if (frame > 0) assert.deepEqual(out.notes, voices.map(v => v.note), 'independent tuning and quiet real octave voices with filtering off');
+  }
+}
+// New noise in every window must not form a persistent harmonic hypothesis.
+const changingHiss = new GuitarPolyDetector(48000, 4096);
+for (let frame = 0; frame < 100; frame++) {
+  const out = changingHiss.process(spectrum([], { noise: 0.05, noiseSeed: 79 + frame * 1289 }), frame / 60);
+  assert.deepEqual(out.notes, [], 'fresh broadband noise is not a sustained pitch');
+  assert.deepEqual(out.hits, [], 'fresh broadband noise produces no attacks');
+}
+for (const note of [76, 83, 88]) {
+  const detector = new GuitarPolyDetector(48000, 4096);
+  const input = spectrum([note], { cents: 4 });
+  detector.process(input, 0);
+  assert.deepEqual(detector.process(input, 1 / 60).notes, [note], 'small high-note offsets keep their spectral resolution');
+}
+const vibrato = new GuitarPolyDetector(48000, 4096);
+const vibratoHits = [];
+for (let frame = 0; frame < 60; frame++) {
+  const out = vibrato.process(spectrum([55], { cents: 30 * Math.sin(frame / 60 * 2 * Math.PI * 4), time: frame / 60 }), frame / 60);
+  if (frame > 0) assert.deepEqual(out.notes, [55], 'vibrato within a semitone does not flicker');
+  vibratoHits.push(...out.hits);
+}
+assert.equal(vibratoHits.length, 1, 'vibrato is not a stream of new attacks');
+
 const detector = new GuitarPolyDetector(48000, 4096);
 const chord = spectrum([40, 47, 52, 56, 59, 64]);
-for (let i = 0; i < 30; i++) detector.process(chord, i / 30);
+for (let i = 0; i < 30; i++) detector.process(chord, i / 60);
 const started = performance.now();
-for (let i = 0; i < 300; i++) detector.process(chord, 1 + i / 30);
-console.log(`Polyphonic waveform regressions passed. Average fit: ${((performance.now() - started) / 300).toFixed(2)} ms (30 analyses/second).`);
+for (let i = 0; i < 300; i++) detector.process(chord, 1 + i / 60);
+console.log(`Polyphonic waveform regressions passed. Average fit: ${((performance.now() - started) / 300).toFixed(2)} ms (60 analyses/second).`);

@@ -29,44 +29,126 @@ lower tunings are not.
 ## Implementation
 
 This is an original spectral-template detector, with no Jam Origin code,
-weights or extracted assets. The browser provides a Blackman-window FFT. Each
-candidate needs fundamental energy and two aligned higher spectral peaks.
-A bounded sparse nonnegative fit compares 51 pitches, each with three generic
-harmonic rolloffs, so notes compete to explain shared partials. Temporal
-confirmation, release grace, a six-voice cap and a per-note retrigger interval
-reduce flicker and repeated gems during sustain. Strong increases in fitted
-note amplitude can retrigger a held note.
+weights or extracted assets. The browser provides a Blackman-window FFT. The
+research-informed version proposes continuous frequencies from local spectral
+peaks divided by small harmonic numbers. It refines each proposal using its
+supporting partials before fitting templates; notes no longer have to align
+with a fixed semitone grid to be considered.
 
-The fit runs at most 30 times per second, independently of display refresh.
+A proposal needs three closely aligned partials with relatively prime harmonic
+orders. This allows a missing fundamental, while rejecting a lower octave
+supported only by partials numbered 2, 4 and 6. Several timbres compete in a
+bounded sparse nonnegative fit. When the first partial is unusually weak, the
+fit can mix ordinary and missing-root templates. This is a small original
+model, not a reconstruction of the MG3 engine. Near-grid refinements smaller
+than five cents **and** 0.025 FFT bins snap to the calibrated grid to avoid
+moving a whole template because of small peak shifts from overlapping notes.
+
+The detector retains two-observation confirmation, an 80 ms release grace,
+a six-voice cap, and a 130 ms per-note retrigger interval. Strong increases in
+fitted note amplitude can retrigger a held note. Note names remain semitone
+labels; continuous refinement does not add MIDI output or identify strings.
+
+A separate timer targets **60 analyses per second**, independently of screen
+drawing. Each analysis uses `AudioContext.currentTime` and skips repeated or
+suspended audio time. There is no catch-up burst after a stall. The timer is
+stopped/replaced on teardown, device changes and mode changes; queued events
+are bounded even without a drawing consumer. It still runs on the main thread:
+a blocked thread or browser timer throttling can delay analysis. This is not
+an AudioWorklet or a guarantee of exact 60 Hz scheduling.
+
 The FFT size scales with sample rate (4096 at 44.1/48 kHz, 8192 at 88.2/96 kHz,
 16384 at 176.4/192 kHz). At 48 kHz the analysis window spans about 85 ms;
-confirmation needs two fits. This adds latency beyond the audio interface,
-and fast articulation can merge. Guitar input is analysed without routing it
-to speakers. Switching modes or devices resets tracking and queued guitar gems.
+confirmation needs two fits. Increasing the fit cadence reduces one source
+of delay, but does not shorten that window or prove end-to-end latency.
+Guitar input is analysed without routing it to speakers. Switching modes or
+devices resets tracking and queued guitar gems.
 
 ## Validation and limits
 
 Run `node --experimental-strip-types tests/guitar-poly.mjs` for generated
-waveform tests and a fit benchmark. The test synthesizes summed harmonics and
-noise, then independently computes an FFT; it does not populate the detector's
-templates directly. It covers single notes, bright/dark timbres, triads,
-six-note E major, release/re-strum, gate and tuning at 44.1 and 48 kHz.
-Additional checks cover every supported single pitch, stronger repeat attacks
-and scaled windows for 96/192 kHz interfaces.
-`tests/stage-audio.mjs` exercises the real browser audio engine and six-lane events
-at 30, 60, 120 and 144 Hz, mode changes and the analysis-rate cap.
+waveform tests and a fit benchmark. The fixture synthesizes summed harmonics
+with optional per-voice tuning, amplitude, phase and timbre, then independently
+computes a Blackman FFT. It does not populate detector templates directly.
+
+Existing coverage includes quiet input, bright/dark single notes, triads,
+six-note E major, release/re-strum, gate and tuning, every supported single
+pitch, stronger repeat attacks, and scaled windows for 96/192 kHz interfaces.
+The new checks add 252 combinations of pitch, detuning and weak/absent roots
+at 44.1/48 kHz; mixed bright chords; independently detuned voices; a quieter
+real octave with filtering off; continuous vibrato; small high-note offsets;
+and 100 changing broadband-noise windows. Sustains must produce one attack
+per voice, rather than extra gems as the waveform phase changes.
+
+`tests/stage-audio.mjs` runs the real audio engine against controlled devices
+and clocks. It checks 60 Hz analysis with 30/60/120/144 Hz drawing, analysis
+without any drawing, frozen/suspended audio, bounded events, mode changes,
+device-request races and teardown. These checks do not open a microphone.
+
+The research failures now have these measured synthetic outcomes:
+
+| Input | Earlier detector | Current detector |
+| --- | --- | --- |
+| E3, fundamental absent | E4, B4 | E3 |
+| E3, fundamental at 5% | E3, E4, B4 | E3 |
+| E3, +25 cents, no calibration | No note | E3 |
+| E3/G3 with strong even harmonics | E3, G3, E4, G4 | E3, G3 |
+| Actual E3/E4 pair | E3, E4 | E3, E4 |
+
+These rows use the inputs recorded in
+[the deeper research](mg3-detector-edge.md#5-measured-weaknesses-in-our-existing-browser-detector).
+The local six-note fit benchmark is around 0.6–0.9 ms per analysis; this excludes
+FFT, audio interface, drawing and end-to-end latency and varies by machine.
+
+For a broader comparison, run:
+
+```sh
+node --experimental-strip-types tests/guitar-evaluation.mjs 1b2dad3
+```
+
+Omit the Git reference to measure only the current detector. This diagnostic
+does not replace the regression assertions or declare every input a pass.
+It varies nine voicings, three starting phases, three harmonic falloffs and
+four signal conditions: 324 combinations, four observations per case at 60 Hz.
+Each condition contains 81 cases and 216 expected note instances. Counts below
+describe the final observation using Balanced filtering.
+
+| Condition | Exact cases, before → after | Missed notes, before → after | Extra notes, before → after |
+| --- | ---: | ---: | ---: |
+| Ordinary | 68 → 67 | 5 → 26 | 16 → 9 |
+| Independently detuned | 9 → 63 | 165 → 24 | 34 → 6 |
+| Weak fundamental | 0 → 31 | 91 → 39 | 260 → 90 |
+| Strong even harmonics | 38 → 64 | 12 → 24 | 91 → 14 |
+
+Across this sample, exact cases rise from 115/324 to 225/324 and false extra
+notes fall from 401 to 119. **Ordinary chords regress in note recall**: the
+stronger octave preference hides some real upper voices, even though it reduces
+false notes. The largest gains are detuned and weak-root inputs. This mixture
+is deliberately stressful and is not a representative real-guitar accuracy
+estimate. It includes the phase/timbre combinations used to inspect the new
+filter's tradeoffs; it is not an untouched validation set. Preserve the Off
+setting when retaining quiet octave voices is more important than extra gems.
 
 Dense octave fixtures deliberately have measured tolerances rather than a
-claim of perfect transcription. In the initial synthetic tests, A minor gives
-5/5 correct pitches plus one extra; G major gives 5/6 plus one extra; drop D
-gives 4–5/6 plus one or two extras. Octave-related partials can reinforce or
-cancel, so generic magnitude templates can miss a note or substitute its
-octave. Distortion, pickup-specific timbres, sympathetic ringing, bends,
-unisons and low notes near adjacent semitones remain difficult. A noise gate
-does not solve these ambiguities. Tim's live tests have been encouraging, but
-there is no annotated real-guitar evaluation set or measured accuracy/latency
-comparison. The synthetic tests are regression coverage, not an MG3-quality
-claim. Rehearse with the same clean input before choosing this for a live talk.
+claim of perfect transcription. At both 44.1 and 48 kHz with Balanced filtering,
+A minor currently ends at 4/5 correct pitches with no extra; G major at 5/6
+with one extra; drop D at 4/6 with no extra. The new filter favors fewer false
+gems and can remove a quieter genuine chord voice. The older A-minor fixture
+had more correct pitches but also an extra voice. This is a documented tradeoff,
+not a claim that every chord is more accurate.
+
+Arbitrary timbres, distortion, sympathetic ringing, unisons, fast bends across
+note-label boundaries and low adjacent notes remain difficult. A missing
+fundamental still needs enough visible upper partials in the analysis band;
+a pure sine or a high note with only two remaining partials will not qualify.
+Steady mono audio can be ambiguous between one bright note and a real octave
+pair. A gate or more FFT windows cannot resolve every such ambiguity.
+
+There is no annotated recording set from Tim's guitar or measured live
+accuracy/latency comparison. Synthetic checks establish regressions, not
+MG3-quality recognition. Rehearse with the actual clean DI input. An audio
+worklet, additional windows or pickup-specific models should follow a measured
+remaining failure; no new dependencies or native companion were added.
 
 ## Guitar notes panel
 
@@ -101,23 +183,17 @@ threshold problem; accuracy on the physical guitar still needs a live test.
 
 ## Octave filtering
 
-**Rig → Guitar input → Octave filtering** now defaults to **Balanced**. When
-all candidate notes belong to one pitch class (for example E3 and E4), a weaker
-octave guess must have at least 65% of the strongest fitted note amplitude.
-**Strong** raises this to 85%; **Off** restores the original fit. This is a
-relative-strength preference, not a calibrated probability. It leaves mixed
-pitch-class chords on the existing recognition path, and retains similarly
-strong real octave pairs. Rejected octave notes are cleared immediately rather
-than lingering through release grace. The selected setting persists between songs.
+**Rig → Guitar input → Octave filtering** defaults to **Balanced**. Filtering
+now compares octave relatives within **each pitch class**, including mixed
+chords. An unrelated G no longer disables protection against a phantom E4.
+A candidate above its strongest octave relative needs at least 65% of that
+relative's fitted amplitude. **Strong** raises this to 85%; **Off** removes
+that preference. Lower supported notes are retained when a higher octave
+is strongest, so a dominant upper voice does not automatically erase the bass.
 
-A quiet genuine octave voice can also be rejected: the same mono signal can
-be consistent with one bright note or two octave notes. Turn filtering off if
-you need those quieter octave voices. The filter does not fix every octave
-error, especially in dense chords, or guarantee correct octave selection when
-a harmonic is stronger than the played fundamental.
-
-Waveform regressions cover single E notes with changing even-harmonic emphasis
-at quiet input levels, balanced/strong/off settings, one gem per attack, a
-clear real octave pair and the existing six-voice chord tests. The audio
-integration test also checks the actual two-lane-to-one-lane routing and filter
-changes. Physical guitar validation remains the next step.
+This is a relative-strength preference, not a calibrated probability or proof
+that a second string was played. Quiet real upper octaves can be rejected;
+use Off when retaining those voices matters more than extra harmonic guesses.
+Rejected upper octaves clear immediately instead of lingering through release
+grace. Changing the setting resets tracking and queued gems; the setting
+persists between songs.

@@ -61,7 +61,7 @@ function chooseSource(id: LaneSource) {
           <option :value="0">Off · keep quieter octave voices</option>
         </select>
       </label>
-      <p class="rig-status">For single-note octave doubles, try Strong. Filtering can hide a quieter note in a real octave pair.</p>
+      <p class="rig-status">For extra octave notes, try Strong. Filtering can hide a quieter note in a real octave pair.</p>
       <label class="rig-field">
         <span>Tuning {{ stage.guitarTuningCents.value > 0 ? '+' : '' }}{{ stage.guitarTuningCents.value }} cents</span>
         <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">

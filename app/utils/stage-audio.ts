@@ -29,6 +29,7 @@ export function createStageAudio() {
   let polyDetector: GuitarPolyDetector | null = null;
   let polyFreq = new Float32Array(0);
   let lastPolyFrame = -10;
+  let polyTimer: ReturnType<typeof setInterval> | undefined;
   let lastDiagnostics = -10;
 
   let context: AudioContext | null = null;
@@ -53,6 +54,8 @@ export function createStageAudio() {
   const lastHit = [-10, -10, -10, -10, -10, -10];
 
   function resetGuitarDetection() {
+    clearInterval(polyTimer);
+    polyTimer = undefined;
     if (context && guitarAnalyser) {
       // Keep the same analysis duration on interfaces running at 44.1–192 kHz.
       guitarAnalyser.fftSize = guitarMode.value === 'polyphonic'
@@ -63,6 +66,7 @@ export function createStageAudio() {
     }
     polyDetector = context && guitarAnalyser && guitarMode.value === 'polyphonic'
       ? new GuitarPolyDetector(context.sampleRate, guitarAnalyser.fftSize, guitarTuningCents.value) : null;
+    if (polyDetector) polyTimer = setInterval(analyseGuitar, 1000 / 60);
     if (guitarAnalyser) guitarAnalyser.smoothingTimeConstant = guitarMode.value === 'polyphonic' ? 0 : 0.3;
     lastPolyFrame = -10;
     lastDiagnostics = -10;
@@ -74,6 +78,29 @@ export function createStageAudio() {
     if (laneSource.value === 'guitar') {
       stageClock.lanes.fill(0);
       stageClock.events.length = 0;
+    }
+  }
+
+  // Native FFT on a separate timer: drawing can slow down without reducing
+  // analysis to the display rate. Audio time prevents repeated/suspended data
+  // from confirming a note. No catch-up burst after a stalled main thread.
+  function analyseGuitar() {
+    if (!users || laneSource.value !== 'guitar' || !context || context.state !== 'running' || !guitarAnalyser || !polyDetector) return;
+    const now = context.currentTime;
+    if (now - lastPolyFrame < 1 / 90) return;
+    lastPolyFrame = now;
+    guitarAnalyser.getFloatFrequencyData(polyFreq);
+    const started = performance.now();
+    const detected = polyDetector.process(polyFreq, now, guitarGateDb.value, guitarOctaveRatio.value);
+    const elapsed = performance.now() - started;
+    for (let lane = 0; lane < 6; lane++) stageClock.lanes[lane] = detected.levels[lane] ?? 0;
+    stageClock.events.push(...detected.hits);
+    if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
+    if (now - lastDiagnostics >= 0.1) {
+      lastDiagnostics = now;
+      guitarInputDb.value = Math.round(detected.inputDb);
+      guitarNotes.value = detected.notes.map(guitarNoteName).join(' · ');
+      guitarDetectionMs.value = Math.round(elapsed * 10) / 10;
     }
   }
 
@@ -278,24 +305,7 @@ export function createStageAudio() {
       if (stageClock.energy > 0.04) { heardSignal = true; setAnalysis('live'); }
       else if (audioTime > 3 && !heardSignal) setAnalysis('unavailable');
     } else if (guitarLive && guitarAnalyser) {
-      if (guitarMode.value === 'polyphonic' && polyDetector) {
-        // Native FFT plus a bounded 30 Hz fit, independent of display frame rate.
-        if (wall - lastPolyFrame >= 1 / 30) {
-          lastPolyFrame = wall;
-          guitarAnalyser.getFloatFrequencyData(polyFreq);
-          const started = performance.now();
-          const detected = polyDetector.process(polyFreq, wall, guitarGateDb.value, guitarOctaveRatio.value);
-          const elapsed = performance.now() - started;
-          for (let lane = 0; lane < 6; lane++) stageClock.lanes[lane] = detected.levels[lane] ?? 0;
-          stageClock.events.push(...detected.hits);
-          if (wall - lastDiagnostics >= 0.1) {
-            lastDiagnostics = wall;
-            guitarInputDb.value = Math.round(detected.inputDb);
-            guitarNotes.value = detected.notes.map(guitarNoteName).join(' · ');
-            guitarDetectionMs.value = Math.round(elapsed * 10) / 10;
-          }
-        }
-      } else {
+      if (guitarMode.value !== 'polyphonic') {
         guitarAnalyser.getByteFrequencyData(guitarFreq);
         pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
       }

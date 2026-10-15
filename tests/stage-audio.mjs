@@ -15,10 +15,32 @@ registerHooks({
 });
 let renderFrame;
 let wall = 1000;
+let frozenAudioTime = null;
+let activeContext;
+let nextTimer = 0;
+const timers = new Map();
+function advance(milliseconds, draw = true) {
+  const end = wall + milliseconds;
+  while (true) {
+    const entry = [...timers.entries()].sort((a, b) => a[1].due - b[1].due)[0];
+    if (!entry || entry[1].due > end + 1e-8) break;
+    wall = entry[1].due;
+    entry[1].due += entry[1].interval;
+    entry[1].callback();
+  }
+  wall = end;
+  if (draw) renderFrame();
+}
 Object.assign(globalThis, {
   requestAnimationFrame: callback => { renderFrame = callback; return 1; },
   cancelAnimationFrame: () => {},
   performance: { now: () => wall },
+  setInterval: (callback, interval) => {
+    const id = ++nextTimer;
+    timers.set(id, { callback, interval, due: wall + interval });
+    return id;
+  },
+  clearInterval: id => timers.delete(id),
   localStorage: { getItem: key => key === 'alive-lane-source' ? 'midi' : null, setItem: () => {} },
 });
 
@@ -30,6 +52,8 @@ let inputPeaks = [7];
 let polyInput = new Float32Array(2048).fill(-Infinity);
 let polyReads = 0;
 class FakeAudioContext {
+  constructor() { activeContext = this; }
+  get currentTime() { return frozenAudioTime ?? wall / 1000; }
   state = 'running';
   sampleRate = 48000;
   createMediaStreamSource(stream) {
@@ -81,11 +105,10 @@ assert.equal(requests.length, 0, 'retired source does not open a microphone');
 // Exercise the real audio tick at different rates, with no sound or devices.
 const { stageClock } = await import('../shared/stage/clock.ts');
 for (const hz of [30, 60, 120, 144]) {
-  wall += 1000;
-  renderFrame();
+  advance(1000);
   stageClock.bass = stageClock.mid = stageClock.treble = stageClock.energy = 1;
   stageClock.lanes.fill(1);
-  for (let frame = 0; frame < hz; frame++) { wall += 1000 / hz; renderFrame(); }
+  for (let frame = 0; frame < hz; frame++) { advance(1000 / hz); }
   for (const value of [stageClock.bass, stageClock.mid, stageClock.treble, stageClock.energy]) {
     assert.ok(Math.abs(value - Math.pow(0.82, 60)) < 1e-12);
   }
@@ -136,25 +159,23 @@ assert.equal(audio.guitarStatus.value, 'Listening to latest');
 assert.equal(guitarAnalyser.minDecibels, -75);
 assert.equal(guitarAnalyser.maxDecibels, -25);
 stageClock.events.length = 0;
-for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+for (let frame = 0; frame < 30; frame++) { advance(1000 / 60); }
 assert.equal(stageClock.events.length, 0);
 inputDb = -62;
-wall += 1000 / 60;
-renderFrame();
+advance(1000 / 60);
 assert.equal(stageClock.events.length, 1);
 assert.equal(stageClock.events[0].lane, 0);
 stageClock.events.length = 0;
-for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+for (let frame = 0; frame < 30; frame++) { advance(1000 / 60); }
 // The existing detector can emit another pulse during the attack, then settles.
 assert.ok(stageClock.events.length <= 1);
 stageClock.events.length = 0;
-for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+for (let frame = 0; frame < 30; frame++) { advance(1000 / 60); }
 assert.equal(stageClock.events.length, 0);
 inputDb = -72;
-for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
+for (let frame = 0; frame < 30; frame++) { advance(1000 / 60); }
 inputDb = -62;
-wall += 1000 / 60;
-renderFrame();
+advance(1000 / 60);
 assert.equal(stageClock.events.length, 1);
 
 // A strummed E-major spectrum (fundamentals plus harmonics) must light several
@@ -165,51 +186,74 @@ inputPeaks = [82.41, 123.47, 164.81, 207.65, 246.94, 329.63, 494, 659, 989]
 for (const refreshRate of [30, 60, 120, 144]) {
   for (let strum = 0; strum < 2; strum++) {
     inputDb = -72;
-    for (let frame = 0; frame < refreshRate / 2; frame++) { wall += 1000 / refreshRate; renderFrame(); }
+    for (let frame = 0; frame < refreshRate / 2; frame++) { advance(1000 / refreshRate); }
     stageClock.events.length = 0;
     inputDb = -50;
-    wall += 1000 / refreshRate;
-    renderFrame();
+    advance(1000 / refreshRate);
     assert.equal(stageClock.events.length, 3, 'a chord produces the three strongest lane pulses');
     assert.equal(new Set(stageClock.events.map(event => event.lane)).size, 3);
     assert.ok(stageClock.lanes.every(level => level > 0.2), 'all six spectrum zones respond');
-    for (let frame = 0; frame < refreshRate; frame++) { wall += 1000 / refreshRate; renderFrame(); }
+    for (let frame = 0; frame < refreshRate; frame++) { advance(1000 / refreshRate); }
     stageClock.events.length = 0;
-    for (let frame = 0; frame < refreshRate / 2; frame++) { wall += 1000 / refreshRate; renderFrame(); }
+    for (let frame = 0; frame < refreshRate / 2; frame++) { advance(1000 / refreshRate); }
     assert.equal(stageClock.events.length, 0, 'a held chord settles without flooding gems');
   }
 }
 
 // The experimental polyphonic path drives all six lanes without sending guitar
-// audio to speakers, and performs at most 30 fits/second at any display rate.
+// audio to speakers, and analyses at 60 Hz independently of display refresh.
 for (const refreshRate of [30, 60, 120, 144]) {
   audio.setGuitarMode('polyphonic');
   assert.equal(guitarAnalyser.smoothingTimeConstant, 0);
   stageClock.events.length = 0;
   polyInput = spectrum([40, 47, 52, 56, 59, 64]);
   const before = polyReads;
-  for (let frame = 0; frame < refreshRate; frame++) { wall += 1000 / refreshRate; renderFrame(); }
-  assert.ok(polyReads - before <= 31, 'fit rate is capped independently of display refresh');
+  for (let frame = 0; frame < refreshRate; frame++) { advance(1000 / refreshRate); }
+  assert.ok(polyReads - before >= 59 && polyReads - before <= 61, '60 Hz analysis is independent of display refresh');
   assert.equal(stageClock.events.length, 6, 'six chord voices produce six attacks');
   assert.deepEqual(stageClock.events.map(hit => hit.lane).toSorted(), [0, 1, 2, 3, 4, 5]);
   assert.ok(stageClock.lanes.every(level => level > 0));
   assert.match(audio.guitarNotes.value, /E2/);
   assert.ok(audio.guitarInputDb.value > audio.guitarGateDb.value, 'debug exposes signal level above the gate');
   polyInput.fill(-Infinity);
-  for (let frame = 0; frame < refreshRate / 3; frame++) { wall += 1000 / refreshRate; renderFrame(); }
+  for (let frame = 0; frame < refreshRate / 3; frame++) { advance(1000 / refreshRate); }
   assert.ok(stageClock.lanes.every(level => level === 0), 'released chord clears all lanes');
   assert.equal(audio.guitarInputDb.value, -120, 'silence is visible below the gate');
 }
+// Detection continues without drawing; suspended or unchanged audio cannot
+// produce duplicate observations. A long rendering pause cannot grow the queue.
+audio.setGuitarMode('polyphonic');
+polyInput = spectrum([40, 47, 52, 56, 59, 64]);
+advance(200, false);
+assert.equal(stageClock.events.length, 6, 'analysis does not wait for requestAnimationFrame');
+let beforePause = polyReads;
+frozenAudioTime = wall / 1000;
+advance(1000, false);
+assert.ok(polyReads - beforePause <= 1, 'unchanged audio time is read at most once');
+activeContext.state = 'suspended';
+beforePause = polyReads;
+advance(1000, false);
+assert.equal(polyReads, beforePause, 'suspended audio is not analysed');
+activeContext.state = 'running';
+frozenAudioTime = null;
+for (let beat = 0; beat < 24; beat++) {
+  polyInput = spectrum([40, 47, 52, 56, 59, 64], { amplitude: beat % 2 ? 0.08 : 0.001 });
+  advance(200, false);
+}
+assert.ok(stageClock.events.length <= 64, 'analysis bounds events even without drawing');
+assert.equal(timers.size, 1, 'only one guitar analysis timer is live');
+audio.setGuitarMode('polyphonic');
+
 // Octave filtering is wired through the real input tick, not only the helper.
 polyInput = spectrum([52], { harmonicGains: [1, 2, 1, 1.6, 1, 1.2, 1, 1, 1, 1] });
 audio.guitarOctaveRatio.value = 0;
 await nextTick();
-for (let frame = 0; frame < 12; frame++) { wall += 1000 / 60; renderFrame(); }
+for (let frame = 0; frame < 12; frame++) { advance(1000 / 60); }
 assert.deepEqual(stageClock.events.map(hit => hit.lane).toSorted(), [2, 5], 'unfiltered octave guess reaches two lanes');
 audio.guitarOctaveRatio.value = 0.65;
 await nextTick();
 assert.equal(stageClock.events.length, 0, 'filter changes clear pending gems');
-for (let frame = 0; frame < 12; frame++) { wall += 1000 / 60; renderFrame(); }
+for (let frame = 0; frame < 12; frame++) { advance(1000 / 60); }
 assert.deepEqual(stageClock.events.map(hit => hit.lane), [2], 'balanced filtering sends one E gem');
 assert.equal(audio.guitarNotes.value, 'E3');
 audio.guitarOctaveRatio.value = 999;
@@ -222,6 +266,7 @@ assert.equal(audio.guitarGateDb.value, -85, 'gate is bounded');
 assert.equal(audio.guitarTuningCents.value, 50, 'tuning is bounded');
 audio.setGuitarMode('spectrum');
 assert.equal(guitarAnalyser.smoothingTimeConstant, 0.3);
+assert.equal(timers.size, 0, 'spectrum mode stops note analysis');
 assert.ok(stageClock.lanes.every(level => level === 0));
 assert.equal(stageClock.events.length, 0, 'mode changes clear queued attacks');
 
@@ -231,11 +276,9 @@ audio.release();
 assert.equal(latest.track.stopped, false);
 let ticks = 0;
 const unsubscribe = audio.onTick(() => { ticks++; });
-wall += 1000 / 60;
-renderFrame();
+advance(1000 / 60);
 unsubscribe();
-wall += 1000 / 60;
-renderFrame();
+advance(1000 / 60);
 assert.equal(ticks, 1, 'tick observers have an explicit unsubscribe');
 
 // Teardown invalidates outstanding requests as well as stopping active tracks.
@@ -249,4 +292,5 @@ await leaving;
 assert.equal(late.track.stopped, true);
 assert.equal(audio.guitarStatus.value, 'Guitar input is off');
 assert.deepEqual(connected, [current, latest]);
+assert.equal(timers.size, 0, 'teardown stops the analysis timer');
 console.log('Guitar quiet notes, chords, re-strums, source changes, device races and teardown checks passed');
