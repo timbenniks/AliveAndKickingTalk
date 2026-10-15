@@ -1,9 +1,11 @@
 # Experimental polyphonic guitar input
 
-In Rig settings or `/config`, choose **Guitar input**, select a clean DI input,
+In Rig settings or `/config`, set **Neck follows → Guitar**, select a clean DI input,
 then choose **Polyphonic notes · experimental** under Guitar detection. No MIDI
 converter, plugin, model download or additional dependency is needed. Spectrum
-remains the default; the existing Guitar MIDI input still works with MG3.
+remains the default. The neck has two sources: Track and Guitar. MIDI is
+reserved for amp program changes; guitar MIDI input and MIDI lane mapping
+have been removed. Saved MIDI neck-source preferences fall back to Track.
 
 Start with the gate at −65 dB. Raise it until idle noise no longer triggers,
 and lower it if quiet notes disappear. The gate compares the overall
@@ -16,7 +18,7 @@ fit duration are visible in settings. The duration measures the fit only, not
 FFT, input-interface latency or total note-to-gem latency.
 
 The detector covers D2–E6, fits up to six simultaneous pitches, and uses the
-same low-to-high pitch ranges as the MIDI Notes mode. These ranges cannot tell
+six low-to-high pitch ranges starting at E2, A2, D3, G3, B3 and E4. These ranges cannot tell
 which physical string was played. Multiple notes in one pitch range can
 launch separate gems into that lane. Drop D is within the supported range;
 lower tunings are not.
@@ -63,16 +65,19 @@ validated; the synthetic tests are regression coverage, not an MG3-quality
 claim. Compare with Spectrum or MG3 using the same clean input before choosing
 this for a live talk.
 
-## Stage note debug window
+## Guitar notes panel
 
-Selecting Polyphonic notes shows a small note debug window at the lower left
-of the live/practise stage, above the player. It shows all currently detected
-note names, signal level, fit duration, gate setting and input status even with Rig closed.
-The readout reuses the existing throttled diagnostics; it adds no detector
-work or animation loop. Close it with ×, or use **Show note debug** in Rig
-(or `/config`) to restore it. Visibility is saved in this browser between songs.
-The window only appears for polyphonic guitar input.
+Selecting Polyphonic notes shows the **Guitar notes** panel at the lower left
+of the live/practise stage, above the player. All currently recognized note
+names appear together, including chords; the input status appears below.
+It stays visible with Rig closed. Close with × and restore it with **Show
+notes** in Rig or `/config`. Visibility is saved in this browser between songs.
+The panel is a normal interface feature and only appears for polyphonic guitar
+input; Spectrum does not estimate note pitches.
 
+Signal level, gate status and processing duration remain in Rig for tuning the
+detector. The panel reuses the existing throttled readout and adds no analysis
+work or animation loop.
 
 ## Quiet-input correction
 
@@ -81,8 +86,7 @@ bins, harmonic eligibility and fitted note amplitudes. These values are lower
 than overall guitar RMS, so an input could be audible yet need a hard strum to
 trigger. The gate now opens from the complete analysis band's RMS estimate
 (window-power corrected); recognition uses signal-relative thresholds and a
-broadband noise estimate. Existing gate settings remain saved. The note window
-and Rig show **Signal … dB** and whether it is below the gate. If the signal is
+broadband noise estimate. Existing gate settings remain saved. Rig shows **Signal … dB** and whether it is below the gate. If the signal is
 above the gate but no notes appear, louder playing is not necessarily the fix:
 that points to pitch matching, tuning or the input's timbre.
 

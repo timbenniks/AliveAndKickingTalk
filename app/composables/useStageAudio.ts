@@ -229,15 +229,7 @@ function setLaneSource(source: LaneSource) {
   baseline.fill(0);
   lastHit.fill(-10);
   if (source !== 'guitar') stopGuitar();
-  setAnalysis(source === 'midi' ? 'live' : 'idle');
-}
-
-// Routing resolves MIDI pitches/channels into lanes. On release, velocity is
-// the level of any other notes still held in that lane; only note-ons add gems.
-function midiNote(lane: number, velocity: number, on: boolean) {
-  if (laneSource.value !== 'midi' || lane < 0 || lane >= stageClock.lanes.length) return;
-  stageClock.lanes[lane] = velocity;
-  if (on) stageClock.events.push({ lane, strength: velocity });
+  setAnalysis('idle');
 }
 
 function pushAudioHits(levels: number[], now: number, delta: number) {
@@ -254,7 +246,7 @@ function tick() {
   const audioTime = element && Number.isFinite(element.currentTime) ? element.currentTime : 0;
   const guitarLive = laneSource.value === 'guitar' && !!guitarAnalyser;
   // The rule: lanes follow the chosen source; everything else follows the music.
-  const pulsing = laneSource.value === 'song' ? songPlaying : guitarLive || laneSource.value === 'midi';
+  const pulsing = laneSource.value === 'song' ? songPlaying : guitarLive;
 
   // Two clocks. `time` is the song position: cues, gates, the amp board and
   // light sweeps stop when the song stops. `flow` only moves the highway
@@ -320,7 +312,7 @@ function tick() {
       pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
     }
     setAnalysis('live');
-  } else if (laneSource.value !== 'midi') {
+  } else {
     const keep = frameDecay(0.8, delta);
     for (let i = 0; i < stageClock.lanes.length; i++) stageClock.lanes[i] = (stageClock.lanes[i] ?? 0) * keep;
   }
@@ -384,7 +376,7 @@ watch(guitarTuningCents, value => {
 export function useStageAudio() {
   onMounted(() => {
     if (users++ > 0) return;
-    laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar', 'midi']) || 'song';
+    laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar']) || 'song';
     guitarDeviceId.value = read(DEVICE_KEY);
     guitarMode.value = read('alive-guitar-mode', ['spectrum', 'polyphonic']) || 'spectrum';
     guitarOctaveRatio.value = Number(read('alive-guitar-octave-filter', ['0', '0.65', '0.85']) || '0.65');
@@ -393,7 +385,6 @@ export function useStageAudio() {
     guitarGateDb.value = Number.isFinite(savedGate) ? Math.max(-85, Math.min(-30, savedGate)) : -65;
     guitarTuningCents.value = Number.isFinite(savedTuning) ? Math.max(-50, Math.min(50, savedTuning)) : 0;
     offsetMs.value = Number(read(OFFSET_KEY)) || 0;
-    if (laneSource.value === 'midi') setAnalysis('live');
     // Songs load as new pages: pick the guitar back up where it was.
     if (laneSource.value === 'guitar') void startGuitar();
     void listGuitarDevices();
@@ -406,6 +397,6 @@ export function useStageAudio() {
   return {
     laneSource, analysis, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
     guitarMode, guitarGateDb, guitarTuningCents, guitarOctaveRatio, guitarNotes, guitarInputDb, guitarDetectionMs, setGuitarMode,
-    registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote, onTick, seek,
+    registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, onTick, seek,
   };
 }

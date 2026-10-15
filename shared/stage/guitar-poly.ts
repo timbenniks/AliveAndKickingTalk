@@ -110,7 +110,7 @@ export class GuitarPolyDetector {
     }
     this.coefficients.fill(0);
     // Fit the best-supported templates first, so nearby low notes cannot steal
-    // the same broad fundamental simply because they came first in MIDI order.
+    // the same broad fundamental simply because they came first in pitch order.
     for (const item of this.order) {
       const atom = this.atoms[item.index]!;
       let dot = 0;

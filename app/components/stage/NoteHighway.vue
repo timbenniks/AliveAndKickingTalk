@@ -28,7 +28,7 @@ import { BOARD_TILT, frameDecay, HIGHWAY_SPEED, LANE_COLORS, LANE_X, NECK_LENGTH
 import { shadeFaces } from '#shared/stage/formShade'
 
 // Visualizer only: pulses come from stageClock.events, fed by the song, the
-// guitar input or a MIDI pickup. There are no authored notes.
+// guitar input. There are no authored notes.
 const props = defineProps<{
   resetKey: string
   gems?: string[]

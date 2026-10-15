@@ -124,7 +124,7 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
       </aside>
     </div>
 
-    <StageGuitarDebug />
+    <StageGuitarNotes />
 
     <player :song="song" :countdown="mashupMode ? 10 : undefined" @on-song-ended="mashupMode && findNextSong()">
       <template #rig>

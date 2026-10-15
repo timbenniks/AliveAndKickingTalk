@@ -1,4 +1,4 @@
-// The Rig's motion and quality toggles. Songs load as new pages, and /config
+// The Rig's motion, quality and note display toggles. Songs load as new pages, and /config
 // sets these too, so they live in localStorage like the rest of the Rig.
 
 const KEY = 'alive-rig-display';

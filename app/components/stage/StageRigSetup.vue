@@ -13,9 +13,8 @@ const { forceReduced, lowQuality, showGuitarNotes } = useRigDisplay();
 const reducedNow = computed(() => props.reduced ?? forceReduced.value);
 
 const sources: Array<{ id: LaneSource; label: string }> = [
-  { id: "song", label: "Backing track" },
-  { id: "guitar", label: "Guitar input" },
-  { id: "midi", label: "Guitar MIDI" },
+  { id: "song", label: "Track" },
+  { id: "guitar", label: "Guitar" },
 ];
 
 function chooseSource(id: LaneSource) {
@@ -26,7 +25,7 @@ function chooseSource(id: LaneSource) {
 
 <template>
   <fieldset class="rig-sources">
-    <legend class="rig-field"><span>Lanes follow</span></legend>
+    <legend class="rig-field"><span>Neck follows</span></legend>
     <label v-for="source in sources" :key="source.id" class="rig-source">
       <input type="radio" name="lane-source" :checked="stage.laneSource.value === source.id" @change="chooseSource(source.id)">
       {{ source.label }}
@@ -67,7 +66,7 @@ function chooseSource(id: LaneSource) {
         <span>Tuning {{ stage.guitarTuningCents.value > 0 ? '+' : '' }}{{ stage.guitarTuningCents.value }} cents</span>
         <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">
       </label>
-      <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide note debug' : 'Show note debug' }}</PixelButton>
+      <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide notes' : 'Show notes' }}</PixelButton>
       <p class="rig-status">Signal {{ stage.guitarInputDb.value }} dB · {{ stage.guitarInputDb.value < stage.guitarGateDb.value ? 'below gate' : 'above gate' }}</p>
       <p role="status" class="rig-status">Detected: {{ stage.guitarNotes.value || '—' }} · {{ stage.guitarDetectionMs.value }} ms per analysis</p>
       <p class="rig-status">Raise the gate until idle noise stops triggering; lower it if quiet notes disappear. Tune to A440 or adjust the tuning above.</p>
@@ -75,7 +74,6 @@ function chooseSource(id: LaneSource) {
     <p v-else class="rig-status">Lanes follow low-to-high audio energy, including chords and harmonics.</p>
     <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
   </template>
-  <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Choose your converter or pickup under Guitar MIDI input. Use Note pitches for MG3.</p>
   <label class="rig-field">
     <span>Visual offset {{ stage.offsetMs.value }} ms</span>
     <input v-model.number="stage.offsetMs.value" type="range" min="-200" max="200" step="5">

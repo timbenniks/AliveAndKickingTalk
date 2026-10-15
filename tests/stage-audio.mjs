@@ -24,7 +24,7 @@ Object.assign(globalThis, {
   requestAnimationFrame: callback => { renderFrame = callback; return 1; },
   cancelAnimationFrame: () => {},
   performance: { now: () => wall },
-  localStorage: { getItem: () => null, setItem: () => {} },
+  localStorage: { getItem: key => key === 'alive-lane-source' ? 'midi' : null, setItem: () => {} },
 });
 
 const requests = [];
@@ -76,6 +76,8 @@ function stream(id) {
 const { useStageAudio } = await import('../app/composables/useStageAudio.ts');
 const audio = useStageAudio();
 mounted.forEach(callback => callback());
+assert.equal(audio.laneSource.value, 'song', 'retired MIDI source falls back to track');
+assert.equal(requests.length, 0, 'retired source does not open a microphone');
 
 // Exercise the real audio tick at different rates, with no sound or devices.
 const { stageClock } = await import('../shared/stage/clock.ts');
@@ -224,20 +226,18 @@ assert.equal(guitarAnalyser.smoothingTimeConstant, 0.3);
 assert.ok(stageClock.lanes.every(level => level === 0));
 assert.equal(stageClock.events.length, 0, 'mode changes clear queued attacks');
 
-// Exercise the real WebMIDI routing into the actual stage clock. MG3 Legacy
-// sends an entire chord on channel 1; its pitches must reach distinct lanes.
+// MIDI is output-only: preserve amp preset selection, program zero, saved
+// device names and reconnect/error handling without touching note inputs.
 const { WebMidi } = await import('webmidi');
-const portListeners = new Map();
 const midiListeners = new Map();
-const midiPort = {
-  id: 'mg3', name: 'MIDI Guitar Virtual Output',
-  addListener: (event, callback) => portListeners.set(event, callback),
-  removeListener: () => portListeners.clear(),
+const programs = [];
+const ampPort = { id: 'amp', name: 'IAC Driver Alive and Kicking',
+  sendProgramChange: (pc, options) => programs.push({ pc, options }),
 };
-let availableInputs = [midiPort];
+let availableOutputs = [ampPort];
 Object.defineProperties(WebMidi, {
-  inputs: { configurable: true, get: () => availableInputs },
-  outputs: { configurable: true, get: () => [] },
+  inputs: { configurable: true, get: () => { throw Error('Guitar MIDI input must not be used'); } },
+  outputs: { configurable: true, get: () => availableOutputs },
 });
 WebMidi.enable = async () => WebMidi;
 WebMidi.addListener = (event, callback) => midiListeners.set(event, callback);
@@ -248,74 +248,38 @@ globalThis.localStorage = {
   setItem: (key, value) => midiSettings.set(key, value),
 };
 const { useMidi } = await import('../app/composables/useMidi.ts');
-const midi = useMidi(audio.midiNote);
+const midi = useMidi();
 mounted.at(-1)();
 await midi.connect();
-midi.selectInput('mg3');
-assert.equal(midi.inputMode.value, 'notes');
-assert.equal(midi.status.value, 'Listening to MIDI Guitar Virtual Output');
-audio.setLaneSource('midi');
-function midiEvent(pitch, channel = 1, velocity = 0.8) {
-  return { message: { channel }, note: { number: pitch, attack: velocity } };
-}
-for (const pitch of [40, 47, 52, 56, 59, 64]) portListeners.get('noteon')(midiEvent(pitch));
-assert.deepEqual(stageClock.events.map(event => event.lane), [0, 1, 2, 3, 4, 5]);
-assert.ok(stageClock.lanes.every(level => level === 0.8));
-stageClock.events.length = 0;
-// Two notes in the same lane keep sounding until both are released; releases
-// must not generate gems, and different MPE channels can hold the same pitch.
-portListeners.get('noteon')(midiEvent(67, 1, 0.6));
-portListeners.get('noteoff')(midiEvent(64));
-assert.equal(stageClock.lanes[5], 0.6);
-assert.equal(stageClock.events.length, 1);
-portListeners.get('noteon')(midiEvent(67, 16, 0.7));
-portListeners.get('noteoff')(midiEvent(67, 1));
-assert.equal(stageClock.lanes[5], 0.7);
-portListeners.get('noteoff')(midiEvent(67, 16));
-assert.equal(stageClock.lanes[5], 0);
-// Repeated note-ons retrigger rather than incrementing a stuck-note count.
-stageClock.events.length = 0;
-portListeners.get('noteon')(midiEvent(64));
-portListeners.get('noteon')(midiEvent(64));
-assert.equal(stageClock.events.length, 2);
-portListeners.get('noteon')(midiEvent(64, 1, 0));
-assert.equal(stageClock.lanes[5], 0);
-portListeners.get('noteon')(midiEvent(64, 16));
-portListeners.get('controlchange')({ message: { channel: 1 }, controller: { number: 123 } });
-assert.ok(stageClock.lanes.slice(0, 5).every(level => level === 0));
-assert.equal(stageClock.lanes[5], 0.8);
-portListeners.get('controlchange')({ message: { channel: 16 }, controller: { number: 120 } });
-assert.ok(stageClock.lanes.every(level => level === 0));
-// A port refresh while the same input remains connected must not drop notes.
-portListeners.get('noteon')(midiEvent(40));
+assert.equal(midi.outputId.value, 'amp');
+assert.equal(midi.status.value, 'Amp MIDI output connected');
+assert.equal(midi.sendProgramChange(0), true, 'program zero remains supported');
+assert.deepEqual(programs, [{ pc: 0, options: { channels: [1] } }]);
+midi.selectOutput('');
+assert.equal(midi.sendProgramChange(5), false, 'missing output can be retried');
+const otherAmp = { ...ampPort, id: 'other', name: 'Other amp output' };
+availableOutputs.push(otherAmp);
 midiListeners.get('connected')();
-assert.equal(stageClock.lanes[0], 0.8);
-// Legacy pickup routing is explicitly selectable and persisted.
-midi.selectInputMode('strings');
-assert.equal(midiSettings.get('alive-midi-input-mode'), 'strings');
-assert.ok(stageClock.lanes.every(level => level === 0));
-stageClock.events.length = 0;
-portListeners.get('noteon')(midiEvent(64, 6));
-portListeners.get('noteon')(midiEvent(64, 7));
-assert.deepEqual(stageClock.events.map(event => event.lane), [5]);
-midi.selectInputMode('notes');
-assert.ok(stageClock.lanes.every(level => level === 0));
-portListeners.get('noteon')(midiEvent(40));
-midi.selectInput('');
-assert.ok(stageClock.lanes.every(level => level === 0));
-assert.equal(portListeners.size, 0);
-midi.selectInput('mg3');
-portListeners.get('noteon')(midiEvent(40));
-availableInputs = [];
+midi.selectOutput('other');
+assert.equal(midiSettings.get('alive-midi-output'), 'Other amp output');
+availableOutputs = [];
 midiListeners.get('disconnected')();
-assert.ok(stageClock.lanes.every(level => level === 0));
-assert.equal(portListeners.size, 0);
-console.log('MG3 chords, overlapping MIDI notes, channels, panic, routing modes and disconnect checks passed');
+assert.equal(midi.outputId.value, '');
+assert.equal(midi.sendProgramChange(5), false);
+availableOutputs = [{ ...otherAmp, id: 'reconnected' }];
+midiListeners.get('connected')();
+assert.equal(midi.outputId.value, 'reconnected', 'reconnect restores the output by saved name');
+assert.equal(midi.sendProgramChange(42), true);
+availableOutputs[0].sendProgramChange = () => { throw Error('device unavailable'); };
+assert.equal(midi.sendProgramChange(12), false, 'send failure remains retryable');
+assert.match(midi.status.value, /MIDI send failed/);
+console.log('Amp MIDI output selection, program zero, saved device, disconnect/reconnect and failure checks passed');
 
 // Teardown invalidates outstanding requests as well as stopping active tracks.
 const leaving = audio.startGuitar('leaving');
 assert.equal(latest.track.stopped, true);
 unmounted.forEach(callback => callback());
+assert.equal(midiListeners.size, 0, 'MIDI listeners are cleaned up on unmount');
 const late = stream('leaving');
 requests.shift().resolve(late);
 await leaving;

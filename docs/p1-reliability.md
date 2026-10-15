@@ -1,6 +1,6 @@
 # P1 reliability fixes
 
-- **Rig setup:** `/config` and the stage drawer share MIDI port selection, lane-source controls, and display settings. Motion, quality, visual offset, and guitar device preferences persist in this browser between songs. A remembered guitar source reconnects when the next song page mounts.
+- **Rig setup:** `/config` and the stage drawer share amp MIDI output selection, Track/Guitar neck controls, and display settings. Motion, quality, visual offset, and guitar device preferences persist in this browser between songs. A remembered guitar source reconnects when the next song page mounts.
 - **Voting:** taps made while the vote queue is refreshing from the database are saved in order, followed by another refresh. The queue stays busy until every queued write and the final refresh finish.
 - **Guitar input:** switching source, selecting another device, stopping input, or leaving the page invalidates pending microphone requests. Tracks from obsolete requests are stopped immediately. An obsolete failure cannot stop a newer input or replace its status.
 - **Show phase:** host updates to `idle`, `playing`, and the encore deadline are serialized. Failed updates retry after two seconds while the stage clock runs. A newer phase takes precedence over a stale retry. The host's Rig drawer reports failures and clears the message after recovery. Leaving the stage stops retries, waits for an in-flight write, then attempts one final `idle` update.

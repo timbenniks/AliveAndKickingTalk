@@ -1,4 +1,4 @@
-// Pitch ranges, shared with converted MIDI. A mono cable cannot identify the
+// Pitch ranges for the polyphonic guitar detector. A mono cable cannot identify the
 // physical string when the same pitch can be played in several positions.
 const LANE_STARTS = [40, 45, 50, 55, 59, 64];
 export function guitarPitchLane(pitch: number) {
