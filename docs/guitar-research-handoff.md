@@ -7,6 +7,11 @@ and [application architecture](architecture.md). This document preserves the
 research trail so another agent can investigate a reported failure without
 repeating the initial executable analysis.
 
+Latest follow-up: [standard MG3 routing, browser failure cases, and the next
+useful edge](mg3-detector-edge.md). It adds constructor-backed engine attribution,
+continuous-pitch and harmonic evidence, and a documented browser integration
+option that requires a newer MG3 version than the installed one.
+
 ## Current position
 
 The browser detector is our independent implementation. It contains no Jam
@@ -292,3 +297,11 @@ not a feature to restore during routine detector fixes.
 > verified behavior. Implement the smallest independent correction, add a useful
 > regression, document tradeoffs and run the required checks. Report what still
 > needs a physical-guitar test.
+
+## Deeper follow-up
+
+[The deeper MG3 analysis](mg3-deep-analysis.md) extends this first study with the
+31 core's nonuniform resonator banks, a second core's four FFT windows, recovered
+harmonic contrast/coverage/agreement operations, and browser/native-MIDI options.
+It also includes a hash-checked reproduction tool under `scripts/research/mg3/`.
+Read its evidence caveats before treating any formula as the complete recognizer.
