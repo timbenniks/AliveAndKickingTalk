@@ -41,7 +41,27 @@ function chooseSource(id: LaneSource) {
       </select>
     </label>
     <p role="status" class="rig-status">{{ stage.guitarStatus.value }}</p>
-    <p class="rig-status">Lanes follow low-to-high audio energy, including chords and harmonics.</p>
+    <label class="rig-field">
+      <span>Guitar detection</span>
+      <select :value="stage.guitarMode.value" @change="stage.setGuitarMode(($event.target as HTMLSelectElement).value as 'spectrum' | 'polyphonic')">
+        <option value="spectrum">Spectrum · responsive visuals</option>
+        <option value="polyphonic">Polyphonic notes · experimental</option>
+      </select>
+    </label>
+    <template v-if="stage.guitarMode.value === 'polyphonic'">
+      <p class="rig-status">Use a clean guitar signal. Lanes follow pitch ranges, not physical strings. Dense chords may miss notes or show extra octaves.</p>
+      <label class="rig-field">
+        <span>Noise gate {{ stage.guitarGateDb.value }} dB</span>
+        <input v-model.number="stage.guitarGateDb.value" type="range" min="-85" max="-30" step="1">
+      </label>
+      <label class="rig-field">
+        <span>Tuning {{ stage.guitarTuningCents.value > 0 ? '+' : '' }}{{ stage.guitarTuningCents.value }} cents</span>
+        <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">
+      </label>
+      <p role="status" class="rig-status">Detected: {{ stage.guitarNotes.value || '—' }} · {{ stage.guitarDetectionMs.value }} ms per analysis</p>
+      <p class="rig-status">Raise the gate until idle noise stops triggering; lower it if quiet notes disappear. Tune to A440 or adjust the tuning above.</p>
+    </template>
+    <p v-else class="rig-status">Lanes follow low-to-high audio energy, including chords and harmonics.</p>
     <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
   </template>
   <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Choose your converter or pickup under Guitar MIDI input. Use Note pitches for MG3.</p>

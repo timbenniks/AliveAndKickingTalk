@@ -1,3 +1,5 @@
+import { GuitarPolyDetector } from '#shared/stage/guitar-poly';
+import { guitarNoteName } from '#shared/stage/guitar-notes';
 import { frameDecay, stageClock } from '#shared/stage/clock';
 import { bandLevels, guitarLaneBins, peakLevels, risingLanes, type LaneBins } from '#shared/stage/pulses';
 import type { AnalysisState, LaneSource } from '#shared/stage/types';
@@ -16,6 +18,46 @@ const offsetMs = ref(0);
 const guitarDevices = shallowRef<MediaDeviceInfo[]>([]);
 const guitarDeviceId = ref('');
 const guitarStatus = ref('Guitar input is off');
+const guitarMode = ref<'spectrum' | 'polyphonic'>('spectrum');
+const guitarGateDb = ref(-65);
+const guitarTuningCents = ref(0);
+const guitarNotes = ref('');
+const guitarDetectionMs = ref(0);
+let polyDetector: GuitarPolyDetector | null = null;
+let polyFreq = new Float32Array(0);
+let lastPolyFrame = -10;
+let lastDiagnostics = -10;
+
+function resetGuitarDetection() {
+  if (context && guitarAnalyser) {
+    // Keep the same analysis duration on interfaces running at 44.1–192 kHz.
+    guitarAnalyser.fftSize = guitarMode.value === 'polyphonic'
+      ? Math.min(16384, Math.max(2048, 2 ** Math.round(Math.log2(context.sampleRate * 4096 / 48000)))) : 4096;
+    polyFreq = new Float32Array(guitarAnalyser.frequencyBinCount);
+    guitarFreq = new Uint8Array(guitarAnalyser.frequencyBinCount);
+    guitarBins = guitarLaneBins(context.sampleRate, guitarAnalyser.fftSize);
+  }
+  polyDetector = context && guitarAnalyser && guitarMode.value === 'polyphonic'
+    ? new GuitarPolyDetector(context.sampleRate, guitarAnalyser.fftSize, guitarTuningCents.value) : null;
+  if (guitarAnalyser) guitarAnalyser.smoothingTimeConstant = guitarMode.value === 'polyphonic' ? 0 : 0.3;
+  lastPolyFrame = -10;
+  lastDiagnostics = -10;
+  guitarNotes.value = '';
+  guitarDetectionMs.value = 0;
+  baseline.fill(0);
+  lastHit.fill(-10);
+  if (laneSource.value === 'guitar') {
+    stageClock.lanes.fill(0);
+    stageClock.events.length = 0;
+  }
+}
+
+function setGuitarMode(mode: 'spectrum' | 'polyphonic') {
+  if (mode !== 'spectrum' && mode !== 'polyphonic') return;
+  guitarMode.value = mode;
+  write('alive-guitar-mode', mode);
+  resetGuitarDetection();
+}
 
 let context: AudioContext | null = null;
 let songElement: HTMLAudioElement | null = null;
@@ -126,6 +168,7 @@ function stopGuitar() {
   guitarSource = null;
   guitarAnalyser = null;
   guitarStatus.value = 'Guitar input is off';
+  resetGuitarDetection();
 }
 
 // Called from a user gesture. The guitar is analysed only, never sent to the
@@ -158,8 +201,7 @@ async function startGuitar(deviceId = guitarDeviceId.value) {
     guitarAnalyser.minDecibels = -75;
     guitarAnalyser.maxDecibels = -25;
     guitarSource.connect(guitarAnalyser);
-    guitarFreq = new Uint8Array(guitarAnalyser.frequencyBinCount);
-    guitarBins = guitarLaneBins(ctx.sampleRate, guitarAnalyser.fftSize);
+    resetGuitarDetection();
     baseline.fill(0);
     lastHit.fill(-10);
     const track = guitarStream.getAudioTracks()[0];
@@ -253,8 +295,26 @@ function tick() {
     if (stageClock.energy > 0.04) { heardSignal = true; setAnalysis('live'); }
     else if (audioTime > 3 && !heardSignal) setAnalysis('unavailable');
   } else if (guitarLive && guitarAnalyser) {
-    guitarAnalyser.getByteFrequencyData(guitarFreq);
-    pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
+    if (guitarMode.value === 'polyphonic' && polyDetector) {
+      // Native FFT plus a bounded 30 Hz fit, independent of display frame rate.
+      if (wall - lastPolyFrame >= 1 / 30) {
+        lastPolyFrame = wall;
+        guitarAnalyser.getFloatFrequencyData(polyFreq);
+        const started = performance.now();
+        const detected = polyDetector.process(polyFreq, wall, guitarGateDb.value);
+        const elapsed = performance.now() - started;
+        for (let lane = 0; lane < 6; lane++) stageClock.lanes[lane] = detected.levels[lane] ?? 0;
+        stageClock.events.push(...detected.hits);
+        if (wall - lastDiagnostics >= 0.1) {
+          lastDiagnostics = wall;
+          guitarNotes.value = detected.notes.map(guitarNoteName).join(' · ');
+          guitarDetectionMs.value = Math.round(elapsed * 10) / 10;
+        }
+      }
+    } else {
+      guitarAnalyser.getByteFrequencyData(guitarFreq);
+      pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
+    }
     setAnalysis('live');
   } else if (laneSource.value !== 'midi') {
     const keep = frameDecay(0.8, delta);
@@ -301,12 +361,27 @@ function onTick(handler: () => void) {
 }
 
 watch(offsetMs, value => write(OFFSET_KEY, String(value)));
+watch(guitarGateDb, value => {
+  guitarGateDb.value = Number.isFinite(value) ? Math.max(-85, Math.min(-30, value)) : -65;
+  write('alive-guitar-gate', String(guitarGateDb.value));
+  polyDetector?.reset();
+});
+watch(guitarTuningCents, value => {
+  guitarTuningCents.value = Number.isFinite(value) ? Math.max(-50, Math.min(50, value)) : 0;
+  write('alive-guitar-tuning', String(guitarTuningCents.value));
+  resetGuitarDetection();
+});
 
 export function useStageAudio() {
   onMounted(() => {
     if (users++ > 0) return;
     laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar', 'midi']) || 'song';
     guitarDeviceId.value = read(DEVICE_KEY);
+    guitarMode.value = read('alive-guitar-mode', ['spectrum', 'polyphonic']) || 'spectrum';
+    const savedGate = Number(read('alive-guitar-gate') || -65);
+    const savedTuning = Number(read('alive-guitar-tuning') || 0);
+    guitarGateDb.value = Number.isFinite(savedGate) ? Math.max(-85, Math.min(-30, savedGate)) : -65;
+    guitarTuningCents.value = Number.isFinite(savedTuning) ? Math.max(-50, Math.min(50, savedTuning)) : 0;
     offsetMs.value = Number(read(OFFSET_KEY)) || 0;
     if (laneSource.value === 'midi') setAnalysis('live');
     // Songs load as new pages: pick the guitar back up where it was.
@@ -320,6 +395,7 @@ export function useStageAudio() {
 
   return {
     laneSource, analysis, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
+    guitarMode, guitarGateDb, guitarTuningCents, guitarNotes, guitarDetectionMs, setGuitarMode,
     registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote, onTick, seek,
   };
 }

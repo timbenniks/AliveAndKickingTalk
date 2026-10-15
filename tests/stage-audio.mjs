@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
-import { ref, shallowRef, watch } from 'vue';
+import { ref, shallowRef, watch, nextTick } from 'vue';
+import { spectrum } from './guitar-signal.mjs';
 
 // Import the actual Nuxt composable with its shared alias and lifecycle hooks.
 // All audio devices are fakes: this test never opens a microphone or plays sound.
@@ -31,6 +32,8 @@ const connected = [];
 let guitarAnalyser;
 let inputDb = -72;
 let inputPeaks = [7];
+let polyInput = new Float32Array(2048).fill(-Infinity);
+let polyReads = 0;
 class FakeAudioContext {
   state = 'running';
   sampleRate = 48000;
@@ -41,6 +44,7 @@ class FakeAudioContext {
   createAnalyser() {
     guitarAnalyser = {
       frequencyBinCount: 2048, connect() {}, disconnect() {},
+      getFloatFrequencyData(data) { polyReads++; data.set(polyInput); },
       getByteFrequencyData(data) {
         data.fill(0);
         // Simulate note/chord peaks using the analyser's configured dB window.
@@ -174,6 +178,34 @@ for (const refreshRate of [30, 60, 120, 144]) {
     assert.equal(stageClock.events.length, 0, 'a held chord settles without flooding gems');
   }
 }
+
+// The experimental polyphonic path drives all six lanes without sending guitar
+// audio to speakers, and performs at most 30 fits/second at any display rate.
+for (const refreshRate of [30, 60, 120, 144]) {
+  audio.setGuitarMode('polyphonic');
+  assert.equal(guitarAnalyser.smoothingTimeConstant, 0);
+  stageClock.events.length = 0;
+  polyInput = spectrum([40, 47, 52, 56, 59, 64]);
+  const before = polyReads;
+  for (let frame = 0; frame < refreshRate; frame++) { wall += 1000 / refreshRate; renderFrame(); }
+  assert.ok(polyReads - before <= 31, 'fit rate is capped independently of display refresh');
+  assert.equal(stageClock.events.length, 6, 'six chord voices produce six attacks');
+  assert.deepEqual(stageClock.events.map(hit => hit.lane).toSorted(), [0, 1, 2, 3, 4, 5]);
+  assert.ok(stageClock.lanes.every(level => level > 0));
+  assert.match(audio.guitarNotes.value, /E2/);
+  polyInput.fill(-Infinity);
+  for (let frame = 0; frame < refreshRate / 3; frame++) { wall += 1000 / refreshRate; renderFrame(); }
+  assert.ok(stageClock.lanes.every(level => level === 0), 'released chord clears all lanes');
+}
+audio.guitarGateDb.value = -200;
+audio.guitarTuningCents.value = 500;
+await nextTick();
+assert.equal(audio.guitarGateDb.value, -85, 'gate is bounded');
+assert.equal(audio.guitarTuningCents.value, 50, 'tuning is bounded');
+audio.setGuitarMode('spectrum');
+assert.equal(guitarAnalyser.smoothingTimeConstant, 0.3);
+assert.ok(stageClock.lanes.every(level => level === 0));
+assert.equal(stageClock.events.length, 0, 'mode changes clear queued attacks');
 
 // Exercise the real WebMIDI routing into the actual stage clock. MG3 Legacy
 // sends an entire chord on channel 1; its pitches must reach distinct lanes.

@@ -36,3 +36,6 @@ use fake analyser data and never open a microphone or play audio.
 
 The custom waveform pitch-processing loop is gone; the browser analyser and a
 peak scan over the guitar frequency range supply the visual response.
+
+An optional [experimental polyphonic detector](guitar-polyphonic.md) is available
+under Guitar input → Guitar detection. Spectrum remains the default.

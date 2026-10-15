@@ -1,3 +1,4 @@
+import { guitarPitchLane } from '#shared/stage/guitar-notes';
 import { WebMidi } from 'webmidi';
 import type { Input, Output } from 'webmidi';
 
@@ -8,9 +9,6 @@ const OUTPUT_KEY = 'alive-midi-output';
 const INPUT_KEY = 'alive-midi-input';
 const MODE_KEY = 'alive-midi-input-mode';
 type MidiInputMode = 'notes' | 'strings';
-// Low-to-high pitch lanes aligned with standard open-string notes. These are
-// visual pitch ranges, not an estimate of which physical string was played.
-const LANE_STARTS = [40, 45, 50, 55, 59, 64];
 
 const ready = ref(false);
 const outputs = shallowRef<Output[]>([]);
@@ -60,7 +58,7 @@ function receiveNote(channel: number, pitch: number, velocity: number, on: boole
     emitNote(held.lane, laneLevel(held.lane), false);
     return;
   }
-  const lane = inputMode.value === 'strings' ? channel - 1 : Math.max(0, LANE_STARTS.findLastIndex(start => pitch >= start));
+  const lane = inputMode.value === 'strings' ? channel - 1 : guitarPitchLane(pitch);
   if (lane < 0 || lane > 5) return;
   heldNotes.set(key, { lane, velocity });
   emitNote(lane, laneLevel(lane), true);
