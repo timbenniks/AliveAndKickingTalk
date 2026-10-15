@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
-import { ref, shallowRef, watch, nextTick } from 'vue';
+import { nextTick } from 'vue';
 import { spectrum } from './guitar-signal.mjs';
 
-// Import the actual Nuxt composable with its shared alias and lifecycle hooks.
-// All audio devices are fakes: this test never opens a microphone or plays sound.
+// Import the browser engine directly: no Nuxt setup or fake Vue lifecycle.
+// Only browser audio devices/clocks are faked; no microphone is opened.
 registerHooks({
   resolve(specifier, context, nextResolve) {
     if (specifier.startsWith('#shared/')) {
@@ -13,14 +13,9 @@ registerHooks({
     return nextResolve(specifier, context);
   },
 });
-const mounted = [];
-const unmounted = [];
 let renderFrame;
 let wall = 1000;
 Object.assign(globalThis, {
-  ref, shallowRef, watch,
-  onMounted: callback => mounted.push(callback),
-  onUnmounted: callback => unmounted.push(callback),
   requestAnimationFrame: callback => { renderFrame = callback; return 1; },
   cancelAnimationFrame: () => {},
   performance: { now: () => wall },
@@ -73,9 +68,13 @@ function stream(id) {
   return { track, getTracks: () => [track], getAudioTracks: () => [track] };
 }
 
-const { useStageAudio } = await import('../app/composables/useStageAudio.ts');
-const audio = useStageAudio();
-mounted.forEach(callback => callback());
+const { createStageAudio } = await import('../app/utils/stage-audio.ts');
+const audio = createStageAudio();
+const otherAudio = createStageAudio();
+otherAudio.guitarGateDb.value = -30;
+assert.equal(audio.guitarGateDb.value, -65, 'audio state is isolated between Nuxt app instances');
+otherAudio.dispose();
+audio.acquire();
 assert.equal(audio.laneSource.value, 'song', 'retired MIDI source falls back to track');
 assert.equal(requests.length, 0, 'retired source does not open a microphone');
 
@@ -226,60 +225,24 @@ assert.equal(guitarAnalyser.smoothingTimeConstant, 0.3);
 assert.ok(stageClock.lanes.every(level => level === 0));
 assert.equal(stageClock.events.length, 0, 'mode changes clear queued attacks');
 
-// MIDI is output-only: preserve amp preset selection, program zero, saved
-// device names and reconnect/error handling without touching note inputs.
-const { WebMidi } = await import('webmidi');
-const midiListeners = new Map();
-const programs = [];
-const ampPort = { id: 'amp', name: 'IAC Driver Alive and Kicking',
-  sendProgramChange: (pc, options) => programs.push({ pc, options }),
-};
-let availableOutputs = [ampPort];
-Object.defineProperties(WebMidi, {
-  inputs: { configurable: true, get: () => { throw Error('Guitar MIDI input must not be used'); } },
-  outputs: { configurable: true, get: () => availableOutputs },
-});
-WebMidi.enable = async () => WebMidi;
-WebMidi.addListener = (event, callback) => midiListeners.set(event, callback);
-WebMidi.removeListener = event => midiListeners.delete(event);
-const midiSettings = new Map();
-globalThis.localStorage = {
-  getItem: key => midiSettings.get(key) ?? null,
-  setItem: (key, value) => midiSettings.set(key, value),
-};
-const { useMidi } = await import('../app/composables/useMidi.ts');
-const midi = useMidi();
-mounted.at(-1)();
-await midi.connect();
-assert.equal(midi.outputId.value, 'amp');
-assert.equal(midi.status.value, 'Amp MIDI output connected');
-assert.equal(midi.sendProgramChange(0), true, 'program zero remains supported');
-assert.deepEqual(programs, [{ pc: 0, options: { channels: [1] } }]);
-midi.selectOutput('');
-assert.equal(midi.sendProgramChange(5), false, 'missing output can be retried');
-const otherAmp = { ...ampPort, id: 'other', name: 'Other amp output' };
-availableOutputs.push(otherAmp);
-midiListeners.get('connected')();
-midi.selectOutput('other');
-assert.equal(midiSettings.get('alive-midi-output'), 'Other amp output');
-availableOutputs = [];
-midiListeners.get('disconnected')();
-assert.equal(midi.outputId.value, '');
-assert.equal(midi.sendProgramChange(5), false);
-availableOutputs = [{ ...otherAmp, id: 'reconnected' }];
-midiListeners.get('connected')();
-assert.equal(midi.outputId.value, 'reconnected', 'reconnect restores the output by saved name');
-assert.equal(midi.sendProgramChange(42), true);
-availableOutputs[0].sendProgramChange = () => { throw Error('device unavailable'); };
-assert.equal(midi.sendProgramChange(12), false, 'send failure remains retryable');
-assert.match(midi.status.value, /MIDI send failed/);
-console.log('Amp MIDI output selection, program zero, saved device, disconnect/reconnect and failure checks passed');
+// Two mounted consumers share one stream; releasing one must leave it running.
+audio.acquire();
+audio.release();
+assert.equal(latest.track.stopped, false);
+let ticks = 0;
+const unsubscribe = audio.onTick(() => { ticks++; });
+wall += 1000 / 60;
+renderFrame();
+unsubscribe();
+wall += 1000 / 60;
+renderFrame();
+assert.equal(ticks, 1, 'tick observers have an explicit unsubscribe');
 
 // Teardown invalidates outstanding requests as well as stopping active tracks.
 const leaving = audio.startGuitar('leaving');
 assert.equal(latest.track.stopped, true);
-unmounted.forEach(callback => callback());
-assert.equal(midiListeners.size, 0, 'MIDI listeners are cleaned up on unmount');
+audio.release();
+audio.dispose();
 const late = stream('leaving');
 requests.shift().resolve(late);
 await leaving;

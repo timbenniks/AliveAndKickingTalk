@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import {
-  mergePlayedSongsWithAllSongs,
-} from "~/helpers";
+import { buildSetlist } from "#shared/utils/performance";
 
 const songStore = useSongStore();
 await songStore.getSongs();
@@ -27,7 +25,7 @@ const mashupMode = computed(() => {
 
 const songs = computed(() => {
   if (mashupMode.value) {
-    return mergePlayedSongsWithAllSongs(allSongs, allPlayedSongs);
+    return buildSetlist(allSongs.value, allPlayedSongs.value);
   } else {
     return allSongs.value.toSorted((a, b) => b.votes - a.votes);
   }

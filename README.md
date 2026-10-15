@@ -8,7 +8,7 @@ npm run dev
 
 Configure `.env` using `.env.example`. The app uses hosted Supabase and Contentstack.
 
-Requires Node 22.22.3 or newer in the Node 22 line; verified with 22.23.1.
+Requires Node 24, matching `.nvmrc` and the CI build.
 
 ```sh
 npm run typecheck
@@ -25,3 +25,6 @@ See [the modernization record](docs/modernization.md) for the Nuxt 4 branch chan
 See [the recovery record](docs/recovery.md) for restored data, environment setup, changes and verification.
 
 https://plausible.io/aliveandkicking.dev/
+
+See [the architecture guide](docs/architecture.md) for code ownership, lifecycle
+rules and the test layout.

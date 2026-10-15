@@ -8,18 +8,6 @@ export type PlayedSong = {
   mashupSpot: number
 }
 
-export type realtimeOptions = {
-  callback: (payload: { eventType: string; new: Record<string, unknown> }) => void | Promise<void>
-  table: "votes" | "config" | "songs_played" | "votes_per_song"
-  event: "UPDATE" | "INSERT" | "DELETE" | "*"
-}
-
-export type LatestVote = {
-  userid: string;
-  user_avatar: string;
-  songid: string;
-}
-
 export type Song = {
   songId: string
   song: string
@@ -32,11 +20,7 @@ export type Song = {
   homeTown: string
   length: string
   mp3: string
-  presets: Array<{
-    name: string
-    at: number
-    pc: number
-  }>
+  presets: AmpPreset[]
   artwork: Array<{
     publicId: string
     bg: string
@@ -57,28 +41,8 @@ export type AmpPreset = {
   at: number;
 };
 
-export type eventReturn = {
-  event: Event;
-  setPlaying: (value: boolean) => void;
-  setMuted: (value: boolean) => void;
-  setVolume: (value: number) => void;
-};
-
 export type Vote = {
   userid: string;
   user_avatar: string;
   songid: string;
 };
-
-export type events =
-  | "play"
-  | "pause"
-  | "ended"
-  | "loadeddata"
-  | "waiting"
-  | "playing"
-  | "timeupdate"
-  | "canplay"
-  | "canplaythrough"
-  | "statechanged"
-  | "volumechange";

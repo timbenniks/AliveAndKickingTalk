@@ -50,7 +50,7 @@ templates directly. It covers single notes, bright/dark timbres, triads,
 six-note E major, release/re-strum, gate and tuning at 44.1 and 48 kHz.
 Additional checks cover every supported single pitch, stronger repeat attacks
 and scaled windows for 96/192 kHz interfaces.
-`tests/stage-audio.mjs` exercises the real input composable and six-lane events
+`tests/stage-audio.mjs` exercises the real browser audio engine and six-lane events
 at 30, 60, 120 and 144 Hz, mode changes and the analysis-rate cap.
 
 Dense octave fixtures deliberately have measured tolerances rather than a

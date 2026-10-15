@@ -5,7 +5,6 @@ export default defineNuxtConfig({
   routeRules: {
     '/': { ssr: false },
     '/live': { ssr: false },
-    '/slides': { ssr: false },
     '/live/*': { ssr: false },
     '/share/*': { ssr: true },
     '/band': { ssr: false },

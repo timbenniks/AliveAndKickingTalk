@@ -10,6 +10,6 @@ Guitar MIDI input, MG3/pickup setup and MIDI lane mapping have been removed.
 browser's Spectrum or Polyphonic notes detector. Old saved MIDI-source
 preferences fall back to Track; old input/mapping preferences are ignored.
 
-`tests/stage-audio.mjs` checks output selection, program zero on channel 1,
+`tests/midi-output.mjs` checks output selection, program zero on channel 1,
 saved device names, disconnect/reconnect, send failures and listener cleanup.
 The output composable never reads MIDI inputs or subscribes to note events.

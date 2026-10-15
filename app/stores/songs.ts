@@ -1,19 +1,15 @@
 import { createVoteQueue, performVote } from '#shared/utils/performance'
 import { formatShowPhase, type ShowPhase } from '#shared/show/phase'
 import { defineStore } from 'pinia'
-import type { Song, Database, ConfigValue, PlayedSong, LatestVote } from '../types'
-import { log } from '../helpers'
+import type { Song, Database, ConfigValue, PlayedSong, Vote } from '../types'
+import { log } from '../utils/log.ts'
 
-let voteQueue: ReturnType<typeof createVoteQueue> | null = null
+const voteQueues = new WeakMap<object, ReturnType<typeof createVoteQueue>>()
 
 const SHARE_ERROR = 'Your share link could not be made. Check your connection and try again.'
 
 function providerAvatar(user: ReturnType<typeof useSupabaseUser>['value']) {
   return String(user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '')
-}
-
-async function getSongs() {
-  return await $fetch<Song[]>('/api/songs')
 }
 
 export const useSongStore = defineStore('song-store', {
@@ -28,7 +24,7 @@ export const useSongStore = defineStore('song-store', {
       savingVotes: false,
       config: [] as ConfigValue[],
       errorMessage: "",
-      latestVote: [] as LatestVote[],
+      latestVote: [] as Vote[],
       // The voter's avatar copied to our own storage (see /api/avatar). Empty
       // until it is ready, in which case the provider URL is used instead.
       stableAvatar: ""
@@ -38,7 +34,7 @@ export const useSongStore = defineStore('song-store', {
     async getSongs() {
       log('[async][action] getSongs')
 
-      this.songs = await getSongs();
+      this.songs = await $fetch<Song[]>('/api/songs');
     },
 
     async getVotesForSongs() {
@@ -55,7 +51,7 @@ export const useSongStore = defineStore('song-store', {
         throw createError('[async][action] setVotedState: errorVotesPerSong')
       }
 
-      this.songs.map(song => {
+      this.songs.forEach(song => {
         const votes = votesPerSong?.find(songVotes => songVotes.songid === song.songId)?.votes
         song.votes = votes || 0
       })
@@ -145,13 +141,17 @@ export const useSongStore = defineStore('song-store', {
       const on = !song.voted;
       if (on && this.songs.filter(item => item.voted).length >= this.voteMax) return false;
       song.voted = on;
-      voteQueue ??= createVoteQueue({
-        write: (id, vote) => this.writeVote(id, vote),
-        resync: () => this.setVotedState(),
-        onError: () => { this.errorMessage = 'Your vote could not be saved. Check your connection and try again.'; },
-        onBusy: (busy) => { this.savingVotes = busy; },
-      });
-      void voteQueue.push(songId, on);
+      let queue = voteQueues.get(this);
+      if (!queue) {
+        queue = createVoteQueue({
+          write: (id, vote) => this.writeVote(id, vote),
+          resync: () => this.setVotedState(),
+          onError: () => { this.errorMessage = 'Your vote could not be saved. Check your connection and try again.'; },
+          onBusy: (busy) => { this.savingVotes = busy; },
+        });
+        voteQueues.set(this, queue);
+      }
+      void queue.push(songId, on);
       return true;
     },
 
@@ -229,7 +229,6 @@ export const useSongStore = defineStore('song-store', {
     async mashupDownVote(spot: number) {
       return performVote(this, async () => {
         log('[async][action] mashupDownVote', spot)
-
 
 
         const client = useSupabaseClient<Database>()
@@ -372,9 +371,6 @@ export const useSongStore = defineStore('song-store', {
   getters: {
     allSongs: state => state.songs,
     allPlayedSongs: state => state.playedSongs,
-    getPlayedSong: (state) => {
-      return (songId: string) => state.playedSongs.find((song) => song.songId === songId)
-    },
     theLatestVotes: state => state.latestVote,
     errors: state => state.errorMessage,
     configValues: state => state.config,

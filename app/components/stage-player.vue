@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { mergePlayedSongsWithAllSongs } from "~/helpers";
+import { buildSetlist } from "#shared/utils/performance";
 import type { Song } from "~/types";
 import { stageClock } from "#shared/stage/clock";
 
@@ -19,7 +19,7 @@ const { flying } = useStageIntro(() => props.song);
 const show = props.live ? useStageShow({ host: () => !!props.host, songId: () => props.song.songId }) : null;
 
 const upNext = computed(() => {
-  if (props.mashupMode) return mergePlayedSongsWithAllSongs(allSongs, allPlayedSongs);
+  if (props.mashupMode) return buildSetlist(allSongs.value, allPlayedSongs.value);
   return allSongs.value.filter(song => song.songId !== props.song.songId).sort((a, b) => b.votes - a.votes);
 });
 

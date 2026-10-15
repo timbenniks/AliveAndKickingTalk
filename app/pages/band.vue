@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database } from "../types";
-import { createRealtimeChannel, removeRealtimeChannel } from "../helpers";
 
 const client = useSupabaseClient<Database>();
 
@@ -19,31 +17,11 @@ const { data: song, refresh: refreshSong } = await useAsyncData(
   }
 );
 
-let channel: RealtimeChannel;
-onMounted(() => {
-  channel = createRealtimeChannel("config_changes", [
-    {
-      table: "config",
-      event: "UPDATE",
-      callback: () => {
-        refreshSong();
-      },
-    },
-  ]);
-
-  channel.subscribe();
-});
-
-onUnmounted(() => {
-  if (channel) removeRealtimeChannel(channel);
-  window.onbeforeunload = null;
-});
-
-onBeforeMount(() => {
-  window.onbeforeunload = () => {
-    removeRealtimeChannel(channel);
-  };
-});
+useDatabaseChanges('config_changes', [{
+  table: 'config',
+  event: 'UPDATE',
+  callback: () => { void refreshSong(); },
+}]);
 </script>
 
 <template>

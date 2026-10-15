@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import type { eventReturn, Song } from "../types";
+import type { Song } from "~/types";
+import type { AudioPlayerEvent } from "~/types/audio";
 
 const props = defineProps<{
   song: Song;
@@ -16,31 +17,31 @@ const { showVolume } = useRuntimeConfig().public;
 const route = useRoute();
 const { autoplay } = route.query;
 
-function onPlayerPlay({ event, setPlaying }: eventReturn) {
+function onPlayerPlay({ event, setPlaying }: AudioPlayerEvent) {
   setPlaying(true);
   void connectSong(event.target as HTMLAudioElement).catch(() => {
     visualizerError.value = "The stage could not hear the track. Check your audio output.";
   });
 }
 
-function onPlayerLoaded({ event }: eventReturn) {
+function onPlayerLoaded({ event }: AudioPlayerEvent) {
   registerSong(event.target as HTMLAudioElement);
 }
 
-function onPlayerPause({ setPlaying }: eventReturn) {
+function onPlayerPause({ setPlaying }: AudioPlayerEvent) {
   setPlaying(false);
 }
 
-function onPlayerEnded({ setPlaying }: eventReturn) {
+function onPlayerEnded({ setPlaying }: AudioPlayerEvent) {
   setPlaying(false);
   emit("onSongEnded");
 }
 
-function onPlayerTimeupdate({ event }: eventReturn) {
+function onPlayerTimeupdate({ event }: AudioPlayerEvent) {
   time.value = (event.target as HTMLAudioElement).currentTime;
 }
 
-function onVolumeChange({ event, setVolume }: eventReturn) {
+function onVolumeChange({ event, setVolume }: AudioPlayerEvent) {
   setVolume((event.target as HTMLAudioElement).volume);
 }
 
