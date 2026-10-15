@@ -40,12 +40,12 @@ class FakeAudioContext {
   createAnalyser() {
     guitarAnalyser = {
       frequencyBinCount: 2048, connect() {}, disconnect() {},
-      getByteFrequencyData(data) {
-        data.fill(0);
-        // Simulate one low E peak using the analyser's configured dB window.
-        data[7] = Math.max(0, Math.min(255, Math.round(
-          255 * (inputDb - this.minDecibels) / (this.maxDecibels - this.minDecibels),
-        )));
+      getFloatTimeDomainData(data) {
+        // A quiet DI note, expressed as waveform RMS dBFS rather than FFT bytes.
+        const amplitude = Math.SQRT2 * 10 ** (inputDb / 20);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = amplitude * Math.sin(2 * Math.PI * 82.4069 * (wall / 1000 + i / 48000));
+        }
       },
     };
     return guitarAnalyser;
@@ -125,28 +125,26 @@ assert.equal(latest.track.stopped, false);
 assert.equal(audio.guitarStatus.value, 'Listening to latest');
 
 // Quiet single notes trigger without song playback; noise and sustain do not flood.
-assert.equal(guitarAnalyser.minDecibels, -75);
-assert.equal(guitarAnalyser.maxDecibels, -25);
+assert.equal(guitarAnalyser.fftSize, 4096);
+assert.equal(guitarAnalyser.smoothingTimeConstant, 0);
 stageClock.events.length = 0;
 for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
 assert.equal(stageClock.events.length, 0);
 inputDb = -62;
-wall += 1000 / 60;
-renderFrame();
+for (let frame = 0; frame < 3; frame++) { wall += 1000 / 60; renderFrame(); }
 assert.equal(stageClock.events.length, 1);
 assert.equal(stageClock.events[0].lane, 0);
 stageClock.events.length = 0;
 for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
-// The existing detector can emit another pulse during the attack, then settles.
-assert.ok(stageClock.events.length <= 1);
+// A held note must not generate another pick.
+assert.equal(stageClock.events.length, 0);
 stageClock.events.length = 0;
 for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
 assert.equal(stageClock.events.length, 0);
 inputDb = -72;
 for (let frame = 0; frame < 30; frame++) { wall += 1000 / 60; renderFrame(); }
 inputDb = -62;
-wall += 1000 / 60;
-renderFrame();
+for (let frame = 0; frame < 3; frame++) { wall += 1000 / 60; renderFrame(); }
 assert.equal(stageClock.events.length, 1);
 
 // Teardown invalidates outstanding requests as well as stopping active tracks.

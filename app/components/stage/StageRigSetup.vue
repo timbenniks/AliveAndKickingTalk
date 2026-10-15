@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LaneSource } from "#shared/stage/types";
+import { GUITAR_TUNINGS } from "#shared/stage/guitar";
 
 // The Rig settings that stick between songs: what feeds the lanes, timing,
 // motion and quality. Shared by the Rig drawer and /config.
@@ -40,7 +41,19 @@ function chooseSource(id: LaneSource) {
         <option v-for="device in stage.guitarDevices.value" :key="device.deviceId" :value="device.deviceId">{{ device.label || 'Audio input' }}</option>
       </select>
     </label>
+    <label class="rig-field">
+      <span>Guitar tuning</span>
+      <select v-model="stage.guitarTuning.value">
+        <option v-for="(tuning, id) in GUITAR_TUNINGS" :key="id" :value="id">{{ tuning.label }}</option>
+      </select>
+    </label>
+    <label class="rig-field">
+      <span>Noise gate {{ stage.guitarGateDb.value }} dB</span>
+      <input v-model.number="stage.guitarGateDb.value" type="range" min="-80" max="-30" step="1">
+    </label>
+    <p class="rig-status">Lower the gate for quiet notes; raise it if idle noise triggers gems. Use a clean signal for best tracking. String positions are estimates; chords may not track.</p>
     <p role="status" class="rig-status">{{ stage.guitarStatus.value }}</p>
+    <p class="rig-status">{{ stage.guitarNote.value || 'Waiting for a clear note' }}</p>
     <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
   </template>
   <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Pick the pickup under Guitar MIDI input. Channels 1 to 6 light lanes 1 to 6.</p>

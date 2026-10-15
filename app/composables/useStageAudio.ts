@@ -1,5 +1,6 @@
 import { frameDecay, stageClock } from '#shared/stage/clock';
-import { bandLevels, guitarLaneBins, peakLevels, risingLanes, type LaneBins } from '#shared/stage/pulses';
+import { bandLevels, risingLanes } from '#shared/stage/pulses';
+import { GuitarDetector, GUITAR_TUNINGS, guitarNoteName, type GuitarTuning } from '#shared/stage/guitar';
 import type { AnalysisState, LaneSource } from '#shared/stage/types';
 
 // One engine per page: one AudioContext, one MediaElementSource for the song
@@ -9,6 +10,8 @@ import type { AnalysisState, LaneSource } from '#shared/stage/types';
 const SOURCE_KEY = 'alive-lane-source';
 const DEVICE_KEY = 'alive-guitar-input';
 const OFFSET_KEY = 'alive-visual-offset';
+const TUNING_KEY = 'alive-guitar-tuning';
+const GATE_KEY = 'alive-guitar-gate';
 
 const laneSource = ref<LaneSource>('song');
 const analysis = ref<AnalysisState>('idle');
@@ -16,6 +19,9 @@ const offsetMs = ref(0);
 const guitarDevices = shallowRef<MediaDeviceInfo[]>([]);
 const guitarDeviceId = ref('');
 const guitarStatus = ref('Guitar input is off');
+const guitarTuning = ref<GuitarTuning>('standard');
+const guitarGateDb = ref(-65);
+const guitarNote = ref('');
 
 let context: AudioContext | null = null;
 let songElement: HTMLAudioElement | null = null;
@@ -26,10 +32,10 @@ let guitarStream: MediaStream | null = null;
 let guitarSource: MediaStreamAudioSourceNode | null = null;
 let guitarAnalyser: AnalyserNode | null = null;
 let guitarRequest = 0;
-let guitarBins: LaneBins = [];
+let guitarDetector: GuitarDetector | null = null;
+let guitarWave = new Float32Array(0);
 let songFreq = new Uint8Array(0);
 let pulseFreq = new Uint8Array(0);
-let guitarFreq = new Uint8Array(0);
 let raf = 0;
 let users = 0;
 const tickHandlers = new Set<() => void>();
@@ -125,6 +131,8 @@ function stopGuitar() {
   guitarStream = null;
   guitarSource = null;
   guitarAnalyser = null;
+  guitarDetector = null;
+  guitarNote.value = '';
   guitarStatus.value = 'Guitar input is off';
 }
 
@@ -153,13 +161,10 @@ async function startGuitar(deviceId = guitarDeviceId.value) {
     // Not awaited: after a page load there is no gesture yet, and play resumes it.
     if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
     guitarSource = ctx.createMediaStreamSource(guitarStream);
-    guitarAnalyser = analyser(ctx, 4096, 0.3);
-    // Keep the narrow window, but include quiet single notes from a DI input.
-    guitarAnalyser.minDecibels = -75;
-    guitarAnalyser.maxDecibels = -25;
+    guitarDetector = new GuitarDetector(ctx.sampleRate);
+    guitarAnalyser = analyser(ctx, guitarDetector.fftSize, 0);
     guitarSource.connect(guitarAnalyser);
-    guitarFreq = new Uint8Array(guitarAnalyser.frequencyBinCount);
-    guitarBins = guitarLaneBins(ctx.sampleRate, guitarAnalyser.fftSize);
+    guitarWave = new Float32Array(guitarAnalyser.fftSize);
     baseline.fill(0);
     lastHit.fill(-10);
     const track = guitarStream.getAudioTracks()[0];
@@ -179,6 +184,8 @@ function setLaneSource(source: LaneSource) {
   laneSource.value = source;
   write(SOURCE_KEY, source);
   heardSignal = false;
+  guitarDetector?.reset();
+  guitarNote.value = '';
   stageClock.lanes.fill(0);
   stageClock.events.length = 0;
   baseline.fill(0);
@@ -251,9 +258,17 @@ function tick() {
     pushAudioHits(bandLevels(pulseFreq), now, delta);
     if (stageClock.energy > 0.04) { heardSignal = true; setAnalysis('live'); }
     else if (audioTime > 3 && !heardSignal) setAnalysis('unavailable');
-  } else if (guitarLive && guitarAnalyser) {
-    guitarAnalyser.getByteFrequencyData(guitarFreq);
-    pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
+  } else if (guitarLive && guitarAnalyser && guitarDetector) {
+    guitarAnalyser.getFloatTimeDomainData(guitarWave);
+    const note = guitarDetector.read(guitarWave, wall, guitarTuning.value, guitarGateDb.value);
+    const voiced = note.lane >= 0 && note.confidence >= 0.88 && note.level > 0;
+    stageClock.lanes.fill(0);
+    if (voiced) {
+      stageClock.lanes[note.lane] = note.level;
+      if (note.hit) stageClock.events.push({ lane: note.lane, strength: note.level });
+    }
+    const label = voiced ? `${guitarNoteName(note.midi)} · estimated string ${6 - note.lane}` : '';
+    if (guitarNote.value !== label) guitarNote.value = label;
     setAnalysis('live');
   } else if (laneSource.value !== 'midi') {
     const keep = frameDecay(0.8, delta);
@@ -300,6 +315,15 @@ function onTick(handler: () => void) {
 }
 
 watch(offsetMs, value => write(OFFSET_KEY, String(value)));
+watch(guitarTuning, value => {
+  write(TUNING_KEY, value);
+  guitarDetector?.reset();
+  guitarNote.value = '';
+});
+watch(guitarGateDb, value => {
+  write(GATE_KEY, String(value));
+  guitarDetector?.reset();
+});
 
 export function useStageAudio() {
   onMounted(() => {
@@ -307,6 +331,10 @@ export function useStageAudio() {
     laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar', 'midi']) || 'song';
     guitarDeviceId.value = read(DEVICE_KEY);
     offsetMs.value = Number(read(OFFSET_KEY)) || 0;
+    guitarTuning.value = read<GuitarTuning>(TUNING_KEY, Object.keys(GUITAR_TUNINGS) as GuitarTuning[]) || 'standard';
+    const savedGate = read(GATE_KEY);
+    const gate = Number(savedGate);
+    guitarGateDb.value = savedGate && Number.isFinite(gate) ? Math.max(-80, Math.min(-30, gate)) : -65;
     if (laneSource.value === 'midi') setAnalysis('live');
     // Songs load as new pages: pick the guitar back up where it was.
     if (laneSource.value === 'guitar') void startGuitar();
@@ -319,6 +347,7 @@ export function useStageAudio() {
 
   return {
     laneSource, analysis, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
+    guitarTuning, guitarGateDb, guitarNote,
     registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote, onTick, seek,
   };
 }
