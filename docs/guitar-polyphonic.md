@@ -90,3 +90,27 @@ Regression checks now require quiet single notes, triads and six-note E major
 at the default −65 dB gate, as well as a quiet note mixed with hiss. A hiss-only
 fixture above the gate must produce no notes or gems. This fixes a reproduced
 threshold problem; accuracy on the physical guitar still needs a live test.
+
+
+## Octave filtering
+
+**Rig → Guitar input → Octave filtering** now defaults to **Balanced**. When
+all candidate notes belong to one pitch class (for example E3 and E4), a weaker
+octave guess must have at least 65% of the strongest fitted note amplitude.
+**Strong** raises this to 85%; **Off** restores the original fit. This is a
+relative-strength preference, not a calibrated probability. It leaves mixed
+pitch-class chords on the existing recognition path, and retains similarly
+strong real octave pairs. Rejected octave notes are cleared immediately rather
+than lingering through release grace. The selected setting persists between songs.
+
+A quiet genuine octave voice can also be rejected: the same mono signal can
+be consistent with one bright note or two octave notes. Turn filtering off if
+you need those quieter octave voices. The filter does not fix every octave
+error, especially in dense chords, or guarantee correct octave selection when
+a harmonic is stronger than the played fundamental.
+
+Waveform regressions cover single E notes with changing even-harmonic emphasis
+at quiet input levels, balanced/strong/off settings, one gem per attack, a
+clear real octave pair and the existing six-voice chord tests. The audio
+integration test also checks the actual two-lane-to-one-lane routing and filter
+changes. Physical guitar validation remains the next step.

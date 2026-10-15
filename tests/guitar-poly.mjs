@@ -65,6 +65,37 @@ for (const rolloff of [0.8, 2]) {
   detector.process(input, 0);
   assert.deepEqual(detector.process(input, 0.04).notes, [40], 'bright/dark single notes do not create harmonic notes');
 }
+// A single E with uneven upper partials used to create two lanes. Exercise
+// changing attack/sustain timbres as well as levels, so suppression cannot
+// leave an octave hanging through the release grace period.
+for (const sampleRate of [44100, 48000]) {
+  for (const pitch of [40, 52, 64]) {
+    const detector = new GuitarPolyDetector(sampleRate, 4096);
+    const hits = [];
+    for (let frame = 0; frame < 10; frame++) {
+      const boost = [1.5, 2, 2.5, 2, 1.5][frame % 5];
+      const input = spectrum([pitch], { sampleRate, amplitude: 0.003, time: frame / 30,
+        harmonicGains: [1, boost, 1, boost * 0.8, 1, boost * 0.6, 1, 1, 1, 1] });
+      const detected = detector.process(input, frame / 30);
+      if (frame > 0) assert.deepEqual(detected.notes, [pitch], 'one E despite changing harmonic balance');
+      hits.push(...detected.hits);
+    }
+    assert.deepEqual(hits.map(hit => hit.lane), [guitarPitchLane(pitch)], 'no phantom octave gems');
+  }
+}
+const brightE = spectrum([52], { harmonicGains: [1, 3, 1, 2.4, 1, 1.8, 1, 1, 1, 1] });
+const strict = new GuitarPolyDetector(48000, 4096);
+strict.process(brightE, 0, -65, 0.85);
+assert.deepEqual(strict.process(brightE, 0.04, -65, 0.85).notes, [52], 'strong octave filtering');
+const unfiltered = new GuitarPolyDetector(48000, 4096);
+const unevenE = spectrum([52], { harmonicGains: [1, 2, 1, 1.6, 1, 1.2, 1, 1, 1, 1] });
+unfiltered.process(unevenE, 0, -65, 0);
+assert.deepEqual(unfiltered.process(unevenE, 0.04, -65, 0).notes, [52, 64], 'off preserves the original ambiguous fit');
+assert.deepEqual(unfiltered.process(unevenE, 0.08, -65, 0.65).notes, [52], 'rejected octaves clear immediately');
+const realOctaves = new GuitarPolyDetector(48000, 4096);
+const pair = spectrum([52, 64]);
+realOctaves.process(pair, 0);
+assert.deepEqual(realOctaves.process(pair, 0.04).notes, [52, 64], 'clear real octave voices survive balanced filtering');
 const tuned = new GuitarPolyDetector(48000, 4096, -35);
 const detuned = spectrum([45, 60, 64], { cents: -35 });
 tuned.process(detuned, 0);

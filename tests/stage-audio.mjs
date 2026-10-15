@@ -199,6 +199,21 @@ for (const refreshRate of [30, 60, 120, 144]) {
   assert.ok(stageClock.lanes.every(level => level === 0), 'released chord clears all lanes');
   assert.equal(audio.guitarInputDb.value, -120, 'silence is visible below the gate');
 }
+// Octave filtering is wired through the real input tick, not only the helper.
+polyInput = spectrum([52], { harmonicGains: [1, 2, 1, 1.6, 1, 1.2, 1, 1, 1, 1] });
+audio.guitarOctaveRatio.value = 0;
+await nextTick();
+for (let frame = 0; frame < 12; frame++) { wall += 1000 / 60; renderFrame(); }
+assert.deepEqual(stageClock.events.map(hit => hit.lane).toSorted(), [2, 5], 'unfiltered octave guess reaches two lanes');
+audio.guitarOctaveRatio.value = 0.65;
+await nextTick();
+assert.equal(stageClock.events.length, 0, 'filter changes clear pending gems');
+for (let frame = 0; frame < 12; frame++) { wall += 1000 / 60; renderFrame(); }
+assert.deepEqual(stageClock.events.map(hit => hit.lane), [2], 'balanced filtering sends one E gem');
+assert.equal(audio.guitarNotes.value, 'E3');
+audio.guitarOctaveRatio.value = 999;
+await nextTick();
+assert.equal(audio.guitarOctaveRatio.value, 0.65, 'unknown filter settings return to balanced');
 audio.guitarGateDb.value = -200;
 audio.guitarTuningCents.value = 500;
 await nextTick();

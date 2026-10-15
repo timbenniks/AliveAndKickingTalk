@@ -1,6 +1,6 @@
 // Generate actual summed waveforms, then independently FFT a Blackman window,
 // matching Web Audio's analyser scaling. No pre-populated detector templates.
-export function spectrum(notes, { sampleRate = 48000, size = 4096, amplitude = 0.08, cents = 0, rolloff = 1.3, time = 0, noise = 0 } = {}) {
+export function spectrum(notes, { sampleRate = 48000, size = 4096, amplitude = 0.08, cents = 0, rolloff = 1.3, time = 0, noise = 0, harmonicGains = [] } = {}) {
   const real = new Float64Array(size);
   const imag = new Float64Array(size);
   let seed = 123456;
@@ -9,7 +9,7 @@ export function spectrum(notes, { sampleRate = 48000, size = 4096, amplitude = 0
     for (const note of notes) {
       const hz = 440 * 2 ** ((note - 69 + cents / 100) / 12);
       for (let harmonic = 1; harmonic <= 10; harmonic++) {
-        signal += amplitude / harmonic ** rolloff * Math.sin(2 * Math.PI * hz * harmonic * (time + i / sampleRate) + note * harmonic * 1.23);
+        signal += amplitude * (harmonicGains[harmonic - 1] ?? 1) / harmonic ** rolloff * Math.sin(2 * Math.PI * hz * harmonic * (time + i / sampleRate) + note * harmonic * 1.23);
       }
     }
     seed = (1664525 * seed + 1013904223) >>> 0;

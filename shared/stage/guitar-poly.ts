@@ -65,7 +65,7 @@ export class GuitarPolyDetector {
     this.lastTime = -10;
   }
 
-  process(decibels: Float32Array, now: number, gateDb = -65): GuitarDetection {
+  process(decibels: Float32Array, now: number, gateDb = -65, octaveRatio = 0.65): GuitarDetection {
     if (now < this.lastTime || now - this.lastTime > 0.3) this.reset();
     this.lastTime = now;
     let peak = 0;
@@ -139,9 +139,25 @@ export class GuitarPolyDetector {
     this.amplitudes.fill(0);
     for (let index = 0; index < this.atoms.length; index++) this.amplitudes[this.atoms[index]!.note]! += this.coefficients[index]!;
     const threshold = Math.max(noise * 4, peak * 0.085);
-    const candidates = Array.from(this.amplitudes, (amplitude, note) => ({ amplitude, note }))
-      .filter(item => item.amplitude > threshold).sort((a, b) => b.amplitude - a.amplitude).slice(0, 6);
-    const present = new Set(candidates.map(item => item.note));
+    let candidates = Array.from(this.amplitudes, (amplitude, note) => ({ amplitude, note }))
+      .filter(item => item.amplitude > threshold).sort((a, b) => b.amplitude - a.amplitude);
+    const strongest = candidates[0];
+    // A single pitch family is ambiguous: an unusually strong second partial
+    // can fit as a second note. Require octave companions to approach the
+    // strongest fitted voice. Mixed-note chords keep their existing fit.
+    // ponytail: quiet real octave pairs can also be rejected; disable this
+    // preference for octave playing, or replace it with calibrated timbres.
+    const ratio = Number.isFinite(octaveRatio) ? Math.max(0, Math.min(1, octaveRatio)) : 0.65;
+    if (ratio > 0 && strongest && candidates.every(item => item.note % 12 === strongest.note % 12)) {
+      candidates = candidates.filter(item => {
+        if (item.amplitude >= strongest.amplitude * ratio) return true;
+        // Do not keep a rejected octave visible through release grace.
+        this.active[item.note] = 0;
+        this.seen[item.note] = 0;
+        return false;
+      });
+    }
+    const present = new Set(candidates.slice(0, 6).map(item => item.note));
     const result: GuitarDetection = { inputDb, notes: [], levels: [0, 0, 0, 0, 0, 0], hits: [] };
     const attacks = new Set<number>();
     const strengths = new Float32Array(this.roots.length);

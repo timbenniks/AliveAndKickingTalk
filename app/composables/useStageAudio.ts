@@ -21,6 +21,7 @@ const guitarStatus = ref('Guitar input is off');
 const guitarMode = ref<'spectrum' | 'polyphonic'>('spectrum');
 const guitarGateDb = ref(-65);
 const guitarTuningCents = ref(0);
+const guitarOctaveRatio = ref(0.65);
 const guitarNotes = ref('');
 const guitarInputDb = ref(-120);
 const guitarDetectionMs = ref(0);
@@ -303,7 +304,7 @@ function tick() {
         lastPolyFrame = wall;
         guitarAnalyser.getFloatFrequencyData(polyFreq);
         const started = performance.now();
-        const detected = polyDetector.process(polyFreq, wall, guitarGateDb.value);
+        const detected = polyDetector.process(polyFreq, wall, guitarGateDb.value, guitarOctaveRatio.value);
         const elapsed = performance.now() - started;
         for (let lane = 0; lane < 6; lane++) stageClock.lanes[lane] = detected.levels[lane] ?? 0;
         stageClock.events.push(...detected.hits);
@@ -369,6 +370,11 @@ watch(guitarGateDb, value => {
   write('alive-guitar-gate', String(guitarGateDb.value));
   polyDetector?.reset();
 });
+watch(guitarOctaveRatio, value => {
+  guitarOctaveRatio.value = [0, 0.65, 0.85].includes(value) ? value : 0.65;
+  write('alive-guitar-octave-filter', String(guitarOctaveRatio.value));
+  resetGuitarDetection();
+});
 watch(guitarTuningCents, value => {
   guitarTuningCents.value = Number.isFinite(value) ? Math.max(-50, Math.min(50, value)) : 0;
   write('alive-guitar-tuning', String(guitarTuningCents.value));
@@ -381,6 +387,7 @@ export function useStageAudio() {
     laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar', 'midi']) || 'song';
     guitarDeviceId.value = read(DEVICE_KEY);
     guitarMode.value = read('alive-guitar-mode', ['spectrum', 'polyphonic']) || 'spectrum';
+    guitarOctaveRatio.value = Number(read('alive-guitar-octave-filter', ['0', '0.65', '0.85']) || '0.65');
     const savedGate = Number(read('alive-guitar-gate') || -65);
     const savedTuning = Number(read('alive-guitar-tuning') || 0);
     guitarGateDb.value = Number.isFinite(savedGate) ? Math.max(-85, Math.min(-30, savedGate)) : -65;
@@ -398,7 +405,7 @@ export function useStageAudio() {
 
   return {
     laneSource, analysis, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
-    guitarMode, guitarGateDb, guitarTuningCents, guitarNotes, guitarInputDb, guitarDetectionMs, setGuitarMode,
+    guitarMode, guitarGateDb, guitarTuningCents, guitarOctaveRatio, guitarNotes, guitarInputDb, guitarDetectionMs, setGuitarMode,
     registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote, onTick, seek,
   };
 }

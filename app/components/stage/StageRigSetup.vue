@@ -55,6 +55,15 @@ function chooseSource(id: LaneSource) {
         <input v-model.number="stage.guitarGateDb.value" type="range" min="-85" max="-30" step="1">
       </label>
       <label class="rig-field">
+        <span>Octave filtering</span>
+        <select :value="stage.guitarOctaveRatio.value" @change="stage.guitarOctaveRatio.value = Number(($event.target as HTMLSelectElement).value)">
+          <option :value="0.65">Balanced</option>
+          <option :value="0.85">Strong · fewer extra octaves</option>
+          <option :value="0">Off · keep quieter octave voices</option>
+        </select>
+      </label>
+      <p class="rig-status">For single-note octave doubles, try Strong. Filtering can hide a quieter note in a real octave pair.</p>
+      <label class="rig-field">
         <span>Tuning {{ stage.guitarTuningCents.value > 0 ? '+' : '' }}{{ stage.guitarTuningCents.value }} cents</span>
         <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">
       </label>
