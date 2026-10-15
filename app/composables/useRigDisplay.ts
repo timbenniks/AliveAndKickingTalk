@@ -5,13 +5,14 @@ const KEY = 'alive-rig-display';
 
 const forceReduced = ref(false);
 const lowQuality = ref(false);
+const showGuitarNotes = ref(true);
 let loaded = false;
 
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify({ forceReduced: forceReduced.value, lowQuality: lowQuality.value })); } catch { /* Private mode: settings are per session. */ }
+  try { localStorage.setItem(KEY, JSON.stringify({ forceReduced: forceReduced.value, lowQuality: lowQuality.value, showGuitarNotes: showGuitarNotes.value })); } catch { /* Private mode: settings are per session. */ }
 }
 
-watch([forceReduced, lowQuality], save);
+watch([forceReduced, lowQuality, showGuitarNotes], save);
 
 export function useRigDisplay() {
   onMounted(() => {
@@ -21,7 +22,8 @@ export function useRigDisplay() {
       const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
       forceReduced.value = saved.forceReduced === true;
       lowQuality.value = saved.lowQuality === true;
+      showGuitarNotes.value = saved.showGuitarNotes !== false;
     } catch { /* Nothing saved yet. */ }
   });
-  return { forceReduced, lowQuality };
+  return { forceReduced, lowQuality, showGuitarNotes };
 }

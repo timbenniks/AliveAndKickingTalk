@@ -9,7 +9,7 @@ const props = defineProps<{
 }>();
 
 const stage = useStageAudio();
-const { forceReduced, lowQuality } = useRigDisplay();
+const { forceReduced, lowQuality, showGuitarNotes } = useRigDisplay();
 const reducedNow = computed(() => props.reduced ?? forceReduced.value);
 
 const sources: Array<{ id: LaneSource; label: string }> = [
@@ -58,6 +58,7 @@ function chooseSource(id: LaneSource) {
         <span>Tuning {{ stage.guitarTuningCents.value > 0 ? '+' : '' }}{{ stage.guitarTuningCents.value }} cents</span>
         <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">
       </label>
+      <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide note debug' : 'Show note debug' }}</PixelButton>
       <p role="status" class="rig-status">Detected: {{ stage.guitarNotes.value || '—' }} · {{ stage.guitarDetectionMs.value }} ms per analysis</p>
       <p class="rig-status">Raise the gate until idle noise stops triggering; lower it if quiet notes disappear. Tune to A440 or adjust the tuning above.</p>
     </template>

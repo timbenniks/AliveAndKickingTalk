@@ -59,3 +59,13 @@ does not solve these ambiguities. Real guitar performance has not yet been
 validated; the synthetic tests are regression coverage, not an MG3-quality
 claim. Compare with Spectrum or MG3 using the same clean input before choosing
 this for a live talk.
+
+## Stage note debug window
+
+Selecting Polyphonic notes shows a small note debug window at the lower left
+of the live/practise stage, above the player. It shows all currently detected
+note names, fit duration, gate setting and input status even with Rig closed.
+The readout reuses the existing throttled diagnostics; it adds no detector
+work or animation loop. Close it with ×, or use **Show note debug** in Rig
+(or `/config`) to restore it. Visibility is saved in this browser between songs.
+The window only appears for polyphonic guitar input.
