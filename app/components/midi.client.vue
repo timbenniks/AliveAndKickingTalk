@@ -5,7 +5,7 @@ import { presetAtTime } from '#shared/utils/performance';
 // Without a song (/config) it only picks the ports.
 const props = defineProps<{ song?: Song; time?: number }>();
 const { midiNote } = useStageAudio();
-const { ready, outputs, inputs, outputId, inputId, status, connect, selectInput, selectOutput, sendProgramChange } = useMidi(midiNote);
+const { ready, outputs, inputs, outputId, inputId, inputMode, status, connect, selectInput, selectInputMode, selectOutput, sendProgramChange } = useMidi(midiNote);
 let selectedPreset: number | null = null;
 const preset = computed(() => props.song ? presetAtTime(props.song.presets, props.time ?? 0) : undefined);
 
@@ -39,8 +39,16 @@ watch(preset, sendPreset);
         <option v-for="input in inputs" :key="input.id" :value="input.id">{{ input.name }}</option>
       </select>
     </label>
+    <label class="rig-field">
+      <span>MIDI lane mapping</span>
+      <select :value="inputMode" @change="selectInputMode(($event.target as HTMLSelectElement).value as 'notes' | 'strings')">
+        <option value="notes">Note pitches · MG3 / audio-to-MIDI</option>
+        <option value="strings">String channels · pickup (1–6)</option>
+      </select>
+    </label>
+    <p class="rig-status">{{ inputMode === 'notes' ? 'Notes and chords use low-to-high pitch lanes. Physical strings are not identified.' : 'Channels 1 to 6 light lanes 1 to 6. Configure your pickup to match.' }}</p>
     <p role="status" class="rig-status">{{ status }}</p>
-    <PixelButton v-if="!ready || !outputId" variant="secondary" @click="connect">Reconnect MIDI</PixelButton>
+    <PixelButton v-if="!ready || (!inputId && !outputId)" variant="secondary" @click="connect">Reconnect MIDI</PixelButton>
   </div>
 </template>
 

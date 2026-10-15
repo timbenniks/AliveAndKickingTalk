@@ -187,10 +187,11 @@ function setLaneSource(source: LaneSource) {
   setAnalysis(source === 'midi' ? 'live' : 'idle');
 }
 
-// MIDI guitar pickups send one string per channel. Lane = string.
+// Routing resolves MIDI pitches/channels into lanes. On release, velocity is
+// the level of any other notes still held in that lane; only note-ons add gems.
 function midiNote(lane: number, velocity: number, on: boolean) {
   if (laneSource.value !== 'midi' || lane < 0 || lane >= stageClock.lanes.length) return;
-  stageClock.lanes[lane] = on ? velocity : 0;
+  stageClock.lanes[lane] = velocity;
   if (on) stageClock.events.push({ lane, strength: velocity });
 }
 

@@ -15,7 +15,7 @@ const reducedNow = computed(() => props.reduced ?? forceReduced.value);
 const sources: Array<{ id: LaneSource; label: string }> = [
   { id: "song", label: "Backing track" },
   { id: "guitar", label: "Guitar input" },
-  { id: "midi", label: "MIDI pickup" },
+  { id: "midi", label: "Guitar MIDI" },
 ];
 
 function chooseSource(id: LaneSource) {
@@ -44,7 +44,7 @@ function chooseSource(id: LaneSource) {
     <p class="rig-status">Lanes follow low-to-high audio energy, including chords and harmonics.</p>
     <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
   </template>
-  <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Pick the pickup under Guitar MIDI input. Channels 1 to 6 light lanes 1 to 6.</p>
+  <p v-if="stage.laneSource.value === 'midi'" class="rig-status">Choose your converter or pickup under Guitar MIDI input. Use Note pitches for MG3.</p>
   <label class="rig-field">
     <span>Visual offset {{ stage.offsetMs.value }} ms</span>
     <input v-model.number="stage.offsetMs.value" type="range" min="-200" max="200" step="5">
