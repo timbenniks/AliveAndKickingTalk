@@ -29,6 +29,9 @@ A new stage readout consumes `useStageAudio()` rather than creating another
 analyser, stream or animation loop. Keep calibration controls available for
 real hardware; avoid adding service/repository layers around a single call.
 
+The [guitar research handoff](guitar-research-handoff.md) records the local MG3
+analysis, evidence limits, potential detector refinements and bug triage steps.
+
 ## Runtime ownership
 
 `useStageAudio()`, `useMidi()` and `useRigDisplay()` are thin adapters over the

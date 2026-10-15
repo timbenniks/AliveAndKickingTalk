@@ -28,3 +28,6 @@ https://plausible.io/aliveandkicking.dev/
 
 See [the architecture guide](docs/architecture.md) for code ownership, lifecycle
 rules and the test layout.
+
+See [the guitar research handoff](docs/guitar-research-handoff.md) for MG3
+analysis findings, potential detection improvements and bug investigation steps.

@@ -1,5 +1,8 @@
 # Experimental polyphonic guitar input
 
+For MG3 evidence, local analysis artifacts and a future bug-investigation path,
+see the [guitar research handoff](guitar-research-handoff.md).
+
 In Rig settings or `/config`, set **Neck follows → Guitar**, select a clean DI input,
 then choose **Polyphonic notes · experimental** under Guitar detection. No MIDI
 converter, plugin, model download or additional dependency is needed. Spectrum
@@ -60,10 +63,10 @@ gives 4–5/6 plus one or two extras. Octave-related partials can reinforce or
 cancel, so generic magnitude templates can miss a note or substitute its
 octave. Distortion, pickup-specific timbres, sympathetic ringing, bends,
 unisons and low notes near adjacent semitones remain difficult. A noise gate
-does not solve these ambiguities. Real guitar performance has not yet been
-validated; the synthetic tests are regression coverage, not an MG3-quality
-claim. Compare with Spectrum or MG3 using the same clean input before choosing
-this for a live talk.
+does not solve these ambiguities. Tim's live tests have been encouraging, but
+there is no annotated real-guitar evaluation set or measured accuracy/latency
+comparison. The synthetic tests are regression coverage, not an MG3-quality
+claim. Rehearse with the same clean input before choosing this for a live talk.
 
 ## Guitar notes panel
 
