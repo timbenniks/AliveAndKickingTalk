@@ -59,6 +59,7 @@ function chooseSource(id: LaneSource) {
         <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">
       </label>
       <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide note debug' : 'Show note debug' }}</PixelButton>
+      <p class="rig-status">Signal {{ stage.guitarInputDb.value }} dB · {{ stage.guitarInputDb.value < stage.guitarGateDb.value ? 'below gate' : 'above gate' }}</p>
       <p role="status" class="rig-status">Detected: {{ stage.guitarNotes.value || '—' }} · {{ stage.guitarDetectionMs.value }} ms per analysis</p>
       <p class="rig-status">Raise the gate until idle noise stops triggering; lower it if quiet notes disappear. Tune to A440 or adjust the tuning above.</p>
     </template>

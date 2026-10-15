@@ -69,6 +69,29 @@ const tuned = new GuitarPolyDetector(48000, 4096, -35);
 const detuned = spectrum([45, 60, 64], { cents: -35 });
 tuned.process(detuned, 0);
 assert.deepEqual(tuned.process(detuned, 0.04).notes, [45, 60, 64], 'tuning calibration');
+// Reproduce quiet DI input at the default gate, not only with the gate at
+// its minimum. Detection should not require harmonics individually above it.
+for (const amplitude of [0.001, 0.003, 0.01]) {
+  for (const notes of [[40], [45, 60, 64], [40, 47, 52, 56, 59, 64]]) {
+    const quietDetector = new GuitarPolyDetector(48000, 4096);
+    const input = spectrum(notes, { amplitude, noise: 0.00001 });
+    quietDetector.process(input, 0);
+    assert.deepEqual(quietDetector.process(input, 0.04).notes, notes, `quiet DI ${amplitude}, ${notes}`);
+  }
+}
+const hiss = new GuitarPolyDetector(48000, 4096);
+for (let frame = 0; frame < 12; frame++) {
+  const detected = hiss.process(spectrum([], { noise: 0.05 }), frame / 30);
+  assert.ok(detected.inputDb > -65, 'noise fixture opens the signal gate');
+  assert.deepEqual(detected.notes, [], 'broadband hiss above the gate is not a guitar note');
+  assert.deepEqual(detected.hits, [], 'hiss creates no gems');
+}
+const noisyQuiet = new GuitarPolyDetector(48000, 4096);
+const noisyInput = spectrum([40], { amplitude: 0.001, noise: 0.0005 });
+noisyQuiet.process(noisyInput, 0);
+const noisyDetection = noisyQuiet.process(noisyInput, 0.04);
+assert.deepEqual(noisyDetection.notes, [40], 'quiet guitar remains detectable above background hiss');
+assert.ok(noisyDetection.inputDb > -65 && noisyDetection.inputDb < -55, 'debug signal uses an RMS estimate, not peak FFT-bin dB');
 const gated = new GuitarPolyDetector(48000, 4096);
 const quiet = spectrum([40], { amplitude: 0.001 });
 gated.process(quiet, 0, -45);

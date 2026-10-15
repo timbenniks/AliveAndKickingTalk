@@ -6,7 +6,10 @@ converter, plugin, model download or additional dependency is needed. Spectrum
 remains the default; the existing Guitar MIDI input still works with MG3.
 
 Start with the gate at −65 dB. Raise it until idle noise no longer triggers,
-and lower it if quiet notes disappear. Tune to A440, or use the tuning control
+and lower it if quiet notes disappear. The gate compares the overall
+spectrum-derived RMS signal level, rather than requiring each harmonic to
+exceed the gate. Quiet harmonics stay available for pitch matching; matching
+thresholds follow the signal and estimated broadband noise. Tune to A440, or use the tuning control
 (−50 to +50 cents) for a consistently sharp/flat guitar. Both controls and the
 selected mode persist between songs. Detected note names and the most recent
 fit duration are visible in settings. The duration measures the fit only, not
@@ -64,8 +67,26 @@ this for a live talk.
 
 Selecting Polyphonic notes shows a small note debug window at the lower left
 of the live/practise stage, above the player. It shows all currently detected
-note names, fit duration, gate setting and input status even with Rig closed.
+note names, signal level, fit duration, gate setting and input status even with Rig closed.
 The readout reuses the existing throttled diagnostics; it adds no detector
 work or animation loop. Close it with ×, or use **Show note debug** in Rig
 (or `/config`) to restore it. Visibility is saved in this browser between songs.
 The window only appears for polyphonic guitar input.
+
+
+## Quiet-input correction
+
+The initial gate was mistakenly also used as the floor for individual FFT
+bins, harmonic eligibility and fitted note amplitudes. These values are lower
+than overall guitar RMS, so an input could be audible yet need a hard strum to
+trigger. The gate now opens from the complete analysis band's RMS estimate
+(window-power corrected); recognition uses signal-relative thresholds and a
+broadband noise estimate. Existing gate settings remain saved. The note window
+and Rig show **Signal … dB** and whether it is below the gate. If the signal is
+above the gate but no notes appear, louder playing is not necessarily the fix:
+that points to pitch matching, tuning or the input's timbre.
+
+Regression checks now require quiet single notes, triads and six-note E major
+at the default −65 dB gate, as well as a quiet note mixed with hiss. A hiss-only
+fixture above the gate must produce no notes or gems. This fixes a reproduced
+threshold problem; accuracy on the physical guitar still needs a live test.

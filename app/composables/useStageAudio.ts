@@ -22,6 +22,7 @@ const guitarMode = ref<'spectrum' | 'polyphonic'>('spectrum');
 const guitarGateDb = ref(-65);
 const guitarTuningCents = ref(0);
 const guitarNotes = ref('');
+const guitarInputDb = ref(-120);
 const guitarDetectionMs = ref(0);
 let polyDetector: GuitarPolyDetector | null = null;
 let polyFreq = new Float32Array(0);
@@ -43,6 +44,7 @@ function resetGuitarDetection() {
   lastPolyFrame = -10;
   lastDiagnostics = -10;
   guitarNotes.value = '';
+  guitarInputDb.value = -120;
   guitarDetectionMs.value = 0;
   baseline.fill(0);
   lastHit.fill(-10);
@@ -307,6 +309,7 @@ function tick() {
         stageClock.events.push(...detected.hits);
         if (wall - lastDiagnostics >= 0.1) {
           lastDiagnostics = wall;
+          guitarInputDb.value = Math.round(detected.inputDb);
           guitarNotes.value = detected.notes.map(guitarNoteName).join(' · ');
           guitarDetectionMs.value = Math.round(elapsed * 10) / 10;
         }
@@ -395,7 +398,7 @@ export function useStageAudio() {
 
   return {
     laneSource, analysis, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
-    guitarMode, guitarGateDb, guitarTuningCents, guitarNotes, guitarDetectionMs, setGuitarMode,
+    guitarMode, guitarGateDb, guitarTuningCents, guitarNotes, guitarInputDb, guitarDetectionMs, setGuitarMode,
     registerSong, connectSong, setLaneSource, startGuitar, stopGuitar, midiNote, onTick, seek,
   };
 }

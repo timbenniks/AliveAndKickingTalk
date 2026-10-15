@@ -193,9 +193,11 @@ for (const refreshRate of [30, 60, 120, 144]) {
   assert.deepEqual(stageClock.events.map(hit => hit.lane).toSorted(), [0, 1, 2, 3, 4, 5]);
   assert.ok(stageClock.lanes.every(level => level > 0));
   assert.match(audio.guitarNotes.value, /E2/);
+  assert.ok(audio.guitarInputDb.value > audio.guitarGateDb.value, 'debug exposes signal level above the gate');
   polyInput.fill(-Infinity);
   for (let frame = 0; frame < refreshRate / 3; frame++) { wall += 1000 / refreshRate; renderFrame(); }
   assert.ok(stageClock.lanes.every(level => level === 0), 'released chord clears all lanes');
+  assert.equal(audio.guitarInputDb.value, -120, 'silence is visible below the gate');
 }
 audio.guitarGateDb.value = -200;
 audio.guitarTuningCents.value = 500;

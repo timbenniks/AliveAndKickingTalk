@@ -1,7 +1,7 @@
 import { guitarPitchLane } from './guitar-notes.ts';
 
 type Atom = { note: number; bins: number[]; weights: number[]; norm: number };
-export type GuitarDetection = { notes: number[]; levels: number[]; hits: Array<{ lane: number; strength: number }> };
+export type GuitarDetection = { inputDb: number; notes: number[]; levels: number[]; hits: Array<{ lane: number; strength: number }> };
 const FIRST_NOTE = 38; // D2 through E6, including drop D.
 const LAST_NOTE = 88;
 
@@ -19,6 +19,7 @@ export class GuitarPolyDetector {
   private coefficients: Float32Array;
   private order: Array<{ index: number; score: number }> = [];
   private residual: Float32Array;
+  private noiseBins: Float32Array;
   private roots: number[] = [];
   private amplitudes = new Float32Array(LAST_NOTE - FIRST_NOTE + 1);
   private active = new Uint8Array(LAST_NOTE - FIRST_NOTE + 1);
@@ -31,6 +32,7 @@ export class GuitarPolyDetector {
 
   constructor(sampleRate: number, fftSize: number, cents = 0) {
     this.residual = new Float32Array(Math.min(fftSize / 2, Math.ceil(4500 * fftSize / sampleRate)));
+    this.noiseBins = new Float32Array(this.residual.length);
     for (let pitch = FIRST_NOTE; pitch <= LAST_NOTE; pitch++) {
       const root = 440 * 2 ** ((pitch - 69 + cents / 100) / 12) * fftSize / sampleRate;
       this.roots.push(root);
@@ -66,15 +68,26 @@ export class GuitarPolyDetector {
   process(decibels: Float32Array, now: number, gateDb = -65): GuitarDetection {
     if (now < this.lastTime || now - this.lastTime > 0.3) this.reset();
     this.lastTime = now;
-    const gate = 10 ** (gateDb / 20);
     let peak = 0;
+    let power = 0;
     for (let bin = 0; bin < this.residual.length; bin++) {
       const db = decibels[bin] ?? -Infinity;
       const value = Number.isFinite(db) ? 10 ** (db / 20) : 0;
       this.residual[bin] = value;
       peak = Math.max(peak, value);
+      if (bin > 0) power += value * value;
     }
-    const floor = Math.max(gate * 0.5, peak * 0.006);
+    // Gate the whole signal, not each partial: FFT magnitudes are much lower
+    // than input RMS, and a guitar's upper harmonics are quieter still.
+    // Parseval, corrected for the Blackman window's mean square (0.3046).
+    const inputDb = Math.max(-120, 10 * Math.log10(Math.max(1e-12, 2 * power / 0.3046)));
+    const gateOpen = inputDb >= gateDb;
+    this.noiseBins.set(this.residual);
+    this.noiseBins.sort();
+    // Lower-quintile bins estimate broadband noise without treating a chord's
+    // strong partials as noise. All matching thresholds now scale with signal.
+    const noise = this.noiseBins[Math.floor(this.noiseBins.length * 0.2)]!;
+    const floor = Math.max(noise * 2, peak * 0.006);
     for (let bin = 0; bin < this.residual.length; bin++) this.residual[bin] = Math.max(0, this.residual[bin]! - floor);
     for (let note = 0; note < this.roots.length; note++) {
       const root = Math.round(this.roots[note]!);
@@ -86,14 +99,14 @@ export class GuitarPolyDetector {
         const center = Math.round(expected);
         for (let bin = Math.max(1, center - 1); bin <= center + 1; bin++) {
           const value = this.residual[bin]!;
-          if (value <= this.residual[bin - 1]! || value < this.residual[bin + 1]! || value < Math.max(gate * 0.2, peak * 0.008)) continue;
+          if (value <= this.residual[bin - 1]! || value < this.residual[bin + 1]! || value < Math.max(noise * 3, peak * 0.008)) continue;
           const left = decibels[bin - 1]!, middle = decibels[bin]!, right = decibels[bin + 1]!;
           const denominator = left - 2 * middle + right;
           const offset = Number.isFinite(denominator) && denominator !== 0 ? 0.5 * (left - right) / denominator : 0;
           if (Math.abs(bin + Math.max(-0.5, Math.min(0.5, offset)) - expected) < 0.45) { support++; break; }
         }
       }
-      this.eligible[note] = Number(fundamental > Math.max(gate, peak * 0.025) && support >= 2);
+      this.eligible[note] = Number(gateOpen && fundamental > Math.max(noise * 4, peak * 0.025) && support >= 2);
     }
     this.coefficients.fill(0);
     // Fit the best-supported templates first, so nearby low notes cannot steal
@@ -109,7 +122,7 @@ export class GuitarPolyDetector {
     this.order.sort((a, b) => b.score - a.score);
     // Sparse nonnegative least squares: notes compete to explain the same
     // partials, instead of turning each harmonic peak into another note.
-    const penalty = Math.max(gate * 0.6, peak * 0.018);
+    const penalty = Math.max(noise * 2, peak * 0.018);
     for (let pass = 0; pass < 32; pass++) {
       for (const { index } of this.order) {
         const atom = this.atoms[index]!;
@@ -125,11 +138,11 @@ export class GuitarPolyDetector {
     }
     this.amplitudes.fill(0);
     for (let index = 0; index < this.atoms.length; index++) this.amplitudes[this.atoms[index]!.note]! += this.coefficients[index]!;
-    const threshold = Math.max(gate * 1.5, peak * 0.085);
+    const threshold = Math.max(noise * 4, peak * 0.085);
     const candidates = Array.from(this.amplitudes, (amplitude, note) => ({ amplitude, note }))
       .filter(item => item.amplitude > threshold).sort((a, b) => b.amplitude - a.amplitude).slice(0, 6);
     const present = new Set(candidates.map(item => item.note));
-    const result: GuitarDetection = { notes: [], levels: [0, 0, 0, 0, 0, 0], hits: [] };
+    const result: GuitarDetection = { inputDb, notes: [], levels: [0, 0, 0, 0, 0, 0], hits: [] };
     const attacks = new Set<number>();
     const strengths = new Float32Array(this.roots.length);
     for (let note = 0; note < this.roots.length; note++) {

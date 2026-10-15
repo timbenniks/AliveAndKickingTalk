@@ -15,7 +15,9 @@ const notes = computed(() => stage.guitarNotes.value ? stage.guitarNotes.value.s
       <span v-for="note in notes" :key="note" class="guitar-debug-note">{{ note }}</span>
       <span v-if="!notes.length" class="guitar-debug-empty">Play a note…</span>
     </div>
-    <p>{{ stage.guitarDetectionMs.value }} ms / analysis · {{ stage.guitarGateDb.value }} dB gate</p>
+    <p>Signal {{ stage.guitarInputDb.value }} dB · gate {{ stage.guitarGateDb.value }} dB</p>
+    <p>{{ stage.guitarInputDb.value < stage.guitarGateDb.value ? 'Below gate · lower the gate for quiet playing' : notes.length ? 'Tracking notes' : 'Signal above gate · listening for pitches' }}</p>
+    <p>{{ stage.guitarDetectionMs.value }} ms / analysis</p>
     <p>{{ stage.guitarStatus.value }}</p>
   </aside>
 </template>
