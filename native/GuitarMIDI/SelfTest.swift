@@ -20,6 +20,13 @@ func runInputTest(arguments: [String]) throws {
         lock.lock(); reports += 1; highestDB = max(highestDB, db); lock.unlock()
     }
     capture.failed = { message in lock.lock(); failure = message; lock.unlock() }
+    capture.configurationChanged = { [weak capture] in
+        DispatchQueue.main.async {
+            if capture?.requiresReconnect == true {
+                lock.lock(); failure = "Audio configuration changed during capture"; lock.unlock()
+            }
+        }
+    }
     try capture.start(device: device.id, channel: channel - 1, modelURL: url, gate: -60, threshold: 0.5, timing: DetectorTiming(), compute: .automatic)
     RunLoop.current.run(until: Date().addingTimeInterval(3))
     let processed = capture.worker.sync { capture.detector?.samplesProcessed ?? 0 }
@@ -28,6 +35,58 @@ func runInputTest(arguments: [String]) throws {
     try require(result.2 == nil, result.2 ?? "Capture failed")
     try require(result.0 > 0 && processed > 0, "No audio reached the detector")
     print("PASS: \(device.name), channel \(channel), \(result.0) audio reports, \(processed) model input samples, peak buffer RMS \(result.1) dBFS")
+}
+
+func runReconnectTest(arguments: [String]) throws {
+    guard arguments.count == 2, let channel = Int(arguments[1]), channel > 0,
+          let device = inputDevices().first(where: { $0.name == arguments[0] }) else {
+        throw NSError(domain: "GuitarMIDITest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Use --reconnect-test 'Exact device name' channel-number"])
+    }
+    try require(AVCaptureDevice.authorizationStatus(for: .audio) == .authorized, "Microphone access is required")
+    func waitFor(_ condition: () -> Bool, timeout: TimeInterval = 5) -> Bool {
+        let end = Date().addingTimeInterval(timeout)
+        while Date() < end {
+            if condition() { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.02))
+        }
+        return condition()
+    }
+    let state = GuitarState()
+    defer { state.stop() }
+    state.device = device.id; state.channel = channel - 1
+    state.start()
+    let opened = waitFor({ state.running && state.capture?.worker.sync { state.capture?.detector?.samplesProcessed ?? 0 } ?? 0 > 0 })
+    print("Initial state:", state.status, "retries:", state.reconnectAttempts.count)
+    try require(opened, "Initial capture failed: \(state.status)")
+    // Give asynchronous hardware changes time to arrive before injecting one.
+    RunLoop.current.run(until: Date().addingTimeInterval(1))
+    try require(waitFor({ state.running }), "Input never settled: \(state.status)")
+    guard let healthy = state.capture else { try require(false, "Missing healthy capture"); return }
+    NotificationCenter.default.post(name: .AVAudioEngineConfigurationChange, object: healthy.engine)
+    RunLoop.current.run(until: Date().addingTimeInterval(0.7))
+    try require(state.capture === healthy && state.running && state.reconnectAttempts.isEmpty, "Healthy input restarted on a harmless route notification")
+    state.reconnectAttempts.removeAll()
+    for attempt in 1...3 {
+        guard let previous = state.capture else { try require(false, "Capture missing before reconnect"); return }
+        previous.engine.stop()
+        // Reproduce the stopped engine and notification documented by Apple,
+        // without changing the user's playback route or system preferences.
+        NotificationCenter.default.post(name: .AVAudioEngineConfigurationChange, object: previous.engine)
+        NotificationCenter.default.post(name: .AVAudioEngineConfigurationChange, object: previous.engine)
+        try require(waitFor({ state.capture !== previous && state.running }), "Reconnect \(attempt) failed: \(state.status)")
+        try require(waitFor({ state.capture?.worker.sync { state.capture?.detector?.samplesProcessed ?? 0 } ?? 0 > 0 }), "No samples after reconnect")
+        try require(state.device == device.id && state.channel == channel - 1, "Reconnect changed the selected input")
+        try require(state.reconnectAttempts.count == attempt, "Duplicate notifications triggered extra reconnects")
+    }
+    state.scheduleReconnect()
+    try require(!state.running && !state.starting && state.capture == nil && state.reconnectWork == nil, "Retry limit did not stop capture")
+    state.start()
+    try require(waitFor({ state.running }), "Manual start did not reset retry limit")
+    state.scheduleReconnect()
+    state.stop()
+    RunLoop.current.run(until: Date().addingTimeInterval(0.7))
+    try require(!state.running && !state.starting && state.capture == nil, "Stop allowed a pending reconnect")
+    print("PASS: \(device.name) channel \(channel), capture resumes after stopped-engine notifications, duplicate events coalesce, retry limit and Stop cancellation")
 }
 
 func require(_ condition: @autoclosure () -> Bool, _ message: String) throws {

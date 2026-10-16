@@ -40,7 +40,7 @@ open 'native/GuitarMIDI/dist/Alive Guitar MIDI.app'
 4. Enable the note display if hidden. Chords produce multiple notes; highway lanes still represent low-to-high pitch ranges, not identified physical strings.
 5. Start with **Balanced + Automatic**. Stop before adjusting timing, acceleration, gate/confidence or input. Lower the gate for quiet notes. Raise confidence to reduce extra notes, lower it for missed notes. These controls trade recall against false positives.
 
-Stopping, closing the companion window, changing its audio configuration, losing audio callbacks for two seconds, or a reported processing failure releases its notes. A dropped capture buffer resets the decoder before processing resumes. The website clears held notes on port disconnection, switching sources, and channel all-notes-off/all-sound-off messages. Reconnect by port name is supported.
+Stopping, closing the companion window, rebuilding capture after an audio configuration change, losing audio callbacks for two seconds, or a reported processing failure releases its notes. Harmless configuration notifications leave healthy capture running; a stopped or reconfigured engine now attempts to reconnect automatically as described below. A dropped capture buffer resets the decoder before processing resumes. The website clears held notes on port disconnection, switching sources, and channel all-notes-off/all-sound-off messages. Reconnect by port name is supported.
 
 The website also accepts other MIDI note sources, including an existing guitar-to-MIDI app, so we can compare engines with the same stage experience. It listens to notes D2–E6 (MIDI 38–88), on all channels, tracking channel and pitch separately. Velocity-zero note-on is note-off. Repeated note-ons generate fresh attacks. It ignores program changes, pitch bend, sustain pedals and out-of-range pitches. The incoming queue is bounded to 64 visual attacks. The backing track may be paused while guitar notes move along the highway.
 
@@ -202,3 +202,22 @@ An optional hardware regression check uses the production capture, conversion an
 Both Scarlett channels passed independently: each delivered 29 reports and 63,488 converted samples to the detector. Channel 2's highest buffer RMS was approximately −84 dBFS during this quiet check; Channel 1 was approximately −100 dBFS. These checks confirm audio delivery, not guitar recognition or correctness of the physical wiring. Nonexistent Channel 3 failed cleanly with the detailed error. The existing model, timing, note-release and CoreMIDI self-tests also passed after the fix.
 
 The relaunched UI also reached **ON AIR** with Scarlett Channel 2 selected, showed an input level around −37 dBFS and emitted a detected note. Its dropped-buffer counter reached 18 during the live observation, so capture continuity under load still needs follow-up; successful device selection does not establish dropout-free operation or correct recognition of the played notes.
+
+
+## Playback-route recovery, 2026-10-16
+
+Using Scarlett Solo USB for macOS playback exposed a second issue. The original handler treated every `AVAudioEngineConfigurationChange` notification as a fatal error. With Scarlett as the default output and RØDE as the default input, a fresh engine explicitly capturing Scarlett Channel 2 emitted that notification while still running. Its input and tap formats were both stereo 48 kHz, and a diagnostic received 39 audio reports over four seconds. Stopping on that notification was unnecessary and caused the reported failure even when restarting manually.
+
+The capture adapter now remembers the actual input device and tap format. On the main queue after a notification, it checks the engine's running state, device identity, and input/output formats. If these still match, listening continues. If the engine stopped or the route no longer matches, the app releases notes, drains the old capture, waits half a second for routing to settle, and builds a fresh engine with the same selected input/channel and detector settings. This follows Apple's [configuration-change lifecycle guidance](https://developer.apple.com/documentation/foundation/nsnotification/name-swift.struct/avaudioengineconfigurationchange), including avoiding engine teardown inside the internal notification callback.
+
+Reconnection allows at most three attempts in ten seconds. Repeated notifications from an old capture are ignored using its generation token. Stop, window close and termination cancel pending reconnects. Manual Start resets the retry limit. A stopped engine discovered by the no-audio watchdog also attempts recovery; a running engine with no callbacks still stops with an error. Processing/MIDI errors and unexpected tap-buffer format changes remain explicit failures. The app never switches an explicitly selected Scarlett input to another device, changes the system playback preference, or silently falls back to a microphone. During a necessary rebuild the virtual MIDI source is recreated; the website's existing reconnect-by-name behavior handles that interruption.
+
+Hardware validation with Scarlett still selected as macOS output:
+
+```sh
+'native/GuitarMIDI/dist/Alive Guitar MIDI.app/Contents/MacOS/AliveGuitarMIDI' --reconnect-test 'Scarlett Solo USB' 2
+```
+
+The test passed initial live capture with zero reconnect attempts, a harmless notification without restarting, three forced stopped-engine/notification cycles with resumed audio, duplicate-notification suppression, retained Channel 2 selection, the retry limit, manual restart after that limit, and cancellation when Stop is pressed during the reconnect delay. These tests stop the real capture engine and inject its documented notification; they do not change the user's playback device. They confirm the recovery path, not every possible physical device-switch sequence.
+
+The standalone three-second Channel 2 capture check and full model/MIDI self-test also passed. The rebuilt GUI remained **ON AIR** with Scarlett Channel 2 selected and Scarlett still the system playback output; the observed dropped-buffer count was zero at that check. This is a short capture check, not a long-duration playback or note-accuracy benchmark.

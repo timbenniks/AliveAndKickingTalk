@@ -27,12 +27,15 @@ final class GuitarState: ObservableObject {
     var watchdog: Timer?
     var lastAudio = Date()
     var termination: NSObjectProtocol?
+    var reconnectWork: DispatchWorkItem?
+    var reconnectAttempts: [TimeInterval] = []
 
     init() {
         termination = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in self?.stop() }
     }
     var channelCount: Int { devices.first(where: { $0.id == device })?.channels ?? 2 }
-    func start() {
+    func start(reconnecting: Bool = false) {
+        if !reconnecting { reconnectAttempts.removeAll() }
         stop()
         starting = true
         let request = generation
@@ -61,23 +64,58 @@ final class GuitarState: ObservableObject {
                         self.stop(); self.status = message
                     }
                 }
+                capture.configurationChanged = { [weak self, weak capture] in
+                    DispatchQueue.main.async {
+                        guard let self, self.generation == request, let capture, capture.requiresReconnect else { return }
+                        self.scheduleReconnect()
+                    }
+                }
                 do {
                     self.inference = 0; self.dropped = 0
                     try capture.start(device: self.device, channel: self.channel, modelURL: url, gate: Float(self.gate), threshold: Float(self.threshold), timing: self.timing, compute: self.compute)
                     self.lastAudio = Date()
                     self.watchdog = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
                         guard let self, self.running, Date().timeIntervalSince(self.lastAudio) > 2 else { return }
+                        if self.capture?.engine.isRunning == false {
+                            self.scheduleReconnect()
+                            return
+                        }
                         self.stop(); self.status = "Audio input stopped delivering samples. Reconnect and start again."
                     }
                     self.running = true
                     self.starting = false
                     self.status = "Sending notes to Alive Guitar MIDI"
-                } catch { self.stop(); self.status = error.localizedDescription }
+                } catch {
+                    if reconnecting { self.scheduleReconnect(reason: error.localizedDescription) }
+                    else { self.stop(); self.status = error.localizedDescription }
+                }
             }
         }
     }
+    func scheduleReconnect(reason: String = "Audio route changed.") {
+        guard running || starting else { return }
+        stop() // Releases notes, drains capture, and invalidates old callbacks.
+        let now = ProcessInfo.processInfo.systemUptime
+        reconnectAttempts.removeAll { now - $0 > 10 }
+        guard reconnectAttempts.count < 3 else {
+            status = "Audio could not reconnect after three attempts. \(reason) Check your input and start again."
+            return
+        }
+        reconnectAttempts.append(now)
+        starting = true
+        status = "Audio route changed. Reconnecting your guitar input…"
+        let request = generation
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.generation == request, self.starting else { return }
+            self.start(reconnecting: true)
+        }
+        reconnectWork = work
+        // Let device/sample-rate changes settle before creating a fresh graph.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+    }
     func stop() {
         generation += 1
+        reconnectWork?.cancel(); reconnectWork = nil
         watchdog?.invalidate(); watchdog = nil
         capture?.stop(); capture = nil
         running = false; starting = false; notes = "—"; pitches = []; inputDB = -120
@@ -245,6 +283,10 @@ struct GuitarMIDIApp: App {
         if let index = CommandLine.arguments.firstIndex(of: "--input-test") {
             do { try runInputTest(arguments: Array(CommandLine.arguments.dropFirst(index + 1))); exit(0) }
             catch { fputs("Input test failed: \(error)\n", stderr); exit(1) }
+        }
+        if let index = CommandLine.arguments.firstIndex(of: "--reconnect-test") {
+            do { try runReconnectTest(arguments: Array(CommandLine.arguments.dropFirst(index + 1))); exit(0) }
+            catch { fputs("Reconnect test failed: \(error)\n", stderr); exit(1) }
         }
     }
     var body: some Scene {

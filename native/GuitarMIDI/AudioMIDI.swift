@@ -80,6 +80,20 @@ final class GuitarCapture {
     var installedTap = false
     var report: (([Int], Double, Float, Int) -> Void)?
     var failed: ((String) -> Void)?
+    var configurationChanged: (() -> Void)?
+    private var captureFormat: AVAudioFormat?
+    private var captureDevice = AudioDeviceID(0)
+
+    // Check on the main queue, after the notification callback has returned.
+    // Some route notifications arrive while the configured input is still healthy.
+    var requiresReconnect: Bool {
+        let node = engine.inputNode
+        guard engine.isRunning, let captureFormat, let unit = node.audioUnit else { return true }
+        var id = AudioDeviceID(0), size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        guard AudioUnitGetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &id, &size) == noErr,
+              id == captureDevice else { return true }
+        return !node.inputFormat(forBus: 0).isEqual(captureFormat) || !node.outputFormat(forBus: 0).isEqual(captureFormat)
+    }
 
     func start(device: AudioDeviceID, channel: Int, modelURL: URL, gate: Float, threshold: Float, timing: DetectorTiming, compute: DetectorCompute) throws {
         let detector = try GuitarDetector(url: modelURL, timing: timing, compute: compute)
@@ -105,6 +119,12 @@ final class GuitarCapture {
         // output can retain the previous device's channel count and sample rate.
         // Installing the tap with the input format also configures that output.
         let hardware = node.inputFormat(forBus: 0)
+        guard let unit = node.audioUnit else {
+            throw NSError(domain: "GuitarMIDI", code: 2, userInfo: [NSLocalizedDescriptionKey: "The audio input could not be opened."])
+        }
+        var deviceSize = UInt32(MemoryLayout<AudioDeviceID>.size)
+        try check(AudioUnitGetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &captureDevice, &deviceSize), "Verify audio input")
+        captureFormat = hardware
         guard hardware.sampleRate > 0, hardware.commonFormat == .pcmFormatFloat32, !hardware.isInterleaved,
               channel >= 0, channel < Int(hardware.channelCount),
               let mono = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: hardware.sampleRate, channels: 1, interleaved: false),
@@ -115,7 +135,7 @@ final class GuitarCapture {
         node.installTap(onBus: 0, bufferSize: 1024, format: hardware) { [weak self] buffer, _ in
             guard let self, let data = buffer.floatChannelData else { return }
             guard channel < Int(buffer.format.channelCount), buffer.format.sampleRate == hardware.sampleRate else {
-                self.failed?("Audio input format changed. Select your input and start again.")
+                self.failed?("Audio input format changed unexpectedly. Select your input and start again.")
                 return
             }
             guard self.slot.wait(timeout: .now()) == .success else {
@@ -152,7 +172,9 @@ final class GuitarCapture {
         engine.prepare()
         try engine.start()
         observer = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
-            self?.failed?("Audio device changed. Select your input and start again.")
+            // Output routing can stop this input-only graph too. The owner
+            // rebuilds it asynchronously, never on Core Audio's notification queue.
+            self?.configurationChanged?()
         }
 
     }
