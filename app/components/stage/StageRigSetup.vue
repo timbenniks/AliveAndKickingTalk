@@ -67,7 +67,7 @@ function chooseSource(id: LaneSource) {
         <span>Tuning {{ stage.guitarTuningCents.value > 0 ? '+' : '' }}{{ stage.guitarTuningCents.value }} cents</span>
         <input v-model.number="stage.guitarTuningCents.value" type="range" min="-50" max="50" step="1">
       </label>
-      <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide notes' : 'Show notes' }}</PixelButton>
+      <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide note names' : 'Show note names' }}</PixelButton>
       <p class="rig-status">Signal {{ stage.guitarInputDb.value }} dB · {{ stage.guitarInputDb.value < stage.guitarGateDb.value ? 'below gate' : 'above gate' }}</p>
       <p role="status" class="rig-status">Detected: {{ stage.guitarNotes.value || '—' }} · {{ stage.guitarDetectionMs.value }} ms per analysis</p>
       <p class="rig-status">Raise the gate until idle noise stops triggering; lower it if quiet notes disappear. Tune to A440 or adjust the tuning above.</p>
@@ -87,7 +87,7 @@ function chooseSource(id: LaneSource) {
     <p class="rig-status">Start Alive Guitar MIDI with your clean guitar input, then select its port here. Lanes follow pitch ranges, not physical strings.</p>
     <p role="status" class="rig-status">Detected: {{ stage.midiNotes.value || '—' }}</p>
     <PixelButton variant="secondary" @click="stage.midiInput.connect()">Reconnect MIDI</PixelButton>
-    <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide notes' : 'Show notes' }}</PixelButton>
+    <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide note names' : 'Show note names' }}</PixelButton>
   </template>
   <label class="rig-field">
     <span>Visual offset {{ stage.offsetMs.value }} ms</span>

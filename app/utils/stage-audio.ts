@@ -2,7 +2,7 @@ import { ref, shallowRef, watch } from 'vue';
 import { readPreference as read, writePreference as write } from './preferences.ts';
 import { GuitarPolyDetector } from '#shared/stage/guitar-poly';
 import { createMidiInput } from './midi-input.ts';
-import { guitarNoteName, guitarPitchLane } from '#shared/stage/guitar-notes';
+import { guitarNoteName, guitarPitchLane, updatePlayedNotes } from '#shared/stage/guitar-notes';
 import { frameDecay, stageClock } from '#shared/stage/clock';
 import { bandLevels, guitarLaneBins, peakLevels, risingLanes, type LaneBins } from '#shared/stage/pulses';
 import type { AnalysisState, LaneSource } from '#shared/stage/types';
@@ -21,6 +21,7 @@ export function createStageAudio() {
   const midiInput = createMidiInput((notes, attack, reset) => {
     midiNotes.value = [...new Set(notes.map(n => n.note))].sort((a, b) => a - b).map(guitarNoteName).join(' · ');
     if (laneSource.value !== 'midi') return;
+    stageClock.notes = updatePlayedNotes(stageClock.notes, notes, performance.now() / 1000, attack === undefined ? [] : [attack]);
     stageClock.lanes.fill(0);
     for (const { note, strength } of notes) {
       const lane = guitarPitchLane(note);
@@ -28,10 +29,11 @@ export function createStageAudio() {
     }
     if (attack !== undefined) {
       const lane = guitarPitchLane(attack);
-      stageClock.events.push({ lane, strength: stageClock.lanes[lane] ?? 0 });
+      const strength = Math.max(...notes.filter(n => n.note === attack).map(n => n.strength));
+      stageClock.events.push({ lane, strength, note: attack });
       if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
     }
-    if (reset) stageClock.events.length = 0;
+    if (reset) { stageClock.events.length = 0; stageClock.noteReset++; }
   });
   const guitarDevices = shallowRef<MediaDeviceInfo[]>([]);
   const guitarDeviceId = ref('');
@@ -93,6 +95,8 @@ export function createStageAudio() {
     baseline.fill(0);
     lastHit.fill(-10);
     if (laneSource.value === 'guitar') {
+      stageClock.notes = [];
+      stageClock.noteReset++;
       stageClock.lanes.fill(0);
       stageClock.events.length = 0;
     }
@@ -110,6 +114,7 @@ export function createStageAudio() {
     const started = performance.now();
     const detected = polyDetector.process(polyFreq, now, guitarGateDb.value, guitarOctaveRatio.value);
     const elapsed = performance.now() - started;
+    stageClock.notes = updatePlayedNotes(stageClock.notes, detected.notes.map(note => ({ note, strength: detected.levels[guitarPitchLane(note)] ?? 0 })), performance.now() / 1000, detected.hits.map(hit => hit.note));
     for (let lane = 0; lane < 6; lane++) stageClock.lanes[lane] = detected.levels[lane] ?? 0;
     stageClock.events.push(...detected.hits);
     if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
@@ -258,6 +263,8 @@ export function createStageAudio() {
     heardSignal = false;
     stageClock.lanes.fill(0);
     stageClock.events.length = 0;
+    stageClock.notes = [];
+    stageClock.noteReset++;
     baseline.fill(0);
     lastHit.fill(-10);
     if (source !== 'guitar') stopGuitar();
@@ -362,6 +369,8 @@ export function createStageAudio() {
     lastWall = 0;
     stageClock.playing = false;
     stageClock.pulsing = false;
+    stageClock.notes = [];
+    stageClock.noteReset++;
     stageClock.lanes.fill(0);
     stageClock.events.length = 0;
     setAnalysis('idle');

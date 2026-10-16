@@ -150,19 +150,22 @@ MG3-quality recognition. Rehearse with the actual clean DI input. An audio
 worklet, additional windows or pickup-specific models should follow a measured
 remaining failure; no new dependencies or native companion were added.
 
-## Guitar notes panel
+## Fretboard note names
 
-Selecting Polyphonic notes shows the **Guitar notes** panel at the lower left
-of the live/practise stage, above the player. All currently recognized note
-names appear together, including chords; the input status appears below.
-It stays visible with Rig closed. Close with × and restore it with **Show
-notes** in Rig or `/config`. Visibility is saved in this browser between songs.
-The panel is a normal interface feature and only appears for polyphonic guitar
-input; Spectrum does not estimate note pitches.
+The former Guitar notes side panel has been replaced by named voxel gems at the
+fretboard bases, for both Polyphonic notes and Guitar MIDI. Each attack pops a
+gem upward; the gem stays raised during the detected note and settles on release.
+Notes sharing a pitch-range lane stack so chords keep their individual names.
+Sustain trails grow while notes remain held, capped visually at 3.5 scene units.
+These are pitch ranges, not identified physical strings or fret positions.
 
-Signal level, gate status and processing duration remain in Rig for tuning the
-detector. The panel reuses the existing throttled readout and adds no analysis
-work or animation loop.
+Rig / config has **Hide note names / Show note names**, using the existing saved
+visibility preference. The gems still respond when their labels are hidden.
+Reduced motion keeps static raised notes with no launch or sustain animation.
+An off-screen live text readout retains screen-reader access; signal, gate and
+processing diagnostics stay in Rig. Spectrum mode does not invent pitch labels.
+The renderer reuses the stage loop, caching at most one gem and pixel label per
+supported pitch. No new audio analysis or rendering loop was added.
 
 ## Quiet-input correction
 

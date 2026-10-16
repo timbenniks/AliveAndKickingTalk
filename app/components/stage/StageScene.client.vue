@@ -32,6 +32,7 @@ defineProps<{
   // Live screen only: the voters who form the mosh pit, and the crowd meter.
   crowd?: Fan[]
   meter?: boolean
+  showNotes?: boolean
 }>()
 
 const emit = defineEmits<{ error: [] }>()
@@ -51,7 +52,7 @@ const emit = defineEmits<{ error: [] }>()
     <StageBeams :solo="solo" :primary="theme.primary" :secondary="theme.secondary" :rich="rich" />
     <StageEnvironment />
     <StageSides :effect="effect" :primary="theme.primary" :secondary="theme.secondary" />
-    <NoteHighway :reset-key="resetKey" :gems="gems" />
+    <NoteHighway :reset-key="resetKey" :gems="gems" :show-notes="showNotes" />
     <ChapterGates :marks="marks" />
     <StageParticles :primary="theme.primary" :particles="theme.particles" />
     <StageMoments />

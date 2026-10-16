@@ -21,17 +21,22 @@ import {
   PlaneGeometry,
   Points,
   PointsMaterial,
+  Sprite,
+  SpriteMaterial,
   Vector3,
 } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { BOARD_TILT, frameDecay, HIGHWAY_SPEED, LANE_COLORS, LANE_X, NECK_LENGTH, stageClock } from '#shared/stage/clock'
 import { shadeFaces } from '#shared/stage/formShade'
+import { guitarNoteName, guitarPitchLane, noteGemPose } from '#shared/stage/guitar-notes'
+import { drawPixel } from '#shared/stage/pixelFont'
 
 // Visualizer only: pulses come from stageClock.events, fed by the song, the
 // guitar input. There are no authored notes.
 const props = defineProps<{
   resetKey: string
   gems?: string[]
+  showNotes?: boolean
 }>()
 
 function laneColor(lane: number) {
@@ -315,6 +320,45 @@ const fretGlows = LANE_X.map((x, lane) => {
   group.add(mesh)
   return mesh
 })
+
+// One cached voxel + camera-facing pixel label per pitch (at most D2–E6).
+// Several notes can share a pitch lane; stack them instead of hiding voices.
+type NoteGem = { gem: Mesh, label: Sprite, at: number, strength: number, releaseAt: number, held: boolean }
+const noteGems = new Map<number, NoteGem>()
+function noteGem(note: number) {
+  let item = noteGems.get(note)
+  if (item) return item
+  const lane = guitarPitchLane(note)
+  const canvas = document.createElement('canvas')
+  canvas.width = 80; canvas.height = 40
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.fillStyle = '#100c1c'
+    ctx.fillRect(0, 0, 80, 40)
+    const text = guitarNoteName(note)
+    drawPixel(ctx, [text], (80 - text.length * 24) / 2, 4, 4, '#f3ead6')
+  }
+  const texture = new CanvasTexture(canvas)
+  texture.magFilter = NearestFilter; texture.minFilter = NearestFilter
+  texture.generateMipmaps = false
+  const labelMaterial = new SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false, toneMapped: false })
+  const label = new Sprite(labelMaterial)
+  label.scale.set(0.48, 0.24, 1)
+  label.renderOrder = 7
+  const gem = new Mesh(gemGeo, gemMaterials[lane])
+  group.add(gem, label)
+  item = { gem, label, at: 0, strength: 0, releaseAt: 0, held: false }
+  noteGems.set(note, item)
+  return item
+}
+let noteReset = stageClock.noteReset
+function clearNoteGems() {
+  for (const item of noteGems.values()) {
+    item.held = false; item.releaseAt = -10
+    item.gem.visible = false; item.label.visible = false
+  }
+}
+
 const SPARK_COUNT = 72
 type Spark = {
   x: number
@@ -505,6 +549,53 @@ onBeforeRender(({ delta: renderDelta }) => {
   const time = stageClock.flow
   const delta = time - previous
   const continuous = delta >= 0 && delta < 0.25
+  const wall = performance.now() / 1000
+  if (noteReset !== stageClock.noteReset) {
+    noteReset = stageClock.noteReset
+    clearPulses(false)
+  }
+  // Capture short notes even when their note-off arrived before this frame.
+  for (const hit of stageClock.events) {
+    if (hit.note === undefined) continue
+    const item = noteGem(hit.note)
+    item.at = wall; item.strength = hit.strength
+    item.releaseAt = wall + 0.18
+  }
+  const held = new Set(stageClock.notes.map(note => note.note))
+  for (const note of stageClock.notes) {
+    const item = noteGem(note.note)
+    item.at = note.startedAt; item.strength = note.strength; item.held = true
+  }
+  const stacks = [0, 0, 0, 0, 0, 0]
+  const laneVoices = [0, 0, 0, 0, 0, 0]
+  for (const note of stageClock.notes) laneVoices[guitarPitchLane(note.note)]!++
+  const heldLanes = [false, false, false, false, false, false]
+  for (const [pitch, item] of [...noteGems].sort(([a], [b]) => a - b)) {
+    if (item.held && !held.has(pitch)) {
+      item.held = false
+      item.releaseAt = Math.max(wall, item.at + 0.18)
+    }
+    const fade = item.held ? 1 : stageClock.reducedMotion ? 0 : Math.max(0, Math.min(1, 1 - (wall - item.releaseAt) / 0.16))
+    item.gem.visible = fade > 0
+    item.label.visible = fade > 0 && props.showNotes !== false
+    if (!fade) continue
+    const lane = guitarPitchLane(pitch)
+    const stack = stacks[lane] ?? 0
+    stacks[lane] = stack + 1
+    heldLanes[lane] = true
+    const pose = noteGemPose(wall - item.at, item.strength, stageClock.reducedMotion)
+    const compact = laneVoices[lane]! > 1 ? 0.8 : 1
+    const y = 0.16 + pose.lift * fade + stack * 0.42
+    item.gem.position.set(LANE_X[lane]!, y, 1.15)
+    item.gem.scale.setScalar(pose.scale * 0.6 * compact * fade)
+    item.label.position.set(LANE_X[lane]!, y + 0.29 * compact, 1.15)
+    item.label.scale.set(0.48 * compact, 0.24 * compact, 1)
+    item.label.material.opacity = fade
+    if (item.held && !stageClock.reducedMotion) {
+      const length = Math.min(3.5, Math.max(0.1, wall - item.at) * 1.7)
+      placeTrail(lane, LANE_X[lane]!, 0.08, 1.15 + length / 2, 0.65, 0.65, length)
+    }
+  }
   gemSpots.length = 0
   if (stageClock.pulsing && stageClock.analysis === 'live' && continuous && !stageClock.reducedMotion) {
     for (const { lane, strength } of stageClock.events) {
@@ -557,7 +648,9 @@ onBeforeRender(({ delta: renderDelta }) => {
     const attack = stageClock.reducedMotion ? 0 : level ** 3
     const ring = mesh.material as MeshStandardMaterial
     const center = cap.material as MeshStandardMaterial
-    ring.emissiveIntensity = 0.22 + level * 0.9 + attack * 1.5
+    cap.visible = !heldLanes[lane]
+    const sustain = heldLanes[lane] ? 0.5 : 0
+    ring.emissiveIntensity = 0.22 + sustain + level * 0.9 + attack * 1.5
     center.emissive.set(laneColor(lane)).lerp(pickWhite, attack * 0.55)
     center.emissiveIntensity = 0.28 + level * 1.2 + attack * 2.4
     const scale = 1 + level * 0.08 + attack * 0.08
@@ -580,7 +673,7 @@ onBeforeRender(({ delta: renderDelta }) => {
     const glow = fretGlows[lane]
     if (glow) {
       const mat = glow.material as MeshBasicMaterial
-      mat.opacity = 0.12 + level * 0.85
+      mat.opacity = 0.12 + sustain + level * 0.85
       glow.scale.setScalar(1 + level * 0.6)
     }
   })
@@ -639,16 +732,21 @@ onBeforeRender(({ delta: renderDelta }) => {
   previous = time
 })
 
-function clearPulses() {
+function clearPulses(clearEvents = true) {
   pulses.length = 0
   flashLevel.fill(0)
-  stageClock.events.length = 0
+  if (clearEvents) stageClock.events.length = 0
   previous = stageClock.flow
+  clearNoteGems()
 }
 
-watch(() => props.resetKey, clearPulses)
+watch(() => props.resetKey, () => clearPulses())
 
 onBeforeUnmount(() => {
+  for (const { label } of noteGems.values()) {
+    label.material.map?.dispose()
+    label.material.dispose()
+  }
   gemGeo.dispose()
   ringGeo.dispose()
   capGeo.dispose()

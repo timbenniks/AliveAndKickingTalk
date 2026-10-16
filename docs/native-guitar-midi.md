@@ -221,3 +221,29 @@ Hardware validation with Scarlett still selected as macOS output:
 The test passed initial live capture with zero reconnect attempts, a harmless notification without restarting, three forced stopped-engine/notification cycles with resumed audio, duplicate-notification suppression, retained Channel 2 selection, the retry limit, manual restart after that limit, and cancellation when Stop is pressed during the reconnect delay. These tests stop the real capture engine and inject its documented notification; they do not change the user's playback device. They confirm the recovery path, not every possible physical device-switch sequence.
 
 The standalone three-second Channel 2 capture check and full model/MIDI self-test also passed. The rebuilt GUI remained **ON AIR** with Scarlett Channel 2 selected and Scarlett still the system playback output; the observed dropped-buffer count was zero at that check. This is a short capture check, not a long-duration playback or note-accuracy benchmark.
+
+
+## Notes on the fretboard and expressive data, 2026-10-16
+
+The website now displays pitch names directly above voxel gems at the six fretboard bases. Attacks spring upward, held notes stay raised with a lit base, and release eases back over 160 ms. A short note received and released between rendered frames still produces a brief 180 ms readout before that fade. A re-strike restarts the launch. Names sharing one pitch-range lane stack in a compact column; identical pitches on multiple MIDI channels merge visually but remain held until all corresponding channel voices release.
+
+Sustain trails grow from each held note's received onset, capped at 3.5 scene units for readability. This is detected note duration, not measured acoustic decay or sustain-pedal data. The named gems work over a paused backing track. Source changes, panic and disconnection clear the visual state. Reduced motion uses static raised notes; the visibility preference now controls fretboard names rather than a side panel. A screen-reader readout and Rig diagnostics remain.
+
+| Musical property | What the current native route provides | Website behavior |
+| --- | --- | --- |
+| Pitch / chords | Integer MIDI notes D2–E6, independent note-on/off | Named gems; simultaneous pitches stay visible |
+| Attack and sustain duration | Note-on, re-strike and note-off timestamps | Launch, held pose, growing trail, release |
+| Pick strength | Every native note currently has velocity 96 | Gem sizing accepts actual incoming velocity, but this companion produces equal strength |
+| Ongoing per-note loudness / decay | No per-note amplitude or pressure messages; native input meter is overall signal RMS | No claimed per-note loudness envelope |
+| String bend / vibrato | No pitch-bend messages; fine-pitch model contours are not decoded into reliable voice bends | No invented bend animation; chromatic note changes remain separate detected notes |
+| Physical string / fret | Not identified from the mixed guitar cable | Lane remains a pitch range, not a fingering diagram |
+
+The browser-only polyphonic experiment has estimated spectral strengths, which already drive its lanes; those are also not calibrated loudness measurements. The working native detector and its Fast settings were left unchanged in this visual pass.
+
+### Where expression could go next
+
+Raw audio contains overall amplitude, and the model also returns 264 fine-pitch contour probabilities. Neither is automatically a reliable per-note performance measurement. An overall RMS value must not be assigned independently to all chord voices, and activation probability must not be labeled loudness. A bend crossing a semitone must retain voice identity rather than become a new unrelated note.
+
+The next native experiment should measure onset-aligned spectral energy for velocity and a continuing per-voice envelope, then associate narrow contour peaks with tracked voices for bend estimates. Test a stationary chord alongside one bent string, slow bends, vibrato, slides and overlapping note decay. The prior Fretwire contour test showed why pooling a broad band pulls neighboring voices out of tune. Independent bends would also require separate MIDI voice channels/MPE (the current channel-1 stream cannot bend one note without bending its chord), plus browser parsing of bend range and pressure. When validated, gem size/glow could follow amplitude and a sideways offset/curved trail could follow bend cents. These are follow-up experiments, not implemented measurements.
+
+Validation for the current website change: native CoreMIDI test source into Chrome, six-note E-major names, three notes sharing one lane, varying transmitted velocities, release, label visibility, and reduced-motion display. Automated checks cover held duration, re-strikes, unison merging, polyphonic routing, disconnect/source cleanup and static reduced-motion pose. Build, typecheck, lint and the full test suite pass.

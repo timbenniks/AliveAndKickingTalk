@@ -46,7 +46,7 @@ const art = computed(() => {
 
 // Motion and quality.
 const prefersReduced = ref(false);
-const { forceReduced, lowQuality } = useRigDisplay();
+const { forceReduced, lowQuality, showGuitarNotes } = useRigDisplay();
 const webglOk = ref(false);
 const surfaceReady = ref(false);
 const baseDpr = ref(1.25);
@@ -89,6 +89,7 @@ onUnmounted(() => media?.removeEventListener("change", onMotion));
         :theme="theme"
         :effect="stageStyle.effect"
         :gems="stageStyle.gems"
+        :show-notes="showGuitarNotes"
         :dpr="dpr"
         :rich="rich"
         :solo="solo"

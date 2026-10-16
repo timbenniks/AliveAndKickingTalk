@@ -28,6 +28,13 @@ export type LaneSource = 'song' | 'guitar' | 'midi'
 export interface StagePulse {
   lane: number
   strength: number
+  note?: number
+}
+
+export interface PlayedNote {
+  note: number
+  strength: number
+  startedAt: number
 }
 
 // A voter in the mosh pit.

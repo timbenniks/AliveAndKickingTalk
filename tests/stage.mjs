@@ -127,3 +127,17 @@ assert.deepEqual(heardA, ['pyro']);
 assert.deepEqual(heardB, ['pyro', 'title']);
 
 console.log('Stage cue, theme and six-lane pulse and moment bus checks passed');
+
+// Names, held duration and restrained motion for the fretboard note display.
+const { updatePlayedNotes, noteGemPose, guitarNoteName } = await import('../shared/stage/guitar-notes.ts');
+const chord = updatePlayedNotes([], [{ note: 64, strength: 0.4 }, { note: 67, strength: 0.8 }, { note: 64, strength: 0.7 }], 1);
+assert.equal(chord.length, 2, 'unison channels merge without hiding another pitch');
+assert.equal(chord[0].strength, 0.7);
+const heldChord = updatePlayedNotes(chord, chord, 3);
+assert.equal(heldChord[0].startedAt, 1);
+assert.equal(updatePlayedNotes(chord, chord, 3, [64])[0].startedAt, 3);
+assert.deepEqual(updatePlayedNotes(chord, [], 4), []);
+assert.equal(guitarNoteName(56), 'G♯3');
+assert.ok(noteGemPose(0.1, 1, false).lift > noteGemPose(1, 1, false).lift, 'attack overshoots then settles');
+assert.ok(noteGemPose(1, 1, false).scale > noteGemPose(1, 0.2, false).scale, 'real velocity affects size');
+assert.deepEqual(noteGemPose(0.1, 1, true), noteGemPose(10, 1, true), 'reduced motion retains a steady readable note');

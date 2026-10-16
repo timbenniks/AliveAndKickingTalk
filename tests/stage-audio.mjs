@@ -211,6 +211,7 @@ for (const refreshRate of [30, 60, 120, 144]) {
   for (let frame = 0; frame < refreshRate; frame++) { advance(1000 / refreshRate); }
   assert.ok(polyReads - before >= 59 && polyReads - before <= 61, '60 Hz analysis is independent of display refresh');
   assert.equal(stageClock.events.length, 6, 'six chord voices produce six attacks');
+assert.deepEqual(stageClock.notes.map(n => n.note), [40, 47, 52, 56, 59, 64]);
   assert.deepEqual(stageClock.events.map(hit => hit.lane).toSorted(), [0, 1, 2, 3, 4, 5]);
   assert.ok(stageClock.lanes.every(level => level > 0));
   assert.match(audio.guitarNotes.value, /E2/);
@@ -269,6 +270,7 @@ assert.equal(guitarAnalyser.smoothingTimeConstant, 0.3);
 assert.equal(timers.size, 0, 'spectrum mode stops note analysis');
 assert.ok(stageClock.lanes.every(level => level === 0));
 assert.equal(stageClock.events.length, 0, 'mode changes clear queued attacks');
+assert.deepEqual(stageClock.notes, [], 'spectrum mode must not invent note names');
 
 // Two mounted consumers share one stream; releasing one must leave it running.
 audio.acquire();
@@ -308,15 +310,27 @@ await new Promise(resolve => setImmediate(resolve));
 function midiMessage(data) { const event = new Event('midimessage'); event.data = new Uint8Array(data); midiPort.dispatchEvent(event); }
 for (const note of [40, 47, 52, 56, 59, 64]) midiMessage([0x90, note, 96]);
 assert.equal(nativeAudio.midiNotes.value, 'E2 · B2 · E3 · G♯3 · B3 · E4');
+assert.deepEqual(stageClock.notes.map(n => n.note), [40, 47, 52, 56, 59, 64], 'actual held pitches reach the fretboard');
+const firstAttack = stageClock.notes[0].startedAt;
 assert.deepEqual(stageClock.events.map(hit => hit.lane), [0, 1, 2, 3, 4, 5]);
 const flowBefore = stageClock.flow;
 advance(20); advance(20);
 assert.equal(stageClock.pulsing, true);
 assert.ok(stageClock.flow > flowBefore);
 assert.equal(stageClock.playing, false, 'MIDI does not start the backing track');
-assert.ok(stageClock.lanes.every(level => level === 96 / 127), 'held notes survive animation frames');
+assert.equal(stageClock.notes[0].startedAt, firstAttack, 'held duration survives animation ticks');
+midiMessage([0x90, 40, 110]);
+assert.ok(stageClock.notes[0].startedAt > firstAttack, 'restrikes restart the pop animation');
+assert.equal(stageClock.notes[0].strength, 110 / 127, 'velocity reaches the gem without pretending it is an envelope');
+stageClock.events.shift();
+assert.ok(stageClock.lanes.slice(1).every(level => level === 96 / 127), 'held notes survive animation frames');
 midiMessage([0x80, 40, 0]);
 assert.equal(stageClock.lanes[0], 0);
+assert.ok(!stageClock.notes.some(n => n.note === 40), 'note-off ends the raised note');
+midiMessage([0x90, 67, 70]); midiMessage([0x90, 71, 80]);
+assert.deepEqual(stageClock.notes.filter(n => n.note >= 64).map(n => n.note), [64, 67, 71], 'three notes in one lane retain three labels');
+midiMessage([0x80, 67, 0]); midiMessage([0x80, 71, 0]);
+stageClock.events.splice(-2);
 assert.equal(stageClock.events.length, 6, 'short note-off must not erase an undrawn attack');
 for (let i = 0; i < 100; i++) midiMessage([0x90, 45, 96]);
 assert.equal(stageClock.events.length, 64);
@@ -324,6 +338,7 @@ midiPort.state = 'disconnected'; midiAccess.dispatchEvent(new Event('statechange
 advance(20);
 assert.equal(stageClock.analysis, 'idle');
 assert.equal(stageClock.pulsing, false);
+assert.deepEqual(stageClock.notes, [], 'disconnection clears all fretboard notes');
 assert.equal(stageClock.events.length, 0);
 assert.ok(stageClock.lanes.every(level => level === 0));
 nativeAudio.setLaneSource('song');

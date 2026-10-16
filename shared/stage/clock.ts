@@ -1,4 +1,4 @@
-import type { AnalysisState, Fan, StagePulse } from './types.ts'
+import type { AnalysisState, Fan, PlayedNote, StagePulse } from './types.ts'
 
 // Length of the song-intro crane shot, in seconds.
 export const INTRO_SECONDS = 6
@@ -48,6 +48,9 @@ export const stageClock = {
   meterMode: 'power' as 'power' | 'encore',
   // Lane hits from whichever source feeds the lanes. The highway drains this every frame.
   events: [] as StagePulse[],
+  // Actual held pitches, independent of the song clock and of lane aggregation.
+  notes: [] as PlayedNote[],
+  noteReset: 0,
   // New votes waiting to drop into the mosh pit. The crowd drains this.
   arrivals: [] as Fan[],
 }

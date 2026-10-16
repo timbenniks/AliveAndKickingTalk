@@ -2,7 +2,7 @@ import { guitarPitchLane } from './guitar-notes.ts';
 
 type Peak = { bin: number; amplitude: number };
 type Atom = { note: number; bins: number[]; weights: number[]; norm: number };
-export type GuitarDetection = { inputDb: number; notes: number[]; levels: number[]; hits: Array<{ lane: number; strength: number }> };
+export type GuitarDetection = { inputDb: number; notes: number[]; levels: number[]; hits: Array<{ lane: number; strength: number; note: number }> };
 const FIRST_NOTE = 38; // D2 through E6, including drop D.
 const LAST_NOTE = 88;
 
@@ -248,7 +248,7 @@ export class GuitarPolyDetector {
       const strength = this.velocity(strengths[note]!, gateDb);
       result.notes.push(pitch);
       result.levels[lane] = Math.max(result.levels[lane]!, strength);
-      if (attacks.has(note)) result.hits.push({ lane, strength });
+      if (attacks.has(note)) result.hits.push({ lane, strength, note: pitch });
     }
     return result;
   }
