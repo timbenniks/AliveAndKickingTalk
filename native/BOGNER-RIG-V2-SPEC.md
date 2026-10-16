@@ -124,6 +124,89 @@ Avoid path traversal, symlink escapes, and path ambiguity. Keep imported license
 
 Incrementally extend C ABI (`RigAudio.h`) with stable structs or versioned functions for cab and EQ. Do not break running references or use Swift-owned buffers across asynchronous loads. Keep all ownership unambiguous and tear down loader/audio threads before destroying the DSP engine.
 
+
+## NAM reference implementation alignment (P0 before live release)
+
+Reference material to inspect against the **exact pinned NeuralAmpModelerCore commit**, not just latest online docs:
+
+- https://www.neuralampmodeler.com/builders
+- https://github.com/sdatkinson/NeuralAmpModelerPlugin
+- https://github.com/sdatkinson/NeuralAmpModelerCore
+- https://neuralampmodelercore.readthedocs.io/en/latest/api/dsp.html
+
+The observations below are code-review findings, **not yet confirmed runtime defects**. Re-check plugin source and model metadata behavior at implementation time. Do not blindly copy plugin logic without reconciling the exact API and calibration units.
+
+### NAM-1: optional calibrated input gain
+
+Current native code applies a user-set input dB value before NAM but does not consult capture input-level metadata. Compare with the official plugin's input calibration behavior and implement an **opt-in** calibrated mode:
+
+- Explicit modes: `manual` (legacy default) and `calibrated` (enabled only when model metadata and an actual interface calibration value are available).
+- Determine and document capture input-level metadata semantics, units and any offsets from the official plugin and pinned core source, especially `HasInputLevel()` / `GetInputLevel()` where available.
+- Set Scarlett/interface calibration as a user-provided measured/reference value **in the expected units**; do not manufacture a fixed dBu number or confuse digital dBFS with analog dBu.
+- Apply the correct difference as an additional **pre-NAM** gain with smooth transitions; display model level, interface reference, calculated correction and clipping/headroom warnings.
+- Missing/invalid capture metadata or unconfigured interface calibration: fall back to manual with an explicit UI explanation. Preserve legacy presets' exact input behavior by default.
+- Test calibrated vs manual using controlled sine/DI recordings and verify the capture's distortion/saturation responds consistently with the official plugin.
+
+### NAM-2: selectable output level modes
+
+Current `RigAudio.cpp` uses `HasLoudness()` to force a custom approximate **-24 dB target**, with clamped correction. This is not a universal required NAM normalization rule.
+
+- Implement selectable `legacy` (preserve old preset sound), `raw`, and `normalized` output modes. Investigate and optionally support a `calibrated` mode if metadata and reference semantics are verified.
+- Compare actual NAM reference-plugin normalization target and loudness units from its **current source**; earlier review suggested **-18 dB**, but treat that as a hypothesis to verify, not a blindly hard-coded invariant.
+- Normalize only where appropriate metadata is present. If absent, show a clear fallback. Prevent unexpected loudness boosts and overshoot.
+- Separate capture loudness normalization from user output gain and solo level lift. Final limiter remains in place; never treat limiter activity as a substitute for matching preset levels.
+- Add per-preset gain/peak/RMS tests at fixed DI input and an automated report of relative output levels. Verify 2-3 dB solo lift is applied **after** capture processing without added distortion.
+
+### NAM-3: model sample rates and channel compatibility
+
+Hardware remains fixed at 48 kHz. The native loader currently rejects models with `GetExpectedSampleRate() != 48000` and any model not 1-in/1-out.
+
+- Inspect `SupportsArbitrarySampleRate()` in the **pinned** core API and actual official plugin usage.
+- Allow compatible models to run at 48 kHz if the model explicitly supports arbitrary processing rates; otherwise evaluate an audio-rate adapter/resampler around NAM off the real-time setup path. Keep deterministic CPU and latency.
+- Do **not** change the sample-rate declared in a .nam file to claim compatibility. No sample-rate magic.
+- Keep explicit mono restrictions until multichannel behavior is consciously supported. Report architecture, expected rate, input/output channels and validation failures during import.
+- Stage release can intentionally remain 48 kHz-only if BOG XT actual files pass, but that is a documented restriction, not an assumed incompatibility of the Scarlett.
+
+### NAM-4: stricter callback and thread-safety audit
+
+- `audio.setSize(2, n, false, false, true)` is currently executed per callback. Replace or verify capacity guarantees and introduce no-allocation assertions/instrumentation in tests. Avoid reallocations even during device buffer-size changes.
+- Audit `effects.set()`, `room.setParameters()`, filter coefficient changes, smoothers, crossfade and `current->dsp->process()` for bounded runtime, heap use and data races. Prepare heavyweight changes off-thread, publish immutable/prepared state, and retire old state outside the callback.
+- Preserve the generation guard and 1440-sample crossfade while ensuring amp+cab+EQ transitions are coherent, no intermediate naked DI amp reaches the PA, and no freed DSP/IR is touched by the audio thread.
+- Quantify rather than assume performance: mean, p95/p99 and worst callback duration under 64/128/256 sample buffers; record xruns, memory allocations, CPU and latency. At 48 kHz the nominal 128-frame callback budget is 2.67 ms, **not** total round-trip latency.
+- Test rapid program changes, failed downloads/imports, missing/corrupt models, failed cabinet IR load, muted/unmuted swaps and device restarts.
+
+### NAM-5: noise, gating and signal-level diagnostics
+
+- Verify model behavior with zero-valued input: some amp models generate residual noise even with silent DI. Differentiate genuine input noise, capture/model noise, normalization-induced gain and effect noise using stage meters.
+- Current gate envelope is applied before and after NAM; test whether double application shortens sustain and causes pumping. Do not reflexively add another compressor or postamp gate.
+- Compare dry DI, post input-gain/gate, post NAM, post cabinet, post EQ and post effects with the same DI recording and levels. Measure idle noise, note tails and peak/RMS values.
+- Expose metering at UI-safe cadence without locks or allocations on the realtime thread.
+- Document testable instrument gain setup for Scarlett Solo, including Instrument/Hi-Z mode, clipping indicator and level calibration process. The physical interface supports 48 kHz; **NAM file compatibility is a separate question**.
+
+### Bogner BOG XT acceptance rehearsal (P0)
+
+Use actual purchased/downloaded BOG XT NAM files and included IRs. Never commit licensed captures or cabinet IRs to Git.
+
+1. Inspect 3 representative captures (clean, crunch, aggressive) for architecture, expected sample rate, channels, input calibration metadata and loudness metadata; save a **text-only metadata report**, not model assets.
+2. Run each through pinned NAM core offline. If a model fails, record its precise error and whether the same file works in the current official NAM plugin; distinguish core version mismatch from bad/corrupt assets.
+3. A/B the same capture + IR with official NAM plugin at matched DI/interface input, input calibration, IR and output normalization settings. Match playback loudness before judging tonality or noise.
+4. Evaluate riff articulation, palm-muted low-end, decay, sustained lead notes, switching click/noise, clipping and noise between songs. Test actual program changes triggered by show chapters.
+5. Run an entire simulated set with backing track and capture changes, at 48 kHz and 128 frames; also test 64 and 256. Verify expected callback timing and audible round-trip latency in the real Scarlett setup.
+6. Create at most six stage presets with explicit gain matching and custom post-cab EQ. Prefer one Bogner family for the performance; retain Fender only as a recoverable legacy bank.
+7. If file metadata differs or the pack is incompatible, stop before rewriting the loader and document the specific compatibility plan.
+
+### Updated implementation order
+
+1. Baseline/compare pinned core with official plugin; add metadata inspector and controlled offline render tests.
+2. Implement optional calibrated input gain and output-level modes **with legacy defaults**; verify with test DI.
+3. Implement cabinet convolution as a safe part of preset loading and tests.
+4. Add post-cab EQ with smooth parameter update and tone rack UI.
+5. Add instrument/model noise diagnostics and tune existing gate based on measurements.
+6. Import and validate real Bogner assets; build and level-match the MIDI stage bank.
+7. Run complete onstage stability, note-detector isolation, latency and regression tests.
+
+**Out of scope:** an extra compressor or pre-amp boost. Existing safety limiter is not a creative compressor.
+
 ## Implementation sequence for the coding agent
 
 1. Add tests and baseline: offline `rig_render` regression with known model, note detector routing, MIDI Program Change, model changes and CPU/callback timing. Record current output and fault behavior.
@@ -160,4 +243,4 @@ Incrementally extend C ABI (`RigAudio.h`) with stable structs or versioned funct
 
 ## Suggested next-day agent prompt
 
-Implement this spec incrementally, starting with cabinet IR convolution and backward-compatible preset model. Read native/RigAudio and native/GuitarMIDI first; preserve realtime safety and notes-to-MIDI. Add tests per phase, run them, and keep purchased BOG XT assets local. Do not implement a preamp boost. Do not delete legacy Fender presets. Work in small commits and report any actual model file incompatibility instead of guessing.
+Implement this spec incrementally, first auditing pinned NAM Core vs the official plugin and implementing metadata-aware calibration with legacy-compatible defaults, then cabinet convolution and post-cabinet EQ. Read native/RigAudio and native/GuitarMIDI first; preserve realtime safety and notes-to-MIDI. Add tests per phase, run them, and keep purchased BOG XT assets local. Do not implement a preamp boost. Do not delete legacy Fender presets. Work in small commits and report any actual model file incompatibility instead of guessing.
