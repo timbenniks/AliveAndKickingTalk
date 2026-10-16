@@ -251,3 +251,5 @@ Validation for the current website change: native CoreMIDI test source into Chro
 ## Dock icon, 2026-10-16
 
 The companion now has a gold pixel guitar icon on a purple rounded tile, with all six fret colors. The bundled ICNS provides standard and Retina sizes and is declared in the generated Info.plist, so subsequent builds keep the icon. Original editable AppKit artwork and regeneration commands live under `native/GuitarMIDI/Artwork/` and `Resources/README.md`. This changes only the app's appearance in macOS; audio and MIDI behavior are unchanged.
+
+macOS retained the generic Dock icon after the first bundle update. The main window now explicitly loads the bundled ICNS into `NSApplication.applicationIconImage` when it appears, refreshing the running app's icon without restarting the Dock. The bundle metadata also names the full `AppIcon.icns` filename.

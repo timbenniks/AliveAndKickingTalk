@@ -290,7 +290,15 @@ struct GuitarMIDIApp: App {
         }
     }
     var body: some Scene {
-        Window("Alive Guitar MIDI", id: "main") { GuitarView() }
+        Window("Alive Guitar MIDI", id: "main") {
+            GuitarView().onAppear {
+                // Refresh the running Dock icon even when macOS cached an older local build.
+                if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+                   let icon = NSImage(contentsOf: url) {
+                    NSApplication.shared.applicationIconImage = icon
+                }
+            }
+        }
             .windowResizability(.contentSize)
     }
 }
