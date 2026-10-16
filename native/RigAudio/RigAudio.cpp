@@ -3,6 +3,7 @@
 #include "dsp/NoiseGate.h"
 #include "dsp/SpringReverb.h"
 #include "dsp/SafetyLimiter.h"
+#include "dsp/RigEffects.h"
 #include "util/AudioMath.h"
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <NAM/get_dsp.h>
@@ -20,13 +21,17 @@ struct Model {
     std::unique_ptr<nam::DSP> dsp;
     uint64_t generation;
     float match = 1, inputDB, outputDB, gateDB, reverb;
+    RigEffectsParameters effects = RigEffects::defaults();
 };
+
+struct EffectsChange { uint64_t generation; RigEffectsParameters settings; };
 
 struct Rig final : juce::AudioIODeviceCallback {
     juce::AudioDeviceManager devices;
     std::array<float, ringSize> ring {};
     std::atomic<uint64_t> write {0}, read {0}, drops {0}, wanted {0}, active {0}, callbacks {0};
     std::atomic<Model*> pending {nullptr}, retired {nullptr};
+    std::atomic<EffectsChange*> pendingEffects {nullptr}, retiredEffects {nullptr};
     Model* current = nullptr;
     Model* fading = nullptr;
     int fade = fadeSamples;
@@ -40,17 +45,20 @@ struct Rig final : juce::AudioIODeviceCallback {
     timsamp::NoiseGate gate;
     timsamp::SpringReverbProcessor spring;
     timsamp::SafetyLimiter limiter;
+    RigEffects effects;
     juce::SmoothedValue<float> inputGain, outputGain;
 
     Rig() {
         dc.prepare(rate); gate.prepare(rate); gate.setEnabled(true); gate.setReleaseMs(100);
         spring.prepare({rate, maxBlock, 2}); limiter.prepare(rate); limiter.setCeilingDb(-1);
+        effects.prepare(rate, maxBlock);
         inputGain.reset(rate, 0.02); outputGain.reset(rate, 0.02);
         inputGain.setCurrentAndTargetValue(1); outputGain.setCurrentAndTargetValue(0);
     }
     ~Rig() {
         devices.removeAudioCallback(this); devices.closeAudioDevice();
         delete pending.exchange(nullptr); delete retired.exchange(nullptr);
+        delete pendingEffects.exchange(nullptr); delete retiredEffects.exchange(nullptr);
         delete current; delete fading;
     }
     void audioDeviceAboutToStart(juce::AudioIODevice* device) override {
@@ -66,6 +74,7 @@ struct Rig final : juce::AudioIODeviceCallback {
         render(in[0], outs > 0 ? out[0] : nullptr, outs > 1 ? out[1] : nullptr, n);
     }
     void render(const float* in, float* left, float* right, int n) noexcept {
+        juce::ScopedNoDenormals noDenormals;
         if (n <= 0 || n > maxBlock) return;
         const auto begin = std::chrono::steady_clock::now();
         callbacks.fetch_add(1, std::memory_order_relaxed);
@@ -83,6 +92,7 @@ struct Rig final : juce::AudioIODeviceCallback {
                     fading = current; current = next; fade = 0;
                     inputDB.store(next->inputDB); outputDB.store(next->outputDB);
                     gateDB.store(next->gateDB); reverb.store(next->reverb);
+                    effects.set(next->effects);
                     active.store(next->generation);
                 }
             }
@@ -92,6 +102,12 @@ struct Rig final : juce::AudioIODeviceCallback {
             if (left) std::fill_n(left, n, 0);
             if (right) std::fill_n(right, n, 0);
             return;
+        }
+        if (!retiredEffects.load(std::memory_order_acquire)) {
+            if (auto* change = pendingEffects.exchange(nullptr, std::memory_order_acq_rel)) {
+                if (change->generation == current->generation) effects.set(change->settings);
+                retiredEffects.store(change, std::memory_order_release);
+            }
         }
         audio.setSize(2, n, false, false, true);
         auto* mono = audio.getWritePointer(0);
@@ -124,6 +140,7 @@ struct Rig final : juce::AudioIODeviceCallback {
         if (fading && fade == fadeSamples) { retired.store(fading, std::memory_order_release); fading = nullptr; }
         audio.copyFrom(1, 0, audio, 0, 0, n);
         spring.setAmount(reverb.load()); spring.process(audio);
+        effects.process(audio);
         outputGain.setTargetValue(muted.load() ? 0 : timsamp::math::dbToGain(outputDB.load()));
         for (int i = 0; i < n; ++i) {
             const auto gain = outputGain.getNextValue();
@@ -165,9 +182,14 @@ int rig_start(void* p, const char* input, const char* output, int channel, int b
 }
 void rig_request(void* p, uint64_t generation) { static_cast<Rig*>(p)->wanted.store(generation); }
 int rig_load(void* p, const char* path, uint64_t generation, float input, float output, float gate, float reverb, char* error, int cap) {
+    const auto effects = RigEffects::defaults();
+    return rig_load_with_effects(p, path, generation, input, output, gate, reverb, &effects, error, cap);
+}
+int rig_load_with_effects(void* p, const char* path, uint64_t generation, float input, float output, float gate, float reverb, const RigEffectsParameters* effects, char* error, int cap) {
     auto& r = *static_cast<Rig*>(p);
     try {
         auto m = std::make_unique<Model>();
+        m->effects = RigEffects::sanitize(effects ? *effects : RigEffects::defaults());
         nam::DspLoadOptions options; options.prewarm = false;
         m->dsp = nam::get_dsp(std::filesystem::path(path), options);
         if (!m->dsp || m->dsp->GetExpectedSampleRate() != rate) throw std::runtime_error("Choose a 48 kHz NAM model.");
@@ -189,6 +211,13 @@ void rig_controls(void* p, float input, float output, float gate, float reverb, 
     r.gateDB.store(std::clamp(gate, -85.0f, -30.0f)); r.reverb.store(std::clamp(reverb, 0.0f, 10.0f)); r.muted.store(muted != 0);
 }
 void rig_mute(void* p, int muted) { static_cast<Rig*>(p)->muted.store(muted != 0); }
+void rig_effects_controls(void* p, const RigEffectsParameters* settings) {
+    auto& r = *static_cast<Rig*>(p);
+    // Allocate on the control thread; the detector worker destroys consumed commands.
+    // Rapid edits replace only snapshots the audio thread has not taken.
+    auto* change = new EffectsChange {r.active.load(), RigEffects::sanitize(settings ? *settings : RigEffects::defaults())};
+    delete r.pendingEffects.exchange(change, std::memory_order_acq_rel);
+}
 int rig_read(void* p, float* data, int capacity) {
     auto& r = *static_cast<Rig*>(p);
     const auto pos = r.read.load(std::memory_order_relaxed), w = r.write.load(std::memory_order_acquire);
@@ -197,7 +226,11 @@ int rig_read(void* p, float* data, int capacity) {
     r.read.store(pos + n, std::memory_order_release);
     return n;
 }
-void rig_collect(void* p) { delete static_cast<Rig*>(p)->retired.exchange(nullptr, std::memory_order_acq_rel); }
+void rig_collect(void* p) {
+    auto& r = *static_cast<Rig*>(p);
+    delete r.retired.exchange(nullptr, std::memory_order_acq_rel);
+    delete r.retiredEffects.exchange(nullptr, std::memory_order_acq_rel);
+}
 uint64_t rig_dropped(void* p) { return static_cast<Rig*>(p)->drops.load(); }
 uint64_t rig_active_generation(void* p) { return static_cast<Rig*>(p)->active.load(); }
 uint64_t rig_callbacks(void* p) { return static_cast<Rig*>(p)->callbacks.load(); }

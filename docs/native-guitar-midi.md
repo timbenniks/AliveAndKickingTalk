@@ -1,5 +1,7 @@
 # Standalone guitar-to-MIDI experiment
 
+The standalone app was retired on 2026-10-16. Use [Alive Rig Preview](alive-rig-preview.md), built with `bash native/GuitarMIDI/build.sh`; **Turn rig off** provides the notes-only Neural DSP fallback. The material below records the original app's implementation and validation. Its old build/launch commands are historical; the known-good app and source are backed up as described in the current guide.
+
 Built on branch `turbo-tim/native-guitar-midi`, based on the browser detector branch. This adds a macOS companion and a MIDI note input to the website. The existing browser detector remains selectable under **Guitar**. The native route is **Guitar MIDI**.
 
 ## What it uses

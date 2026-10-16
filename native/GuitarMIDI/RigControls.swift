@@ -51,7 +51,7 @@ struct RigAudioSetup: View {
 }
 
 // A drawn dial with native keyboard focus and VoiceOver adjustment. Drag vertically
-// for a full sweep over 240 points; arrow keys adjust by half a unit.
+// for a full sweep over 240 points; arrow keys use the control's step size.
 struct RigDial: View {
     let title: String
     let label: String
@@ -59,17 +59,22 @@ struct RigDial: View {
     let range: ClosedRange<Double>
     var suffix = " dB"
     var emphasized = false
+    var tint: Color? = nil
+    var diameter: CGFloat = 68
+    var step: Double = 0.5
+    var wholeNumbers = false
     @State private var dragStart: Double?
     @FocusState private var focused: Bool
     @Environment(\.isEnabled) private var enabled
     private var fraction: Double { (value - range.lowerBound) / (range.upperBound - range.lowerBound) }
-    private var accent: Color { emphasized ? RigStyle.gold : RigStyle.bone }
-    private func set(_ next: Double) { value = min(range.upperBound, max(range.lowerBound, (next * 2).rounded() / 2)) }
+    private var accent: Color { tint ?? (emphasized ? RigStyle.gold : RigStyle.bone) }
+    private var readout: String { (wholeNumbers ? String(Int(value.rounded())) : String(format: "%.1f", value)) + suffix }
+    private func set(_ next: Double) { value = min(range.upperBound, max(range.lowerBound, (next / step).rounded() * step)) }
     var body: some View {
         VStack(spacing: 3) {
-            Text(title).font(RigStyle.caps(10)).foregroundStyle(accent)
+            Text(title).font(RigStyle.caps(diameter < 68 ? 8 : 10)).foregroundStyle(accent).lineLimit(1)
             Canvas { context, _ in
-                context.scaleBy(x: 0.85, y: 0.85)
+                context.scaleBy(x: diameter / 80, y: diameter / 80)
                 for tick in 0...12 {
                     let angle = (-225 + Double(tick) * 22.5) * .pi / 180
                     let x = (40 + cos(angle) * 35).rounded(), y = (40 + sin(angle) * 35).rounded()
@@ -84,8 +89,8 @@ struct RigDial: View {
                 pointer.move(to: CGPoint(x: 40 + cos(angle) * 12, y: 40 + sin(angle) * 12))
                 pointer.addLine(to: CGPoint(x: 40 + cos(angle) * 24, y: 40 + sin(angle) * 24))
                 context.stroke(pointer, with: .color(accent), style: StrokeStyle(lineWidth: 4, lineCap: .square))
-            }.frame(width: 68, height: 68).contentShape(Rectangle())
-            Text("\(value, specifier: "%.1f")\(suffix)").font(RigStyle.body(17)).monospacedDigit().foregroundStyle(accent)
+            }.frame(width: diameter, height: diameter).contentShape(Rectangle())
+            Text(readout).font(RigStyle.body(diameter < 68 ? 14 : 17)).monospacedDigit().foregroundStyle(accent).lineLimit(1)
         }.frame(maxWidth: .infinity).opacity(enabled ? 1 : 0.45)
             .contentShape(Rectangle()).focusable().focused($focused).focusEffectDisabled()
             .gesture(DragGesture(minimumDistance: 1).onChanged { event in
@@ -94,18 +99,18 @@ struct RigDial: View {
                 if dragStart == nil { dragStart = value }
                 set((dragStart ?? value) - Double(event.translation.height) * (range.upperBound - range.lowerBound) / 240)
             }.onEnded { _ in dragStart = nil })
-            .onKeyPress(.upArrow) { guard enabled else { return .ignored }; set(value + 0.5); return .handled }
-            .onKeyPress(.rightArrow) { guard enabled else { return .ignored }; set(value + 0.5); return .handled }
-            .onKeyPress(.downArrow) { guard enabled else { return .ignored }; set(value - 0.5); return .handled }
-            .onKeyPress(.leftArrow) { guard enabled else { return .ignored }; set(value - 0.5); return .handled }
+            .onKeyPress(.upArrow) { guard enabled else { return .ignored }; set(value + step); return .handled }
+            .onKeyPress(.rightArrow) { guard enabled else { return .ignored }; set(value + step); return .handled }
+            .onKeyPress(.downArrow) { guard enabled else { return .ignored }; set(value - step); return .handled }
+            .onKeyPress(.leftArrow) { guard enabled else { return .ignored }; set(value - step); return .handled }
             .accessibilityElement(children: .ignore).accessibilityLabel(label)
-            .accessibilityValue("\(value, specifier: "%.1f")\(suffix)")
+            .accessibilityValue(readout)
             .accessibilityAdjustableAction { direction in
                 guard enabled else { return }
-                if direction == .increment { set(value + 0.5) }
-                if direction == .decrement { set(value - 0.5) }
+                if direction == .increment { set(value + step) }
+                if direction == .decrement { set(value - step) }
             }
-            .help("\(label): drag up or down, or use arrow keys for 0.5 steps.")
+            .help("\(label): drag up or down, or use arrow keys for \(step.formatted()) steps.")
     }
 }
 
@@ -129,7 +134,7 @@ struct RigAmpControls: View {
         let index = selectedIndex + delta
         if state.presets.indices.contains(index) { state.selectPreset(state.presets[index].id) }
     }
-    private var soundSelector: some View {
+    var soundSelector: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 RigCaption(text: "SAVED SOUND")
@@ -151,41 +156,66 @@ struct RigAmpControls: View {
                     .accessibilityLabel("Saved sound").accessibilityValue(state.draft.name)
                 Button { stepPreset(1) } label: { Text("›").font(RigStyle.pixel(32)) }
                     .buttonStyle(.plain).disabled(selectedIndex >= state.presets.count - 1).accessibilityLabel("Next saved sound")
+                Button("SAVE") { state.save(asNew: false) }
+                    .buttonStyle(.plain).font(RigStyle.caps(10)).padding(10)
+                    .background(RigStyle.night).foregroundStyle(RigStyle.gold)
+                    .overlay(Rectangle().stroke(RigStyle.gold.opacity(0.5), lineWidth: 1))
+                    .disabled(!state.dirty || !state.storeReadable || state.loading)
+                    .accessibilityLabel("Save current preset")
             }
         }.padding(.horizontal, 14).padding(.vertical, 8).background(RigStyle.tolex)
             .overlay(alignment: .bottom) { Rectangle().fill(RigStyle.gold).frame(height: 2) }
+    }
+    private var ampFace: some View {
+        VStack(spacing: 6) {
+            ZStack {
+                AmpGrille()
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("BENNIKS").font(RigStyle.pixel(36)).foregroundStyle(RigStyle.bone)
+                        Text("DELUXE REVERB").font(RigStyle.caps(9)).foregroundStyle(RigStyle.gold)
+                    }.padding(.horizontal, 14).padding(.vertical, 6).background(RigStyle.tolex)
+                        .overlay(Rectangle().stroke(RigStyle.gold, lineWidth: 1))
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 5) {
+                        Rectangle().fill(state.running && !state.muted ? RigStyle.frets[0] : RigStyle.dust).frame(width: 8, height: 8)
+                        Text(state.muted ? "MUTED" : state.running ? "LIVE" : "STANDBY").font(RigStyle.caps(9))
+                    }.padding(8).background(RigStyle.night)
+                }.padding(.horizontal, 14)
+            }.frame(height: 64)
+            Picker("Amp and cabinet capture", selection: $state.draft.modelFile) {
+                ForEach(state.captures) { Text("\($0.category) / \($0.displayName)").tag($0.modelFile) }
+            }.labelsHidden().disabled(state.loading)
+                .onChange(of: state.draft.modelFile) { _, _ in if state.running && !state.loading { state.loadSound() } }
+                .help("Amp and cabinet capture")
+        }
+    }
+    private var ampDials: some View {
+        HStack(spacing: 4) {
+            RigDial(title: "INPUT", label: "Input gain", value: $state.draft.input, range: -24...24, diameter: 56)
+            RigDial(title: "GATE", label: "Amp gate", value: $state.draft.gate, range: -85 ... -30, diameter: 56)
+            RigDial(title: "OUTPUT", label: "Output level", value: $state.draft.output, range: -60...6, emphasized: true, diameter: 56)
+        }.padding(.vertical, 6).padding(.horizontal, 8).background(RigStyle.raised).disabled(state.loading)
+            .onChange(of: state.draft.input) { _, _ in state.updateControls() }
+            .onChange(of: state.draft.gate) { _, _ in state.updateControls() }
+            .onChange(of: state.draft.output) { _, _ in state.updateControls() }
     }
     private var cabinet: some View {
         VStack(spacing: 0) {
             // Handle and feet use the same square construction as the note stage.
             Rectangle().stroke(RigStyle.dust, lineWidth: 3).frame(width: 94, height: 9).padding(.top, 3)
             VStack(spacing: 0) {
-                ZStack {
-                    AmpGrille()
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("BENNIKS").font(RigStyle.pixel(36)).foregroundStyle(RigStyle.bone)
-                            Text("DELUXE REVERB").font(RigStyle.caps(9)).foregroundStyle(RigStyle.gold)
-                        }.padding(.horizontal, 14).padding(.vertical, 6).background(RigStyle.tolex)
-                            .overlay(Rectangle().stroke(RigStyle.gold, lineWidth: 1))
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 5) {
-                            Rectangle().fill(state.running && !state.muted ? RigStyle.frets[0] : RigStyle.dust).frame(width: 8, height: 8)
-                            Text(state.muted ? "MUTED" : state.running ? "LIVE" : "STANDBY").font(RigStyle.caps(9))
-                        }.padding(8).background(RigStyle.night)
-                    }.padding(.horizontal, 14)
-                }.frame(height: 64)
-                Rectangle().fill(RigStyle.gold).frame(height: 3)
-                HStack(spacing: 4) {
-                    RigDial(title: "INPUT", label: "Input gain", value: $state.draft.input, range: -24...24)
-                    RigDial(title: "GATE", label: "Amp gate", value: $state.draft.gate, range: -85 ... -30)
-                    RigDial(title: "SPRING", label: "Spring reverb", value: $state.draft.reverb, range: 0...10, suffix: "")
-                    RigDial(title: "OUTPUT", label: "Output level", value: $state.draft.output, range: -60...6, emphasized: true)
-                }.padding(.vertical, 6).padding(.horizontal, 8).background(RigStyle.raised).disabled(state.loading)
-                    .onChange(of: state.draft.input) { _, _ in state.updateControls() }
-                    .onChange(of: state.draft.gate) { _, _ in state.updateControls() }
-                    .onChange(of: state.draft.reverb) { _, _ in state.updateControls() }
-                    .onChange(of: state.draft.output) { _, _ in state.updateControls() }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        ampFace.frame(width: 235)
+                        ampDials
+                    }.frame(minWidth: 700)
+                    VStack(spacing: 0) {
+                        ampFace
+                        Rectangle().fill(RigStyle.gold).frame(height: 3)
+                        ampDials
+                    }
+                }
             }.padding(6).background(RigStyle.tolex).clipShape(PixelFrame())
                 .overlay(PixelFrame().stroke(RigStyle.gold.opacity(0.65), lineWidth: 2))
             HStack { Rectangle().frame(width: 38, height: 5); Spacer(); Rectangle().frame(width: 38, height: 5) }
@@ -194,22 +224,8 @@ struct RigAmpControls: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            soundSelector
             cabinet
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    RigCaption(text: "AMP + CAB CAPTURE")
-                    Picker("Amp and cabinet capture", selection: $state.draft.modelFile) {
-                        ForEach(state.captures) { Text("\($0.category) / \($0.displayName)").tag($0.modelFile) }
-                    }.labelsHidden().disabled(state.loading)
-                        .onChange(of: state.draft.modelFile) { _, _ in if state.running && !state.loading { state.loadSound() } }
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                Button(state.muted ? "Unmute" : "Mute amp") { state.muted.toggle() }
-                    .buttonStyle(StompButton()).accessibilityLabel(state.muted ? "Unmute amp output" : "Mute amp output; keep detecting notes")
-            }
-            if state.running {
-                Text("Playing: \(state.activeName)").font(RigStyle.body(14)).foregroundStyle(RigStyle.gold)
-            }
+            RigEffectsView(state: state)
             DisclosureGroup("SAVE / MIDI MAPPING") {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .bottom, spacing: 16) {

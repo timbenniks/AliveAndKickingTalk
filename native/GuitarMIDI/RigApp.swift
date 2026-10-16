@@ -42,7 +42,7 @@ struct RigView: View {
 
     private var inputControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 20) {
+            VStack(spacing: 8) {
                 VStack(spacing: 2) {
                     HStack { Text("Note gate"); Spacer(); Text("\(Int(state.gate)) dB").foregroundStyle(RigStyle.gold) }
                     Slider(value: $state.gate, in: -85 ... -30, step: 1).accessibilityLabel("Note gate")
@@ -63,8 +63,8 @@ struct RigView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     RigNoteMonitor(live: state.live)
                     inputControls
-                    Text("Website guitar input: Alive Rig Preview Notes")
-                        .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust).lineLimit(1)
+                    Text("MIDI OUT · Alive Rig Preview Notes")
+                        .font(RigStyle.body(13)).foregroundStyle(RigStyle.dust).lineLimit(1)
                 }.padding(.trailing, 4).padding(.bottom, 4)
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -77,9 +77,12 @@ struct RigView: View {
                 Rectangle().fill(state.rigEnabled ? RigStyle.frets[0] : RigStyle.dust).frame(width: 8, height: 8)
                 Text(state.rigEnabled ? "ON" : "OFF").font(RigStyle.caps())
                 Spacer()
-                Button(state.rigEnabled ? "Turn rig off" : "Turn rig on") { state.setRigEnabled(!state.rigEnabled) }
-                    .buttonStyle(StompButton())
+                if state.rigEnabled {
+                    Button(state.muted ? "Unmute" : "Mute amp") { state.muted.toggle() }
+                        .buttonStyle(StompButton()).accessibilityLabel(state.muted ? "Unmute amp output" : "Mute amp output; keep detecting notes")
+                }
             }.frame(height: 30)
+            if state.rigEnabled { RigAmpControls(state: state).soundSelector }
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if state.rigEnabled {
@@ -112,7 +115,7 @@ struct RigView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ALIVE & KICKING").font(RigStyle.pixel(43))
+                    Text("ALIVE & KICKING").font(RigStyle.pixel(34))
                     Text("RIG PREVIEW / AMP + CHORDS & RIFFS").font(RigStyle.caps(10)).foregroundStyle(RigStyle.gold)
                 }
                 Spacer()
@@ -120,22 +123,26 @@ struct RigView: View {
                     Rectangle().fill(state.running ? RigStyle.frets[0] : RigStyle.gold).frame(width: 8, height: 8)
                     Text(state.running ? "ON AIR" : state.starting ? "CONNECTING" : "STANDBY").font(RigStyle.caps(10))
                 }.padding(12).background(RigStyle.tolex)
-            }.padding(.horizontal, 24).padding(.vertical, 14)
+            }.padding(.horizontal, 24).padding(.vertical, 10)
             RigAudioSetup(state: state).padding(.horizontal, 24).padding(.bottom, 12)
             GeometryReader { geometry in
+                let available = max(0, geometry.size.width - 42)
+                let notesWidth = min(360, max(300, available * 0.28))
                 HStack(alignment: .top, spacing: 20) {
-                    notesPanel.frame(width: max(0, (geometry.size.width - 42) / 2))
+                    notesPanel.frame(width: notesWidth)
                     Rectangle().fill(RigStyle.raised).frame(width: 2)
-                    rigPanel.frame(width: max(0, (geometry.size.width - 42) / 2))
+                    rigPanel.frame(width: max(0, available - notesWidth))
                 }
             }.padding(.horizontal, 24).padding(.bottom, 12)
-            VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 16) {
                 Text(state.status).font(RigStyle.body(16)).lineLimit(2)
-                    .frame(height: 36, alignment: .topLeading).help(state.status)
+                    .frame(maxWidth: .infinity, alignment: .leading).frame(height: 36).help(state.status)
                 HStack(spacing: 16) {
                     Button(busy ? "Stop / release notes" : state.rigEnabled ? "Start rig" : "Start notes") {
                         if busy { state.stop() } else { state.start() }
-                    }.buttonStyle(StompButton(primary: true)).keyboardShortcut(.return, modifiers: [.command])
+                    }.buttonStyle(StompButton(primary: true)).frame(width: 240).keyboardShortcut(.return, modifiers: [.command])
+                    Button(state.rigEnabled ? "Turn rig off" : "Turn rig on") { state.setRigEnabled(!state.rigEnabled) }
+                        .buttonStyle(StompButton())
                     Button("Refresh devices") { state.refreshDevices() }.buttonStyle(StompButton()).disabled(busy)
                 }
             }.padding(16).background(RigStyle.night)

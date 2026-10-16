@@ -1,11 +1,12 @@
 # Alive and Kicking
 
-This separate clone develops **Alive Rig Preview**, the native guitar amp and
-guitar-to-MIDI app. Build it with `bash native/GuitarMIDI/build-rig.sh`.
-See [the preview guide](docs/alive-rig-preview.md) for setup, saved presets,
-MIDI routing, tests and the preserved original-app checkpoint.
+**Alive Rig Preview** is the native guitar amp and guitar-to-MIDI app.
+Build it with `bash native/GuitarMIDI/build.sh`. Turn the rig off to use
+guitar-to-MIDI alongside an external amp such as Neural DSP.
+See [the native app guide](docs/alive-rig-preview.md) for setup, saved presets,
+effects, MIDI routing, tests and the original-app backup.
 
-The original talk website remains below:
+Run the talk website:
 
 ```sh
 nvm use

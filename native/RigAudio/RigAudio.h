@@ -5,13 +5,21 @@ extern "C" {
 #endif
 // All control calls are serialized by the owner, except load (one loader queue)
 // and read/collect (one detector worker). Destroy only after joining both queues.
+typedef struct RigEffectsParameters {
+    int delayEnabled, delayTape, delayPingPong;
+    float delayMS, feedback, delayMix, delayTone;
+    int reverbEnabled, reverbHall;
+    float reverbSize, preDelayMS, reverbMix, reverbTone, width, ducking;
+} RigEffectsParameters;
 void* rig_create(void);
 void rig_destroy(void* rig);
 int rig_start(void* rig, const char* input, const char* output, int channel, int block, char* error, int capacity);
 void rig_stop(void* rig);
 void rig_request(void* rig, uint64_t generation);
 int rig_load(void* rig, const char* path, uint64_t generation, float inputDB, float outputDB, float gateDB, float reverb, char* error, int capacity);
+int rig_load_with_effects(void* rig, const char* path, uint64_t generation, float inputDB, float outputDB, float gateDB, float reverb, const RigEffectsParameters* effects, char* error, int capacity);
 void rig_controls(void* rig, float inputDB, float outputDB, float gateDB, float reverb, int muted);
+void rig_effects_controls(void* rig, const RigEffectsParameters* effects);
 void rig_mute(void* rig, int muted);
 int rig_read(void* rig, float* data, int capacity);
 void rig_collect(void* rig);

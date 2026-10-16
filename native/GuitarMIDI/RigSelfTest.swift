@@ -22,6 +22,15 @@ func runRigSelfTest() throws {
     let store = RigPresetStore(url: folder.appendingPathComponent("presets.json"))
     let p = RigPreset(name: "Clean", modelFile: "clean.nam", program: 0)
     var q = RigPreset(name: "Lead", modelFile: "lead.nam", program: 127, input: 3, output: -6, gate: -55, reverb: 5)
+    q.effects.delayEnabled = true; q.effects.reverbEnabled = true
+    q.effects.pingPong = true; q.effects.division = 2; q.effects.tempo = 100
+    q.effects.reverbStyle = 0; q.effects.preDelay = 47; q.effects.ducking = 63
+    var legacy = try JSONSerialization.jsonObject(with: JSONEncoder().encode(p)) as! [String: Any]
+    legacy.removeValue(forKey: "effects")
+    let migrated = try JSONDecoder().decode(RigPreset.self, from: JSONSerialization.data(withJSONObject: legacy))
+    try require(migrated == p && !migrated.effects.delayEnabled && !migrated.effects.reverbEnabled,
+                "Legacy presets keep all values and default new effects off")
+    try require(q.effects.delayMilliseconds == 450, "Dotted eighth at 100 BPM is 450ms")
     try store.save([p, q])
     let loaded = try store.load()
     try require(loaded == [p, q], "Saved presets round-trip all sound settings")
@@ -32,6 +41,12 @@ func runRigSelfTest() throws {
     try require(!invalid.valid, "Model path must stay in the selected folder")
     invalid = p; invalid.output = .nan
     try require(!invalid.valid, "Nonfinite gain rejected")
+    invalid = p; invalid.effects.feedback = 86
+    try require(!invalid.valid, "Runaway delay feedback rejected")
+    invalid = p; invalid.effects.tempo = 0
+    try require(!invalid.valid, "Invalid tempo rejected")
+    invalid = p; invalid.effects.reverbMix = .nan
+    try require(!invalid.valid, "Nonfinite effect control rejected")
     var parser = ProgramParser()
     try require(parser.feed([0xC0, 0, 127, 0xF8, 3, 0xC1, 9, 0x90, 60, 96, 0xC0]) == [0, 127, 3], "Channel filtering, running status and realtime MIDI")
     try require(parser.feed([4, 0xF0, 1, 2, 0xF7, 7, 0xC0, 5]) == [4, 5], "Split packet and SysEx handling")
@@ -76,7 +91,8 @@ func runCombinedRigTest(modelPath: String) throws {
     try session.start(input: "", output: "", channel: 0, block: 128, modelURL: url,
                       gate: -60, threshold: 0.5, timing: DetectorTiming(), compute: .automatic, offline: true)
     let model = URL(fileURLWithPath: modelPath)
-    let preset = RigPreset(name: "Offline test", modelFile: model.lastPathComponent, program: 0)
+    var preset = RigPreset(name: "Offline test", modelFile: model.lastPathComponent, program: 0)
+    preset.effects.delayEnabled = true; preset.effects.reverbEnabled = true; preset.effects.pingPong = true
     session.load(preset, directory: model.deletingLastPathComponent(), generation: 1)
     var left = [Float](repeating: 0, count: 512), right = left
     var energy = 0.0, maxMS = 0.0
@@ -105,7 +121,7 @@ func runCombinedRigTest(modelPath: String) throws {
     try require(result.1.isEmpty && result.2 > 0, "Combined detector must release notes after silence")
     try require(energy > 0 && rig_active_generation(session.pointer) == 2 && rig_fault(session.pointer) == 0, "Amp must produce audio and complete the preset switch")
     try require(rig_dropped(session.pointer) == 0, "Combined path dropped DI audio")
-    print("PASS: simultaneous NAM + 48k DI queue + resampling + Core ML, preset switch, note release; found \(result.0.sorted()), \(result.2) reports, zero drops")
+    print("PASS: simultaneous NAM + stereo effects + 48k DI queue + resampling + Core ML, preset switch, note release; found \(result.0.sorted()), \(result.2) reports, zero drops")
     print(String(format: "Offline 512-sample amp callback max %.3f ms; excludes hardware and is not a round-trip latency measurement", maxMS))
 }
 
@@ -126,8 +142,8 @@ func runRigDisplayTest() throws {
     try require(state.live.readings.pitches.isEmpty, "Note releases must bypass the meter throttle")
     state.live.update(pitches: [45], inference: 2, inputDB: -30, dropped: 0, now: 0.302)
     try require(state.live.readings.pitches == [45], "Note attacks must bypass the meter throttle")
-    let patterns = [[], [45], [40, 47, 52, 56, 59, 64], Array(40...52), Array(40...88)]
-    for width: CGFloat in [440, 580, 760] {
+    let patterns = [[], [45], [40, 47, 52, 56, 59, 64], Array(40...46), Array(40...88)]
+    for width: CGFloat in [296, 330, 360] {
         var expected: CGSize?
         for (index, notes) in patterns.enumerated() {
             state.live.update(pitches: notes, inference: index == 4 ? 9999 : 2.5, inputDB: -Float(index * 25), dropped: index == 4 ? 999999 : 0, now: Double(index + 1))
@@ -136,8 +152,8 @@ func runRigDisplayTest() throws {
             guard let image = renderer.nsImage else { throw NSError(domain: "DisplayTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not render the note monitor"]) }
             if let expected { try require(image.size == expected, "Notes and meter digit changes must not change monitor size") }
             expected = image.size
-            try require(image.size == CGSize(width: width, height: 266), "Monitor has a fixed height at every supported pane width")
-            if width == 580 && index == 2, let data = image.tiffRepresentation,
+            try require(image.size == CGSize(width: width, height: 340), "Monitor has a fixed height at every supported pane width")
+            if width == 330 && index == 2, let data = image.tiffRepresentation,
                let bitmap = NSBitmapImageRep(data: data), let png = bitmap.representation(using: .png, properties: [:]) {
                 try png.write(to: URL(fileURLWithPath: "/tmp/alive-rig-note-monitor.png"))
             }
@@ -146,5 +162,32 @@ func runRigDisplayTest() throws {
     state.live.reset()
     try require(state.live.readings == RigReadings(), "Stopping clears all live readings")
     try require(shellUpdates == 0, "Live reports must not invalidate RigState or the app shell")
-    print("PASS: 30 Hz meters, immediate note attacks/releases, zero shell invalidations, stable monitor geometry for 0/1/6/13/49 notes at three widths")
+    let fxRenderer = ImageRenderer(content: RigEffectsView(state: state, expanded: true)
+        .font(RigStyle.body()).foregroundStyle(RigStyle.bone).tint(RigStyle.gold).pickerStyle(.menu)
+        .preferredColorScheme(.dark).frame(width: 460).background(RigStyle.night))
+    guard let fxImage = fxRenderer.nsImage, let data = fxImage.tiffRepresentation,
+          let bitmap = NSBitmapImageRep(data: data), let png = bitmap.representation(using: .png, properties: [:]) else {
+        throw NSError(domain: "DisplayTest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not render effects rack"])
+    }
+    try png.write(to: URL(fileURLWithPath: "/tmp/alive-rig-effects.png"))
+    for width: CGFloat in [638, 844] {
+        let renderer = ImageRenderer(content: RigAmpControls(state: state)
+            .font(RigStyle.body()).foregroundStyle(RigStyle.bone).preferredColorScheme(.dark)
+            .frame(width: width).background(RigStyle.night))
+        guard let image = renderer.nsImage, let data = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: data), let png = bitmap.representation(using: .png, properties: [:]) else {
+            throw NSError(domain: "DisplayTest", code: 4, userInfo: [NSLocalizedDescriptionKey: "Could not render rig controls"])
+        }
+        try png.write(to: URL(fileURLWithPath: "/tmp/alive-rig-controls-\(Int(width)).png"))
+    }
+    for size in [CGSize(width: 1040, height: 600), CGSize(width: 1280, height: 720), CGSize(width: 1600, height: 900)] {
+        let renderer = ImageRenderer(content: RigView(state: state).frame(width: size.width, height: size.height))
+        guard let image = renderer.nsImage, let data = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: data), let png = bitmap.representation(using: .png, properties: [:]) else {
+            throw NSError(domain: "DisplayTest", code: 3, userInfo: [NSLocalizedDescriptionKey: "Could not render widescreen layout"])
+        }
+        try require(image.size == size, "App must fit the requested window size")
+        try png.write(to: URL(fileURLWithPath: "/tmp/alive-rig-layout-\(Int(size.width)).png"))
+    }
+    print("PASS: 30 Hz meters, immediate note attacks/releases, zero shell invalidations, stable monitor geometry for 0/1/6/7/49 notes at three widths")
 }

@@ -73,13 +73,16 @@ final class RigSession {
         loader.async { [weak self] in
             guard let self else { return }
             var error = [CChar](repeating: 0, count: 1024)
-            let result = rig_load(self.pointer, directory.appendingPathComponent(preset.modelFile).path, generation,
-                                  Float(preset.input), Float(preset.output), Float(preset.gate), Float(preset.reverb), &error, 1024)
+            var effects = preset.effects.audioParameters
+            let result = rig_load_with_effects(self.pointer, directory.appendingPathComponent(preset.modelFile).path, generation,
+                                  Float(preset.input), Float(preset.output), Float(preset.gate), Float(preset.reverb), &effects, &error, 1024)
             if result != 2 { self.loadFinished?(generation, result == 0 ? String(cString: error) : nil) }
         }
     }
     func controls(_ preset: RigPreset, muted: Bool) {
         rig_controls(pointer, Float(preset.input), Float(preset.output), Float(preset.gate), Float(preset.reverb), muted ? 1 : 0)
+        var effects = preset.effects.audioParameters
+        rig_effects_controls(pointer, &effects)
     }
     func stop() {
         guard !stopped else { return }; stopped = true

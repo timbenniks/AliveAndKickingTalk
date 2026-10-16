@@ -1,6 +1,6 @@
 # Alive Rig Preview
 
-This is the combined macOS prototype: the existing Alive voxel stage and guitar-to-MIDI detector, plus a NAM amp, spring reverb, saved sound presets and MIDI preset control. It lives in a normal separate clone, not a worktree.
+This is the main native macOS app: the Alive voxel stage and guitar-to-MIDI detector, plus a NAM amp, stereo delay, room/hall reverb, saved sound presets and MIDI preset control. Turning the rig off provides notes-only operation alongside Neural DSP. The legacy spring setting remains in preset data for sound compatibility.
 
 ## Preserved baseline
 
@@ -8,10 +8,16 @@ This is the combined macOS prototype: the existing Alive voxel stage and guitar-
 - Backup directory: `/Users/tim.benniks/Websites/AliveAndKicking/backups/alive-midi-577c3df/`.
 - The directory contains the working `Alive Guitar MIDI.zip`, a copy of the app's preferences file, and an independent `AliveAndKickingTalk.bundle` Git backup. The original app does not persist its detector knobs, so the preferences file cannot recover unsaved response settings from a running session.
 - App archive SHA-256: `6dceb35e5f33b1d3c6ee37d827553aa4f8e25dab8237892d14ef1e51dd6b98f2`.
-- Development: `/Users/tim.benniks/Websites/AliveAndKicking/AliveAndKickingRig`, branch `turbo-tim/alive-rig`.
-- The clone's local remote is called `source-checkpoint`; it is not configured to push to the talk's GitHub repository.
+- Development originally used `/Users/tim.benniks/Websites/AliveAndKicking/AliveAndKickingRig`, branch `turbo-tim/alive-rig`. The completed app is promoted to `main` in the canonical `AliveAndKickingTalk` checkout.
+- The development clone's local remote is called `source-checkpoint`; GitHub publishing uses the canonical checkout.
 
-The preview has a different app identifier (`live.aliveandkicking.rig-preview`), executable, preferences, preset folder, and MIDI endpoints. It does not replace the original app or change the website's selected ports. Neither original repository's working files were edited.
+The combined app retains its identifier (`live.aliveandkicking.rig-preview`), executable, preferences, preset folder and MIDI endpoints through promotion. It replaces the standalone app; it does not automatically change the website's selected ports. The earlier backup remains available for recovery.
+
+## Main promotion, 2026-10-16
+
+The combined app is the default native build on main. The old standalone app bundle is retired to the local Trash; its independent ZIP/source backup above is retained. Current presets were also copied to `backups/main-promotion-20261016/presets.json` outside the repository before promotion. Bundle identity, user settings, saved sounds and both MIDI port names stay unchanged.
+
+Release validation passed: default build/signature verification, Core ML tests in all timing presets and CPU fallback, actual CoreMIDI loopback, preset persistence/validation, display checks, both native CTest targets, real-NAM concurrent model/effect swaps and combined NAM/effects/detector playback. The combined test found every expected pitch, released notes, switched presets and reported zero DI drops across 447 reports. These tests do not replace live rehearsal with the interface and website. No website JavaScript changed in this promotion.
 
 ## Visual contract
 
@@ -22,13 +28,13 @@ The preview has a different app identifier (`live.aliveandkicking.rig-preview`),
 Requires macOS 14+, Xcode command-line tools, CMake and Ninja. This is a locally ad-hoc signed preview.
 
 ```sh
-bash native/GuitarMIDI/build-rig.sh
+bash native/GuitarMIDI/build.sh
 open 'native/GuitarMIDI/dist/Alive Rig Preview.app'
 ```
 
 Dependencies are pinned to JUCE 8.0.14 (`2cdfca8…`) and NeuralAmpModelerCore v0.5.4 (`1f42f88…`), with `NAM_ENABLE_A2_FAST`. CMake fetches these on a fresh build. Compiled dependencies ship inside the app; the installed preview does not need another checkout at runtime.
 
-The original `build.sh` still builds the note-only app inside this separate checkout. Use `build-rig.sh` for the combined preview.
+`build.sh` delegates to `build-rig.sh`, so both build the combined app. The retired standalone shell remains in source as a historical detector test harness; the normal build no longer produces its app bundle.
 
 ## Use
 
@@ -42,7 +48,7 @@ The dedicated control destination replaces the IAC route for this preview. It ac
 
 ## Notes only / Neural DSP
 
-Click **Turn rig off** on the right. The button changes to **Turn rig on**, and the main action becomes **Start notes**. This choice is remembered across launches.
+Click **Turn rig off** in the bottom transport. The button changes to **Turn rig on**, and the main action becomes **Start notes**. This choice is remembered across launches.
 
 - The left side keeps the original input-only `GuitarCapture` path and unchanged detector. It publishes **Alive Rig Preview Notes** in both modes.
 - With the rig off, no NAM engine or model is started and the app produces no audio output. An output device and NAM files are not required. This mode resamples the input's current rate, as the original MIDI app does; the built-in rig's 48 kHz restriction does not apply.
@@ -56,7 +62,7 @@ If Neural DSP changes the interface's sample rate or the input disconnects, rest
 
 The initial 24 sounds map the catalog to programs 0–23. These assignments are starting points, not a recreation of the existing Neural DSP song mappings. Adjust the program numbers and sounds to match each song.
 
-Saved presets include name, capture filename, MIDI program, input gain, amp gate, spring reverb and output level. Expand **SAVE / MIDI MAPPING** to edit the name and program. **Save preset** updates the selected sound. **Save as new** creates another sound and requires an unused program number. Files are validated and written atomically to:
+Saved presets include name, capture filename, MIDI program, input gain, amp gate, spring reverb, output level and the complete effects rack (including tempo and note division). Expand **SAVE / MIDI MAPPING** to edit the name and program. **Save preset** updates the selected sound. **Save as new** creates another sound and requires an unused program number. Files are validated and written atomically to:
 
 `~/Library/Application Support/Alive Rig Preview/presets.json`
 
@@ -66,7 +72,7 @@ Duplicate programs, invalid ranges and unsafe model filenames are rejected. An u
 
 ```text
 Interface DI (selected channel, 48 kHz)
-  ├─ DC filter → input gain → amp gate → NAM → spring → output gain → limiter → interface
+  ├─ DC filter → input gain → amp gate → NAM → spring → echo → space → output gain → limiter → interface
   └─ bounded preallocated queue → worker resampling to 22,050 Hz → unchanged Core ML detector
                                                                → Preview Notes MIDI source
 Website → Preview Control MIDI destination → saved preset → background model loader
@@ -91,7 +97,7 @@ The Swift checks include the original real Core ML chord/riff tests, note releas
 
 The combined offline test feeds synthetic 48 kHz guitar into the production amp and DI queue while the production resampler and Core ML worker run. It switches the model during processing, checks expected notes and eventual release, and asserts zero queue drops. The first run passed with all expected pitches and one extra A4 (the same octave error seen in the original Balanced detector). This checks integration, not real-guitar accuracy or hardware latency.
 
-Hardware acceptance still requires guitar-to-headphones latency, chord accuracy through the new capture route, rapid preset changes, disconnect/reconnect, and a complete rehearsal with the website running. Inference and callback processing durations are not end-to-end latency measurements. The preview currently has the Deluxe Reverb captures and spring reverb; it does not import Neural DSP presets or provide its other effects.
+Hardware acceptance still requires guitar-to-headphones latency, chord accuracy through the new capture route, rapid preset changes, disconnect/reconnect, and a complete rehearsal with the website running. Inference and callback processing durations are not end-to-end latency measurements. The preview has the Deluxe Reverb captures, spring and the effects rack described below. It does not import Neural DSP presets or reproduce its algorithms.
 
 ## Validation, 2026-10-16
 
@@ -127,7 +133,7 @@ Validation: release build and signing passed. Inspected the running landscape la
 
 **AUDIO SETUP** is now a shared section above the two performance panels. Its collapsed row summarizes input, channel, output and buffer. Expand it to change all four in one place while stopped. Output and buffer are disabled in notes-only mode because Neural DSP owns those choices. Device selections and audio behavior are unchanged.
 
-The note monitor keeps the voxel stage in a compact header beside a live-note count. Twelve permanent display slots reserve two rows in silence and while playing. These are detected pitches, not guitar-string assignments. More than twelve notes show an overflow count; the accessibility description includes every detected pitch, and MIDI still sends every detected note. Input level, inference time and drops have reserved space so changing digits cannot move neighboring controls. The two app columns have explicit equal widths; transport status also has reserved height.
+The note monitor keeps the voxel stage in a compact header beside a live-note count. Six permanent display slots reserve one row in silence and while playing. These are detected pitches, not guitar-string assignments. More than six notes show an overflow count; the accessibility description includes every detected pitch, and MIDI still sends every detected note. Removing the second row reduces the monitor height by 38 points. Input level, inference time and drops have reserved space so changing digits cannot move neighboring controls. The two app columns have explicit equal widths; transport status also has reserved height.
 
 Live readings now belong to a separate observable object, rather than publishing several properties through the shared app state on every audio report. Only the note monitor and optional processing-time text observe it. Note changes and releases update immediately; unchanged-note meter refreshes are capped at 30 Hz. This only changes display refreshes, not inference, MIDI or audio processing. Both the built-in amp and notes-only capture feed this same display path.
 
@@ -137,6 +143,54 @@ Regression check:
 'native/GuitarMIDI/dist/Alive Rig Preview.app/Contents/MacOS/AliveRigPreview' --display-test
 ```
 
-The check verifies immediate note attacks/releases, bounded meter updates, no shared-state notifications from live readings, and unchanged rendered monitor size for silence, 1, 6, 13 and 49 notes at three pane widths. It also varies meter digit lengths and checks that Stop clears readings. It renders the production view without opening audio hardware. A six-note reference render is written to `/tmp/alive-rig-note-monitor.png`.
+The check verifies immediate note attacks/releases, bounded meter updates, no shared-state notifications from live readings, and unchanged rendered monitor size for silence, 1, 6, 7 and 49 notes at three pane widths. It also varies meter digit lengths and checks that Stop clears readings. It renders the production view without opening audio hardware. A six-note reference render is written to `/tmp/alive-rig-note-monitor.png`.
 
 Validation: signed release build and `--display-test` passed. Inspected the complete app and expanded Audio Setup; confirmed all four selectors are together and that output/buffer disable in notes-only mode. Restored the pre-rebuild unsaved −11.5 dB output adjustment. No live guitar capture was started during these checks.
+
+
+## Echo and Space effects, 2026-10-16
+
+Expand **EFFECTS** below the amp. The blue **ECHO** and purple **SPACE** panels use the existing pixel palette and fonts; each has its own on/off button. Controls can be prepared while bypassed. **Save preset** stores the whole rack with the current sound; channel 1 Program Changes recall it with the amp. Changes remain drafts until saved.
+
+- **Echo:** digital or tape character, optional ping-pong, 20–2000 ms manual time, feedback (maximum 85%), wet mix (maximum 60%) and tone. Tape adds soft saturation and subtle time modulation to repeats. Time changes glide over 50 ms and can audibly bend pitch.
+- **Timing:** milliseconds or quarter, dotted-eighth, eighth and half notes at 40–240 BPM. Tap averages the last four valid intervals and switches manual time to quarter notes. Synced time can reach 3000 ms. Tempo is saved per preset; this version does not receive MIDI Clock or the website's song tempo. Program numbers alone do not communicate tempo.
+- **Space:** algorithmic Room/Hall ranges, length, 0–150 ms pre-delay, tone, stereo width and wet mix. This uses JUCE's FreeVerb-based stereo tank with additional filtering and pre-delay. Length is a relative amount, not a measured decay in seconds. It is not convolution, a physical plate emulation, or a copy of Neural DSP's reverb; licensed plate/hall IRs remain a possible later upgrade.
+- **Ducking:** reduces the wet echo and space while the post-amp guitar is loud, releasing over about 250 ms. Dry guitar stays at unity through the new rack. The existing spring remains a separate amp control.
+- **Tails:** switching either effect off fades its input send, allowing stored repeats/reverb to decay. Preset changes retain the same buffers; the new time, feedback, mix and reverb settings reshape existing tails. This is shared-buffer spillover, not two independently preserved preset engines. Mute silences the complete output; Stop/rig-off discards the session and its tails.
+
+Legacy preset files decode with both new effects off and every existing value unchanged. Loading does not rewrite the file. Malformed effects, nonfinite values and invalid ranges are rejected by preset validation. A backup of the previous signed app, preset file, source diff and Git revision is at `/Users/tim.benniks/Websites/AliveAndKicking/backups/before-effects-20261016-152543/`.
+
+The native effect buffers allocate before playback. The audio callback owns DSP state, applies complete control snapshots and preserves the unprocessed DI queue. UI changes allocate commands outside the callback; the detector worker retires them. Effects saved with a model apply when that model is activated, and stale live edits cannot override a newer model generation. No inference code or website JavaScript changed.
+
+Validation:
+
+- Signed release build, original Core ML/MIDI self-tests, old-preset migration, effects persistence/range validation and display tests passed.
+- `native/RigAudio/build/rig_effects_test` checks dry sample identity, echo timing/channel alternation, bypass tails, reverb pre-delay/stereo, ducking and finite output at extreme settings.
+- The real-NAM native test exercises live controls, unchanged DI, concurrent model/effects switching and mute. At 64 samples, one offline run measured 0.483 ms p99 and 5.188 ms maximum wall time against a 1.333 ms audio block. Offline scheduling spikes mean this is not a guarantee of glitch-free 64-sample hardware playback.
+- The existing six-note monitor test still passes at three widths. An expanded effects rack render is written to `/tmp/alive-rig-effects.png` for visual inspection.
+- The combined detector/NAM test passed with both effects enabled: all expected pitches, note release, preset switching and zero DI queue drops (436 reports). An initial run with the live preview also processing missed pitch 45; rerunning with that session paused passed. Concurrent-load reliability still needs rehearsal.
+- Inspected the expanded rack in the running app, changed its mix control and enabled both effects on the Scarlett Solo at 64 samples / 48 kHz. The app reached On Air with zero reported input drops. Restored Stadium Rock (PC 2), its original levels and both effects off, leaving the rack expanded and audio running. The saved preset file remains byte-for-byte identical to the backup. This UI check did not evaluate sound quality.
+
+Live guitar listening, level balancing and a full website-driven rehearsal remain necessary; automated tests do not establish that this sounds like Asato.
+
+## Simplified amp controls, 2026-10-16
+
+Removed the Spring dial from the amp panel. Input, Gate and Output share the control strip; reverb controls are available in the Space effects panel. This is a panel-only change: existing saved spring values and audio processing are retained to preserve preset compatibility and sound.
+
+## Effects rack design, 2026-10-16
+
+Echo and Space now appear as stacked 19-inch-style units below the amp, with mounting ears, slotted screws, inset coloured screens and pixel rotary knobs. Effects Rack opens expanded and can still be collapsed. Echo keeps its blue accent and Space its purple accent, using the existing fonts and palette.
+
+Drag knobs vertically or focus them and use arrow keys. Effects knobs adjust in whole units; amp knobs retain their half-unit steps. The Echo display shows character, stereo mode, actual delay time, timing division, stored tempo and feedback. Space shows the reverb type, length, pre-delay and width. Every knob also has a numeric readout. Power, tap, timing selectors and the shared ducking control retain their existing functions; sound processing and preset storage are unchanged.
+
+Validation: signed release build and display checks passed, including a 460-point rack render. Inspected the running widescreen app and verified that dragging the delay knob and using arrow keys update its screen immediately; checked reverb length updates too. Restored the controls after testing, including the existing unsaved −66.5 dB amp gate adjustment.
+
+## Rig-first widescreen layout, 2026-10-16
+
+The MIDI column now uses 28% of the available panel width, bounded to 300–360 points; the rig takes the rest. The voxel stage spans the column above a compact live-note count/status strip and one row of six permanent note slots. The monitor reserves 340 points in every note state; note gate/confidence controls stack vertically below it. Live readings still update independently of the rig; detection and outgoing MIDI are unchanged.
+
+Preset selection and a quick Save button stay above the rig's scrolling gear. Mute remains in its fixed header; rig on/off sits beside Start/Stop and Refresh Devices in the bottom transport. The capture selector sits on the amp itself. Wide panels place the amp grille beside its knobs and rack screens beside their knobs; smaller windows fall back to the stacked arrangement. Model-folder and MIDI-mapping settings remain below the effects. The shorter app header and single-row transport give more height to the gear while keeping Stop available.
+
+Display checks cover stable note geometry at 296/330/360 points, window bounds at 1040×600, 1280×720 and 1600×900, and narrow/wide gear renders. Full-window ImageRenderer exports do not draw native scroll content; the separate gear renders and live app inspection cover those areas.
+
+Validation: signed build and display checks passed. Reviewed narrow/wide controls and the expanded six-note stage render, including sharp-note labels. In the running widescreen app the amp and both racks are visible together, with preset/Save and Mute above them and Start/Stop, rig on/off and Refresh Devices below. Restarted audio on the existing Scarlett route, confirmed On Air with zero input drops, and restored the unsaved −66.5 dB gate setting. No preset files were saved during this layout work.
