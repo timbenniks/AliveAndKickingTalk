@@ -10,14 +10,14 @@ struct GuitarInput: Identifiable {
     let channels: Int
 }
 
-func inputDevices() -> [GuitarInput] {
+func inputDevices(scope: AudioObjectPropertyScope = kAudioDevicePropertyScopeInput) -> [GuitarInput] {
     var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDevices, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
     var size: UInt32 = 0
     guard AudioObjectGetPropertyDataSize(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size) == noErr else { return [] }
     var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
     guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &ids) == noErr else { return [] }
     return ids.compactMap { id in
-        var streams = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreamConfiguration, mScope: kAudioDevicePropertyScopeInput, mElement: kAudioObjectPropertyElementMain)
+        var streams = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreamConfiguration, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         var bytes: UInt32 = 0
         guard AudioObjectGetPropertyDataSize(id, &streams, 0, nil, &bytes) == noErr, bytes > 0 else { return nil }
         let raw = UnsafeMutableRawPointer.allocate(byteCount: Int(bytes), alignment: MemoryLayout<AudioBufferList>.alignment)
@@ -41,9 +41,9 @@ func check(_ status: OSStatus, _ action: String) throws {
 final class GuitarMIDIPort {
     var client = MIDIClientRef()
     var source = MIDIEndpointRef()
-    init() throws {
-        try check(MIDIClientCreateWithBlock("Alive Guitar MIDI" as CFString, &client, nil), "Create MIDI client")
-        do { try check(MIDISourceCreate(client, "Alive Guitar MIDI" as CFString, &source), "Create MIDI source") }
+    init(name: String = "Alive Guitar MIDI") throws {
+        try check(MIDIClientCreateWithBlock(name as CFString, &client, nil), "Create MIDI client")
+        do { try check(MIDISourceCreate(client, name as CFString, &source), "Create MIDI source") }
         catch { MIDIClientDispose(client); client = 0; throw error }
     }
     @discardableResult func send(_ note: Int, _ velocity: Int) -> OSStatus {

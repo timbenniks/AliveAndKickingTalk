@@ -272,6 +272,7 @@ struct GuitarView: View {
     }
 }
 
+#if !RIG_PREVIEW
 @main
 struct GuitarMIDIApp: App {
     init() {
@@ -302,3 +303,4 @@ struct GuitarMIDIApp: App {
             .windowResizability(.contentSize)
     }
 }
+#endif

@@ -14,3 +14,6 @@ stresstest/artillery.yml
 .vercel
 .env*
 !.env.example
+
+# Native preview build
+native/RigAudio/build/

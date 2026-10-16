@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "productName": "Tims Amp",
+  "ampId": "tims-amp",
+  "modelsSubdir": "Models/Amps/Deluxe Reverb",
+  "defaultPresetId": "texas-blues",
+  "categories": [
+    "Clean",
+    "Edge",
+    "Edge+",
+    "Crunch",
+    "Wide Open",
+    "Drive",
+    "Lead",
+    "Fuzz"
+  ],
+  "presets": [
+    {
+      "id": "morning-clean",
+      "displayName": "Morning Clean",
+      "category": "Clean",
+      "modelFile": "FNDR BFDRI VB Clean BAL CAB.nam",
+      "description": "Clear and open with plenty of headroom.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    },
+    {
+      "id": "studio-clean",
+      "displayName": "Studio Clean",
+      "category": "Clean",
+      "modelFile": "FNDR BFDRI VB Clean BRI CAB.nam",
+      "description": "Bright, articulate clean for recording and detail.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    },
+    {
+      "id": "warm-clean",
+      "displayName": "Warm Clean",
+      "category": "Clean",
+      "modelFile": "FNDR BFDRI VB Clean WRM CAB.nam",
+      "description": "Round lows and softened highs with vintage warmth.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    },
+    {
+      "id": "big-and-round",
+      "displayName": "Big & Round",
+      "category": "Clean",
+      "modelFile": "FNDR BFDRI NR Clean FAT CAB.nam",
+      "description": "Full-bodied clean with a wide, enveloping feel.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    },
+    {
+      "id": "blackface-scoop",
+      "displayName": "Blackface Scoop",
+      "category": "Clean",
+      "modelFile": "FNDR BFDRI VB Clean SCP CAB.nam",
+      "description": "Classic scooped mids with airy top end.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    },
+    {
+      "id": "bright-edge",
+      "displayName": "Bright Edge",
+      "category": "Edge",
+      "modelFile": "FNDR BFDRI VB Edge BRI CAB.nam",
+      "description": "Sparkling edge-of-breakup with crisp attack.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "texas-blues",
+      "displayName": "Texas Blues",
+      "category": "Edge",
+      "modelFile": "FNDR BFDRI VB Edge WRM CAB.nam",
+      "description": "Warm edge-of-breakup tone with expressive mids.",
+      "outputTrimDb": 0.0,
+      "featured": true,
+      "reverbAmount": 4.0
+    },
+    {
+      "id": "warm-breakup",
+      "displayName": "Warm Breakup",
+      "category": "Edge",
+      "modelFile": "FNDR BFDRI VB Edge BAL CAB.nam",
+      "description": "Balanced breakup that blooms with touch.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "fat-edge",
+      "displayName": "Fat Edge",
+      "category": "Edge",
+      "modelFile": "FNDR BFDRI NR Edge FAT CAB.nam",
+      "description": "Thick, mid-forward edge with singing sustain.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "glassy-edge",
+      "displayName": "Glassy Edge",
+      "category": "Edge",
+      "modelFile": "FNDR BFDRI VB Edge SCP CAB.nam",
+      "description": "Glassy harmonics with scooped mids and shimmer.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "pedal-platform",
+      "displayName": "Pedal Platform",
+      "category": "Edge",
+      "modelFile": "FNDR BFDRI VB Edge PED CAB.nam",
+      "description": "Open headroom that loves pedals in front.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    },
+    {
+      "id": "bright-edge-plus",
+      "displayName": "Bright Edge+",
+      "category": "Edge+",
+      "modelFile": "FNDR BFDRI VB Edge2 BRI CAB.nam",
+      "description": "Brighter pushed edge with more harmonic bite.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "balanced-edge-plus",
+      "displayName": "Balanced Edge+",
+      "category": "Edge+",
+      "modelFile": "FNDR BFDRI VB Edge2 BAL CAB.nam",
+      "description": "Even breakup with punch and clarity.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "warm-edge-plus",
+      "displayName": "Warm Edge+",
+      "category": "Edge+",
+      "modelFile": "FNDR BFDRI VB Edge2 WRM CAB.nam",
+      "description": "Warmer pushed edge with rounded aggression.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.5
+    },
+    {
+      "id": "bright-crunch",
+      "displayName": "Bright Crunch",
+      "category": "Crunch",
+      "modelFile": "FNDR BFDRI VB Crunch BRI CAB.nam",
+      "description": "Snappy crunch with cutting presence.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.0
+    },
+    {
+      "id": "classic-crunch",
+      "displayName": "Classic Crunch",
+      "category": "Crunch",
+      "modelFile": "FNDR BFDRI VB Crunch BAL CAB.nam",
+      "description": "Balanced crunch that responds naturally to picking.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.0
+    },
+    {
+      "id": "warm-crunch",
+      "displayName": "Warm Crunch",
+      "category": "Crunch",
+      "modelFile": "FNDR BFDRI VB Crunch WRM CAB.nam",
+      "description": "Thick crunch with smooth top end.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.0
+    },
+    {
+      "id": "normal-channel-crunch",
+      "displayName": "Normal Channel Crunch",
+      "category": "Crunch",
+      "modelFile": "FNDR BFDRI NR Crunch BAL CAB.nam",
+      "description": "Normal-channel grit with vintage character.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.0
+    },
+    {
+      "id": "wide-open-bright",
+      "displayName": "Wide Open Bright",
+      "category": "Wide Open",
+      "modelFile": "FNDR BFDRI VB Dimed BRI CAB.nam",
+      "description": "Dimed bright channel with raw vintage bite.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 4.5
+    },
+    {
+      "id": "wide-open",
+      "displayName": "Wide Open",
+      "category": "Wide Open",
+      "modelFile": "FNDR BFDRI VB Dimed BAL CAB.nam",
+      "description": "The amplifier pushed hard with raw vintage character.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 5.0
+    },
+    {
+      "id": "wide-open-warm",
+      "displayName": "Wide Open Warm",
+      "category": "Wide Open",
+      "modelFile": "FNDR BFDRI VB Dimed WRM CAB.nam",
+      "description": "Dimed warmth with singing sustain.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 5.0
+    },
+    {
+      "id": "drive",
+      "displayName": "Drive",
+      "category": "Drive",
+      "modelFile": "FNDR BFDRI VB Drive BAL TMY CAB.nam",
+      "description": "Smooth overdrive with a focused low end.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 3.0
+    },
+    {
+      "id": "lead",
+      "displayName": "Lead",
+      "category": "Lead",
+      "modelFile": "FNDR BFDRI VB Lead BAL ZEN CAB.nam",
+      "description": "Singing sustain and a warm boutique voice.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.5
+    },
+    {
+      "id": "fuzz",
+      "displayName": "Fuzz",
+      "category": "Fuzz",
+      "modelFile": "FNDR BFDRI VB Fuzz BAL MKIII CAB.nam",
+      "description": "Thick vintage fuzz with aggressive harmonic texture.",
+      "outputTrimDb": 0.0,
+      "featured": false,
+      "reverbAmount": 2.0
+    }
+  ]
+}
