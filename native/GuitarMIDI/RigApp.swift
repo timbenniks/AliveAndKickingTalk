@@ -134,10 +134,7 @@ struct RigView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     if state.rigEnabled {
-                        RigRouteControls(state: state).disabled(busy)
                         RigAmpControls(state: state)
-                        Text("48 kHz · \(state.actualBuffer > 0 ? state.actualBuffer : state.buffer) samples · amp processing \(state.audioMS, specifier: "%.2f") ms")
-                            .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
                     } else {
                         VStack(alignment: .leading, spacing: 20) {
                             Text("BRING YOUR OWN AMP").font(RigStyle.pixel(36)).foregroundStyle(RigStyle.gold)

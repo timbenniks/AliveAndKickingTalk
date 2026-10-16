@@ -110,3 +110,15 @@ Hardware acceptance still requires guitar-to-headphones latency, chord accuracy 
 - Live mode switching, guitar-to-MIDI delivery alongside Neural DSP and interface output still need the hardware acceptance checks above. No microphone capture or speaker playback was started during these checks.
 
 The offline run during UI inspection recorded a 74.6 ms maximum render duration on the ordinary test thread. A repeat with the preview closed and no UI inspection passed with 448 reports, zero drops and a 2.9 ms maximum. These ordinary-thread timings are not a real-time device callback benchmark or evidence of stage-ready latency; measure on the actual interface before the conference.
+
+## Amp panel design, 2026-10-16
+
+The right side now uses a drawn pixel cabinet with a woven grille, Benniks nameplate, gold control strip, and a status light. It keeps the existing colors and fonts; no generated image assets or new dependencies are used. The large preset name and raw MIDI program sit above it, with previous/next buttons and a menu for the full list. Browsing selects a saved preset using the existing loading path and replaces any unsaved draft, just like the previous picker.
+
+Four dials control the same input gain, amp gate, spring reverb and output gain as before. Drag vertically to adjust; keyboard arrows and VoiceOver increment/decrement adjust by 0.5. Values are clamped to the existing ranges. Output has a gold label and readout. There are no cosmetic EQ controls that the capture engine cannot perform. Mute remains separate from turning the rig off.
+
+Expand **SAVE / MIDI MAPPING** to save or rename sounds and assign programs. **AUDIO / MODEL SETUP** holds output routing, buffer size, the model-folder chooser and processing time. The notes panel and rig-off behavior are unchanged.
+
+Starter presets still apply −12 dB output gain; this design update does not change existing levels, saved sounds or DSP. Matching Neural DSP loudness needs listening or measurements of both apps with the same DI. Output gain changes volume after the amp; input gain changes how the capture is driven. Save output adjustments per preset once matched. Neural DSP preset files are not imported or converted by this UI.
+
+Validation: release build and signing passed. Inspected the running landscape layout, preset banner, dials and expandable routing controls. Verified output dragging, keyboard and accessibility increments/decrements, and next/previous preset navigation; restored the selected sound and knob values after testing. The audio engine and detector were not modified; no live playback was started for this UI check.
