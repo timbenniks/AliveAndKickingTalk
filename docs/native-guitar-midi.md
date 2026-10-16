@@ -253,3 +253,9 @@ Validation for the current website change: native CoreMIDI test source into Chro
 The companion now has a gold pixel guitar icon on a purple rounded tile, with all six fret colors. The bundled ICNS provides standard and Retina sizes and is declared in the generated Info.plist, so subsequent builds keep the icon. Original editable AppKit artwork and regeneration commands live under `native/GuitarMIDI/Artwork/` and `Resources/README.md`. This changes only the app's appearance in macOS; audio and MIDI behavior are unchanged.
 
 macOS retained the generic Dock icon after the first bundle update. The main window now explicitly loads the bundled ICNS into `NSApplication.applicationIconImage` when it appears, refreshing the running app's icon without restarting the Dock. The bundle metadata also names the full `AppIcon.icns` filename.
+
+## Development stylesheet recovery, 2026-10-16
+
+After removing the visible guitar-notes panel, an open development session retained a link to `StageGuitarNotes.vue`'s old scoped style block. The component no longer contained any style block. The reported CSS compiler error included the component's `<script setup>` source, and the running server's page HTML still referenced style index 0. This was a stale development stylesheet reference, not a note-analysis or song-data error.
+
+The screen-reader readout now owns a scoped `.note-announcement` rule for its visually hidden presentation. This restores the existing style URL while keeping note names on the fretboard and the accessible status text in the page. The exact formerly failing scoped CSS URL returns HTTP 200 with CSS only. The open Enter Sandman page at 02:32 / 02:32 renders without the compile-error overlay after hot reload.
