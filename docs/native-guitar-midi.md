@@ -94,3 +94,52 @@ The companion now uses the website's night-purple/tolex surfaces, cream text, go
 A miniature native canvas adapts the site's Benniks amp stacks, woven speaker grilles, lighting truss and perspective fretboard. Detected pitches light their corresponding pitch-range pads and appear in colored note tiles. The input meter uses discrete blocks, while status, inference time and dropped buffers remain visible. The art is static except for updates from actual notes; it adds no animation timer or 3D engine. The audio model, thresholds, MIDI messages and capture path are unchanged.
 
 Validation: rebuilt and verified the signed app bundle, inspected the native window for clipping and readable controls, and reran the existing model/decoder/CoreMIDI self-test successfully. Only native Swift, bundled font resources, the native build script and documentation changed in this design pass.
+
+## Comparison with Fretwire, 2026-10-16
+
+Inspected `/Users/tim.benniks/Websites/fretwire`, commit `af9fd09`, including its current source files. Its Xcode project/workspace had local changes; these were not modified. This comparison did not start audio capture or change either detector's runtime settings.
+
+**The model is identical.** SHA-256 hashes match for both the Core ML model definition (`af7bf7d4…`) and the weights (`691a6b63…`). Neither app uses MG3 weights. Differences come from capture, streaming context, note decoding and MIDI features.
+
+| Area | Alive Guitar MIDI | Fretwire |
+| --- | --- | --- |
+| Capture | AVAudioEngine tap, requests 1,024-frame buffers | AUHAL, requests 128-frame device buffers; UI offers 64/128/256 |
+| Queue | One pending capture buffer; drops reset decoder and increment a counter | Lock-protected 131,072-sample ring; overflow drops new samples without an exposed discontinuity reset |
+| Resampling | AVAudioConverter | Two biquad low-pass stages plus linear interpolation |
+| Lookahead | Fixed 15 frames (~174 ms) | Default 8 (~93 ms); UI allows 2–20 |
+| Net interval | Fixed 1,024 samples (~46.4 ms) | Adjustable 12–93 ms; default UI 46 ms |
+| Compute | Core ML CPU-only | Core ML `.all`, permits acceleration |
+| Notes | D2–E6, two-frame soft onset, three-frame release | Adjustable range, four-frame soft onset, adjustable release, six-voice default limit, octave suppression |
+| MIDI | Channel 1, fixed velocity 96 | Plain MIDI or MPE, level-derived velocity, contour-derived bend and pressure |
+| UI | Website design, note tiles, six pitch-range pads | Keyboard, guessed string/fret positions, detailed note table, MIDI monitor |
+| Failure handling | Audio configuration observer, no-audio watchdog, stop/release on inference failure | No equivalent watchdog/configuration observer found; inference exceptions report an error while the loop continues |
+| Automated checks found | Model, decoder, real CoreMIDI loopback, website lifecycle/integration tests | No test files/target found in the inspected source tree |
+
+The buffer request in Fretwire changes a device property; its return value is ignored and the app's latency estimate uses the requested value, not a verified actual buffer size. A small requested buffer alone does not establish actual end-to-end latency. Its ring also permits a backlog under worker stalls. Our drop-and-reset approach trades continuity for bounded work. Neither capture strategy was benchmarked against a real interface here.
+
+### Controlled model/decoder comparison
+
+A temporary Swift harness fed both engines the same 22,050 Hz synthetic audio in 1,024-sample chunks. It used four phrases with the same harmonic synthesis as our existing self-test, shifted one second later to get past Fretwire's startup warm-up. Fretwire's copied `PitchEngine` was changed only to accept the compiled model path rather than locate an app bundle; its tracker was used directly, with the app's default MPE contour reach of 2,400 cents. The identical bundled model was used for both. The apps' capture, resampling and MIDI delivery were bypassed. Final measurements ran sequentially to avoid simultaneous inference contention.
+
+| Engine/configuration | First correct note delay across four phrases | Median inference |
+| --- | --- | --- |
+| Alive, current defaults | 178–207 ms | 7.48 ms |
+| Fretwire, 8-frame default | 86–114 ms | 2.76 ms |
+| Fretwire, 4-frame context | 39–68 ms | 2.72 ms |
+| Fretwire, 15-frame context | 143–190 ms | 2.73 ms |
+
+Delay here is processed audio time, excluding inference runtime and all hardware/browser overhead. It is the first correct note, not the time until a complete correct chord. This is a tiny synthetic comparison, not a guitar accuracy benchmark. Core ML `.all` ran faster on this Mac than our CPU-only baseline; the prior comment claiming CPU-only was measured faster has been corrected. The selected physical accelerator was not profiled.
+
+At default settings, both engines found all expected pitches across these phrases. Both emitted an extra A4 during A2 and A5 during A2–E3–A3. Fretwire also emitted an extra E5 during E3. At four frames, Fretwire emitted a wrong F2 alongside A2 and generated seven note-ons for the six-note E-major phrase. Its octave filter does not guarantee elimination of octave errors, and the speed improvement is not evidence of better accuracy.
+
+### Reproduced edge cases to resolve before copying its tracker
+
+- **Startup burst:** Fretwire waits for half its model window before its first inference. In the harness that was 1.022 seconds. At the eight-frame setting it then emitted 81 historical analysis frames, starting at audio time 0.0027 seconds, in one batch. Its app sends the resulting MIDI events immediately. Notes played immediately after Start can therefore be emitted late and bunched together. The steady-state latency estimate does not include this startup behavior. See `Fretwire/PitchEngine.swift:127` and `:149`.
+- **Repeated attacks from one broad onset:** feeding 25 consecutive frames with fixed note activation 0.9 and onset activation 0.8 produced four note-ons for one pitch. The retrigger checks elapsed frames and high onset probability, but not a new rising onset. Our decoder requires the onset to fall and rise again. See `Fretwire/NoteTracker.swift:95`.
+- **MPE bend cross-talk:** two stationary, exactly in-tune contour peaks at A2 and E3, with Fretwire's default MPE contour reach, produced approximately +347 and −347 cents of bend after eight frames. The broad centroid pools both voices and pulls them toward one another. This is a deterministic decoder test with supplied activations, not a measurement on recorded guitar. Independent voice/contour association is needed before treating these bends as accurate. See `Fretwire/NoteTracker.swift:182` and `Fretwire/AppModel.swift:192` (the `maxBendCents` assignment).
+
+### Implication for our experience
+
+Fretwire already implements the adjustable context and net interval discussed in this chat. Those are concrete improvements worth bringing into our companion, together with a tested Core ML compute option. Its AUHAL capture path is worth measuring on the real interface. Retain our tested note lifecycle and failure handling while comparing both decoders on the same DI recordings; do not transplant the extra MIDI features without validating them.
+
+The website can already select **Fretwire** in **Rig → Guitar MIDI → Note input**. Its note-on/off messages work with our all-channel listener. The website currently ignores pitch bend and pressure, so those features do not improve our displayed pitch accuracy. Notes outside D2–E6 are also filtered by the website, even though Fretwire's native range is wider. Plain MIDI is sufficient for the stage comparison; string/fret positions in Fretwire are guesses, not measured physical-string identity.

@@ -21,7 +21,7 @@ final class GuitarDetector {
 
     init(url: URL) throws {
         let config = MLModelConfiguration()
-        config.computeUnits = .cpuOnly // measured faster than scheduling tiny work on GPU
+        config.computeUnits = .cpuOnly // Initial baseline; the Fretwire comparison found .all faster on this Mac.
         let compiled = url.pathExtension == "mlmodelc" ? url : try MLModel.compileModel(at: url)
         model = try MLModel(contentsOf: compiled, configuration: config)
         input = try MLMultiArray(shape: [1, 43844, 1], dataType: .float32)
