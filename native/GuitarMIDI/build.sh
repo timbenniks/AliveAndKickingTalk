@@ -3,8 +3,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 app="$PWD/dist/Alive Guitar MIDI.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-xcrun swiftc -target "$(uname -m)-apple-macosx14.0" -O -swift-version 5 -parse-as-library Detector.swift AudioMIDI.swift GuitarMIDI.swift SelfTest.swift -o "$app/Contents/MacOS/AliveGuitarMIDI"
+xcrun swiftc -target "$(uname -m)-apple-macosx14.0" -O -swift-version 5 -parse-as-library Detector.swift AudioMIDI.swift GuitarMIDI.swift StageStyle.swift SelfTest.swift -o "$app/Contents/MacOS/AliveGuitarMIDI"
 xcrun coremlcompiler compile Models/nmp.mlpackage "$app/Contents/Resources" >/dev/null
+cp Resources/* "$app/Contents/Resources/"
 cp Models/LICENSE.basic-pitch "$app/Contents/Resources/"
 cp Models/README.md "$app/Contents/Resources/Basic-Pitch-Provenance.md"
 cat > "$app/Contents/Info.plist" <<'PLIST'

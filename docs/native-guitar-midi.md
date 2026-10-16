@@ -86,3 +86,11 @@ The native app launches and lists the available input devices. No guitar interfa
 The native-to-browser transport works and gives us a clean comparison point for other engines. Moving inference off the browser is straightforward; getting reliable polyphonic notes quickly is still the difficult part. Basic Pitch's tiny model runs cheaply, but its context and occasional octave errors make this version better suited to evaluating detected notes and delayed visual feedback than playing a responsive synth.
 
 The next decisive evidence is a shared clean DI recording set: fast riffs, repeated strums, open/barre chords, quiet octave voices, palm mutes and silence. Compare the browser detector, this companion and MIDI Guitar 3 on identical recordings with annotated notes. Measure missed/extra notes, onset error and end-to-end delay separately. Do not replace either detector based only on the current synthetic tests. A genuinely faster ML path would need a causal/short-context model, training/fine-tuning with an appropriate dataset, or validated access to an existing live engine; simply moving the same weights to native does not remove future-context requirements.
+
+## Alive and Kicking visual design
+
+The companion now uses the website's night-purple/tolex surfaces, cream text, gold actions and six fret colors. The same Jersey 10, Silkscreen and Barlow Semi Condensed fonts are bundled locally with their licenses. Buttons have stepped pixel frames and hard shadows, matching the site's stompbox controls.
+
+A miniature native canvas adapts the site's Benniks amp stacks, woven speaker grilles, lighting truss and perspective fretboard. Detected pitches light their corresponding pitch-range pads and appear in colored note tiles. The input meter uses discrete blocks, while status, inference time and dropped buffers remain visible. The art is static except for updates from actual notes; it adds no animation timer or 3D engine. The audio model, thresholds, MIDI messages and capture path are unchanged.
+
+Validation: rebuilt and verified the signed app bundle, inspected the native window for clipping and readable controls, and reran the existing model/decoder/CoreMIDI self-test successfully. Only native Swift, bundled font resources, the native build script and documentation changed in this design pass.
