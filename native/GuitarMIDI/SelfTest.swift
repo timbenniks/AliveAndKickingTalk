@@ -1,5 +1,34 @@
 import Foundation
 import CoreMIDI
+import AVFoundation
+
+// Explicit hardware check, separate from the microphone-free --self-test.
+// Uses the production capture/conversion/model path and retains no audio.
+func runInputTest(arguments: [String]) throws {
+    guard arguments.count == 2, let channel = Int(arguments[1]), channel > 0,
+          let device = inputDevices().first(where: { $0.name == arguments[0] }),
+          let url = Bundle.main.url(forResource: "nmp", withExtension: "mlmodelc") else {
+        throw NSError(domain: "GuitarMIDITest", code: 2, userInfo: [NSLocalizedDescriptionKey: "Use --input-test 'Exact device name' channel-number"])
+    }
+    try require(AVCaptureDevice.authorizationStatus(for: .audio) == .authorized, "Allow microphone access in the app before running the hardware test")
+    let capture = GuitarCapture()
+    defer { capture.stop() }
+    let lock = NSLock()
+    var reports = 0, highestDB: Float = -180
+    var failure: String?
+    capture.report = { _, _, db, _ in
+        lock.lock(); reports += 1; highestDB = max(highestDB, db); lock.unlock()
+    }
+    capture.failed = { message in lock.lock(); failure = message; lock.unlock() }
+    try capture.start(device: device.id, channel: channel - 1, modelURL: url, gate: -60, threshold: 0.5, timing: DetectorTiming(), compute: .automatic)
+    RunLoop.current.run(until: Date().addingTimeInterval(3))
+    let processed = capture.worker.sync { capture.detector?.samplesProcessed ?? 0 }
+    capture.stop()
+    lock.lock(); let result = (reports, highestDB, failure); lock.unlock()
+    try require(result.2 == nil, result.2 ?? "Capture failed")
+    try require(result.0 > 0 && processed > 0, "No audio reached the detector")
+    print("PASS: \(device.name), channel \(channel), \(result.0) audio reports, \(processed) model input samples, peak buffer RMS \(result.1) dBFS")
+}
 
 func require(_ condition: @autoclosure () -> Bool, _ message: String) throws {
     if !condition() { throw NSError(domain: "GuitarMIDITest", code: 1, userInfo: [NSLocalizedDescriptionKey: message]) }

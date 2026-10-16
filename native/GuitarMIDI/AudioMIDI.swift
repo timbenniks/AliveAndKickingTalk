@@ -94,20 +94,30 @@ final class GuitarCapture {
         self.detector = detector
         self.midi = midi
         let node = engine.inputNode
-        if device != 0, let unit = node.audioUnit {
+        if device != 0 {
+            guard let unit = node.audioUnit else {
+                throw NSError(domain: "GuitarMIDI", code: 2, userInfo: [NSLocalizedDescriptionKey: "The audio input could not be opened. Reconnect it and try again."])
+            }
             var id = device
             try check(AudioUnitSetProperty(unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0, &id, UInt32(MemoryLayout<AudioDeviceID>.size)), "Select audio input")
         }
-        let hardware = node.outputFormat(forBus: 0)
+        // Selecting a device updates the hardware input format, but the node's
+        // output can retain the previous device's channel count and sample rate.
+        // Installing the tap with the input format also configures that output.
+        let hardware = node.inputFormat(forBus: 0)
         guard hardware.sampleRate > 0, hardware.commonFormat == .pcmFormatFloat32, !hardware.isInterleaved,
               channel >= 0, channel < Int(hardware.channelCount),
               let mono = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: hardware.sampleRate, channels: 1, interleaved: false),
               let target = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: GuitarDetector.sampleRate, channels: 1, interleaved: false),
               let converter = AVAudioConverter(from: mono, to: target) else {
-            throw NSError(domain: "GuitarMIDI", code: 2, userInfo: [NSLocalizedDescriptionKey: "The selected input/channel is unavailable"])
+            throw NSError(domain: "GuitarMIDI", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot open channel \(channel + 1). The input reports \(hardware.channelCount) channels at \(Int(hardware.sampleRate)) Hz. Reconnect the input and refresh devices."])
         }
         node.installTap(onBus: 0, bufferSize: 1024, format: hardware) { [weak self] buffer, _ in
             guard let self, let data = buffer.floatChannelData else { return }
+            guard channel < Int(buffer.format.channelCount), buffer.format.sampleRate == hardware.sampleRate else {
+                self.failed?("Audio input format changed. Select your input and start again.")
+                return
+            }
             guard self.slot.wait(timeout: .now()) == .success else {
                 self.gapLock.lock(); self.gap = true; self.dropped += 1; self.gapLock.unlock()
                 return

@@ -186,3 +186,19 @@ All expected pitches appeared and all held notes released in every configuration
 4. If the dropped-buffer counter increases, try a longer analysis interval. Compare CPU only if Automatic fails or behaves poorly. Record the preset/custom timing, compute option, gate/confidence and input device with each result.
 
 The website's existing MIDI listener needs no change for these controls. Audio monitoring stays with the interface/amp; only detected notes travel to the website.
+
+## Scarlett channel selection fix, 2026-10-16
+
+A hardware test reproduced the reported “selected input/channel is unavailable” error with Scarlett Solo USB Channel 2. Before selecting the device, AVAudioEngine had a mono 32 kHz input/output format. Selecting Scarlett updated the input hardware format to two channels at 48 kHz, but its output format remained mono at 32 kHz. The capture code incorrectly used that stale output format to validate Channel 2 and configure the tap.
+
+Capture now reads `inputNode.inputFormat(forBus: 0)` after selecting the device and installs the tap with that format. This follows Apple's [input-node hardware-format guidance](https://developer.apple.com/documentation/AVFAudio/AVAudioEngine/inputNode). It does not change the macOS default input or the interface sample rate. A missing audio unit now fails explicitly; unavailable-channel errors report the requested channel and actual hardware format. A tap-format guard stops capture if channels or sample rate change before the configuration notification is handled.
+
+An optional hardware regression check uses the production capture, conversion and model path for three seconds, then releases notes and stops. It requires microphone permission already granted to the app and does not save audio:
+
+```sh
+'native/GuitarMIDI/dist/Alive Guitar MIDI.app/Contents/MacOS/AliveGuitarMIDI' --input-test 'Scarlett Solo USB' 2
+```
+
+Both Scarlett channels passed independently: each delivered 29 reports and 63,488 converted samples to the detector. Channel 2's highest buffer RMS was approximately −84 dBFS during this quiet check; Channel 1 was approximately −100 dBFS. These checks confirm audio delivery, not guitar recognition or correctness of the physical wiring. Nonexistent Channel 3 failed cleanly with the detailed error. The existing model, timing, note-release and CoreMIDI self-tests also passed after the fix.
+
+The relaunched UI also reached **ON AIR** with Scarlett Channel 2 selected, showed an input level around −37 dBFS and emitted a detected note. Its dropped-buffer counter reached 18 during the live observation, so capture continuity under load still needs follow-up; successful device selection does not establish dropout-free operation or correct recognition of the played notes.

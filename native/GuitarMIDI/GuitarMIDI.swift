@@ -242,6 +242,10 @@ struct GuitarMIDIApp: App {
             do { try runSelfTest(); exit(0) }
             catch { fputs("Self-test failed: \(error)\n", stderr); exit(1) }
         }
+        if let index = CommandLine.arguments.firstIndex(of: "--input-test") {
+            do { try runInputTest(arguments: Array(CommandLine.arguments.dropFirst(index + 1))); exit(0) }
+            catch { fputs("Input test failed: \(error)\n", stderr); exit(1) }
+        }
     }
     var body: some Scene {
         Window("Alive Guitar MIDI", id: "main") { GuitarView() }
