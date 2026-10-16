@@ -1,4 +1,6 @@
 import Foundation
+import SwiftUI
+import Combine
 import CoreMIDI
 
 func runRigSelfTest() throws {
@@ -105,4 +107,44 @@ func runCombinedRigTest(modelPath: String) throws {
     try require(rig_dropped(session.pointer) == 0, "Combined path dropped DI audio")
     print("PASS: simultaneous NAM + 48k DI queue + resampling + Core ML, preset switch, note release; found \(result.0.sorted()), \(result.2) reports, zero drops")
     print(String(format: "Offline 512-sample amp callback max %.3f ms; excludes hardware and is not a round-trip latency measurement", maxMS))
+}
+
+// Render the production monitor without opening an interface or sending notes.
+@MainActor
+func runRigDisplayTest() throws {
+    let state = RigState()
+    var shellUpdates = 0, displayUpdates = 0
+    let shell = state.objectWillChange.sink { shellUpdates += 1 }
+    let display = state.live.objectWillChange.sink { displayUpdates += 1 }
+    defer { shell.cancel(); display.cancel() }
+    for i in 0..<300 {
+        state.live.update(pitches: [], inference: Double(i), inputDB: -Float(i % 120), dropped: i, now: Double(i) / 1000)
+    }
+    try require(displayUpdates <= 10 && displayUpdates > 0, "Repeated meter updates must be limited to 30 Hz")
+    state.live.update(pitches: [40], inference: 2, inputDB: -30, dropped: 0, now: 0.300)
+    state.live.update(pitches: [], inference: 2, inputDB: -30, dropped: 0, now: 0.301)
+    try require(state.live.readings.pitches.isEmpty, "Note releases must bypass the meter throttle")
+    state.live.update(pitches: [45], inference: 2, inputDB: -30, dropped: 0, now: 0.302)
+    try require(state.live.readings.pitches == [45], "Note attacks must bypass the meter throttle")
+    let patterns = [[], [45], [40, 47, 52, 56, 59, 64], Array(40...52), Array(40...88)]
+    for width: CGFloat in [440, 580, 760] {
+        var expected: CGSize?
+        for (index, notes) in patterns.enumerated() {
+            state.live.update(pitches: notes, inference: index == 4 ? 9999 : 2.5, inputDB: -Float(index * 25), dropped: index == 4 ? 999999 : 0, now: Double(index + 1))
+            let renderer = ImageRenderer(content: RigNoteMonitor(live: state.live)
+                .font(RigStyle.body()).foregroundStyle(RigStyle.bone).preferredColorScheme(.dark).frame(width: width))
+            guard let image = renderer.nsImage else { throw NSError(domain: "DisplayTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not render the note monitor"]) }
+            if let expected { try require(image.size == expected, "Notes and meter digit changes must not change monitor size") }
+            expected = image.size
+            try require(image.size == CGSize(width: width, height: 266), "Monitor has a fixed height at every supported pane width")
+            if width == 580 && index == 2, let data = image.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: data), let png = bitmap.representation(using: .png, properties: [:]) {
+                try png.write(to: URL(fileURLWithPath: "/tmp/alive-rig-note-monitor.png"))
+            }
+        }
+    }
+    state.live.reset()
+    try require(state.live.readings == RigReadings(), "Stopping clears all live readings")
+    try require(shellUpdates == 0, "Live reports must not invalidate RigState or the app shell")
+    print("PASS: 30 Hz meters, immediate note attacks/releases, zero shell invalidations, stable monitor geometry for 0/1/6/13/49 notes at three widths")
 }

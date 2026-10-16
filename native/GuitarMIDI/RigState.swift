@@ -16,12 +16,7 @@ final class RigState: ObservableObject {
     @Published var starting = false
     @Published private(set) var rigEnabled = true
     @Published var status = "Choose your guitar input and headphone output."
-    @Published var notes = "—"
-    @Published var pitches: [Int] = []
-    @Published var inference = 0.0
-    @Published var inputDB: Float = -120
-    @Published var dropped = 0
-    @Published var audioMS = 0.0
+    let live = RigLiveState()
     @Published var actualBuffer = 0
     @Published var captures: [AmpCapture] = []
     @Published var presets: [RigPreset] = []
@@ -173,14 +168,13 @@ final class RigState: ObservableObject {
                     session.report = { [weak self] notes, ms, db, drops, _, audioMS in
                         DispatchQueue.main.async {
                             guard let self, self.generation == request else { return }
-                            self.pitches = notes; self.notes = notes.isEmpty ? "—" : notes.map(noteName).joined(separator: " · ")
-                            self.inference = ms; self.inputDB = db; self.dropped = drops; self.audioMS = audioMS
+                            self.live.update(pitches: notes, inference: ms, inputDB: db, dropped: drops, audioMS: audioMS)
                         }
                     }
                     session.detectionFailed = { [weak self] error in
                         DispatchQueue.main.async {
                             guard let self, self.generation == request else { return }
-                            self.pitches = []; self.notes = "—"; self.status = error
+                            self.live.clearNotes(); self.status = error
                         }
                     }
                     session.loadFinished = { [weak self] id, error in
@@ -207,8 +201,8 @@ final class RigState: ObservableObject {
         capture.report = { [weak self] notes, ms, db, drops in
             DispatchQueue.main.async {
                 guard let self, self.generation == request else { return }
-                self.pitches = notes; self.notes = notes.isEmpty ? "—" : notes.map(noteName).joined(separator: " · ")
-                self.inference = ms; self.inputDB = db; self.dropped = drops; self.lastAudio = Date()
+                self.live.update(pitches: notes, inference: ms, inputDB: db, dropped: drops)
+                self.lastAudio = Date()
             }
         }
         capture.failed = { [weak self] error in
@@ -251,8 +245,8 @@ final class RigState: ObservableObject {
         generation += 1; monitor?.invalidate(); monitor = nil
         session?.stop(); session = nil
         noteCapture?.stop(); noteCapture = nil
-        running = false; starting = false; loading = false; pitches = []; notes = "—"; inputDB = -120
-        pendingSound = nil; audioMS = 0; actualBuffer = 0; inference = 0; dropped = 0
+        running = false; starting = false; loading = false; live.reset()
+        pendingSound = nil; actualBuffer = 0
         activeName = "No amp loaded"; status = "Stopped. Audio muted and notes released."
     }
     func refreshDevices() {

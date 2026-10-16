@@ -1,24 +1,52 @@
 import SwiftUI
 import CoreAudio
 
-struct RigRouteControls: View {
+struct RigAudioSetup: View {
     @ObservedObject var state: RigState
+    private var inputName: String { state.devices.first(where: { $0.id == state.device })?.name ?? "Select input" }
+    private var outputName: String { state.outputs.first(where: { $0.id == state.output })?.name ?? "Select output" }
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            VStack(alignment: .leading, spacing: 6) {
-                RigCaption(text: "AUDIO OUTPUT")
-                Picker("Audio output", selection: $state.output) {
-                    Text("Select audio output").tag(AudioDeviceID(0))
-                    ForEach(state.outputs) { Text($0.name).tag($0.id) }
-                }.labelsHidden()
-            }.frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .leading, spacing: 6) {
-                RigCaption(text: "BUFFER / 48 KHZ")
-                Picker("Audio buffer", selection: $state.buffer) {
-                    ForEach([64, 128, 256], id: \.self) { Text("\($0) samples").tag($0) }
-                }.labelsHidden().frame(width: 150)
+        DisclosureGroup {
+            HStack(alignment: .top, spacing: 20) {
+                VStack(alignment: .leading, spacing: 5) {
+                    RigCaption(text: "GUITAR INPUT")
+                    Picker("Guitar input", selection: $state.device) {
+                        Text("Select guitar input").tag(AudioDeviceID(0))
+                        ForEach(state.devices) { Text($0.name).tag($0.id) }
+                    }.labelsHidden().onChange(of: state.device) { _, _ in state.channel = 0 }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 5) {
+                    RigCaption(text: "CHANNEL")
+                    Picker("Input channel", selection: $state.channel) {
+                        ForEach(0..<state.channelCount, id: \.self) { Text("Channel \($0 + 1)").tag($0) }
+                    }.labelsHidden()
+                }.frame(width: 120)
+                VStack(alignment: .leading, spacing: 5) {
+                    RigCaption(text: "RIG OUTPUT")
+                    Picker("Audio output", selection: $state.output) {
+                        Text("Select audio output").tag(AudioDeviceID(0))
+                        ForEach(state.outputs) { Text($0.name).tag($0.id) }
+                    }.labelsHidden().disabled(!state.rigEnabled)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 5) {
+                    RigCaption(text: "RIG BUFFER / 48 KHZ")
+                    Picker("Audio buffer", selection: $state.buffer) {
+                        ForEach([64, 128, 256], id: \.self) { Text("\($0) samples").tag($0) }
+                    }.labelsHidden().disabled(!state.rigEnabled)
+                }.frame(width: 170)
+            }.disabled(state.running || state.starting).padding(.top, 10)
+            Text(state.running || state.starting ? "Stop to change the audio setup." : state.rigEnabled ? "Built-in rig uses outputs 1–2 at 48 kHz." : "Notes only: choose output and buffer in Neural DSP.")
+                .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust).padding(.top, 4)
+        } label: {
+            HStack(spacing: 20) {
+                Text("AUDIO SETUP").font(RigStyle.caps(10)).foregroundStyle(RigStyle.gold)
+                Text("\(inputName) · Ch \(state.channel + 1) → \(state.rigEnabled ? outputName : "External amp")")
+                    .font(RigStyle.body(15)).lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 0)
+                Text(state.rigEnabled ? "\(state.actualBuffer > 0 ? state.actualBuffer : state.buffer) samples · 48 kHz" : "NOTES ONLY")
+                    .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
             }
-        }.pickerStyle(.menu).padding(12).background(RigStyle.tolex)
+        }.tint(RigStyle.gold).pickerStyle(.menu).padding(12).background(RigStyle.tolex)
     }
 }
 
@@ -209,19 +237,12 @@ struct RigAmpControls: View {
                 Text(state.presetStatus).font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            DisclosureGroup("AUDIO / MODEL SETUP") {
+            DisclosureGroup("MODEL FOLDER") {
                 VStack(alignment: .leading, spacing: 10) {
-                    RigRouteControls(state: state).disabled(state.running || state.starting)
-                    DisclosureGroup("MODEL FOLDER") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(state.modelsDirectory.path).font(RigStyle.body(14)).textSelection(.enabled)
-                            Text("Uses your existing 48 kHz Deluxe Reverb amp-and-cab captures. Purchased model files stay outside the project.")
-                                .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
-                            Button("Choose folder") { state.chooseModels() }.buttonStyle(StompButton()).disabled(state.running || state.starting)
-                        }.padding(.top, 8)
-                    }.font(RigStyle.body(14))
-                    Text("48 kHz · \(state.actualBuffer > 0 ? state.actualBuffer : state.buffer) samples · amp processing \(state.audioMS, specifier: "%.2f") ms")
-                        .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
+                    Text(state.modelsDirectory.path).font(RigStyle.body(14)).textSelection(.enabled)
+                    Text("Your 48 kHz Deluxe Reverb amp-and-cab captures.").font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
+                    Button("Choose folder") { state.chooseModels() }.buttonStyle(StompButton()).disabled(state.running || state.starting)
+                    RigProcessingTime(live: state.live)
                 }.padding(.top, 8)
             }
             Text(state.midiStatus).font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)

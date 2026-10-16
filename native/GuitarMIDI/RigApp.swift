@@ -2,7 +2,8 @@ import SwiftUI
 import AVFoundation
 
 struct RigView: View {
-    @StateObject var state = RigState()
+    @StateObject var state: RigState
+    init(state: RigState = RigState()) { _state = StateObject(wrappedValue: state) }
     private var busy: Bool { state.running || state.starting }
 
     private var responseControls: some View {
@@ -41,21 +42,6 @@ struct RigView: View {
 
     private var inputControls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 5) {
-                    RigCaption(text: "GUITAR INPUT")
-                    Picker("Guitar input", selection: $state.device) {
-                        Text("Select guitar input").tag(AudioDeviceID(0))
-                        ForEach(state.devices) { Text($0.name).tag($0.id) }
-                    }.labelsHidden().onChange(of: state.device) { _, _ in state.channel = 0 }
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: 5) {
-                    RigCaption(text: "CHANNEL")
-                    Picker("Input channel", selection: $state.channel) {
-                        ForEach(0..<state.channelCount, id: \.self) { Text("Channel \($0 + 1)").tag($0) }
-                    }.labelsHidden().frame(width: 120)
-                }
-            }
             HStack(spacing: 20) {
                 VStack(spacing: 2) {
                     HStack { Text("Note gate"); Spacer(); Text("\(Int(state.gate)) dB").foregroundStyle(RigStyle.gold) }
@@ -70,52 +56,15 @@ struct RigView: View {
         }.disabled(busy).padding(12).background(RigStyle.tolex)
     }
 
-    private var meters: some View {
-        HStack(spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                RigCaption(text: "INPUT / \(Int(state.inputDB)) DB")
-                HStack(spacing: 3) {
-                    ForEach(0..<20) { i in
-                        Rectangle().fill(Double(state.inputDB) > -70 + Double(i)*3.5 ? (i > 17 ? RigStyle.frets[1] : RigStyle.gold) : RigStyle.raised).frame(height: 8)
-                    }
-                }.accessibilityLabel("Input level \(Int(state.inputDB)) decibels")
-            }.frame(maxWidth: .infinity)
-            VStack(alignment: .leading, spacing: 3) {
-                RigCaption(text: "INFERENCE")
-                Text("\(state.inference, specifier: "%.1f") ms").font(RigStyle.pixel(24))
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                RigCaption(text: "DROPS")
-                Text("\(state.dropped)").font(RigStyle.pixel(24)).foregroundStyle(state.dropped > 0 ? RigStyle.gold : RigStyle.bone)
-            }
-        }.padding(10).background(RigStyle.tolex)
-    }
-
-    private func notesPanel(stageHeight: CGFloat) -> some View {
+    private var notesPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("GUITAR → MIDI").font(RigStyle.pixel(30)).foregroundStyle(RigStyle.gold)
+            Text("GUITAR → MIDI").font(RigStyle.pixel(30)).foregroundStyle(RigStyle.gold).frame(height: 30)
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    VoxelStage(pitches: state.pitches).aspectRatio(360.0 / 204.0, contentMode: .fit)
-                        .frame(height: stageHeight).frame(maxWidth: .infinity)
-                        .overlay(Rectangle().stroke(RigStyle.raised, lineWidth: 2))
-                    HStack {
-                        RigCaption(text: "NOTES")
-                        if state.pitches.isEmpty {
-                            Text("Play a chord. Make some noise.").font(RigStyle.pixel(25))
-                        } else {
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 6), spacing: 4) {
-                                ForEach(state.pitches, id: \.self) { pitch in
-                                    Text(noteName(pitch)).font(RigStyle.pixel(27)).foregroundStyle(RigStyle.frets[RigStyle.lane(pitch)])
-                                }
-                            }
-                        }
-                        Spacer(minLength: 0)
-                    }.frame(minHeight: 30).accessibilityElement(children: .ignore).accessibilityLabel("Detected notes: \(state.notes)")
+                    RigNoteMonitor(live: state.live)
                     inputControls
-                    meters
                     Text("Website guitar input: Alive Rig Preview Notes")
-                        .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
+                        .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust).lineLimit(1)
                 }.padding(.trailing, 4).padding(.bottom, 4)
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -172,15 +121,17 @@ struct RigView: View {
                     Text(state.running ? "ON AIR" : state.starting ? "CONNECTING" : "STANDBY").font(RigStyle.caps(10))
                 }.padding(12).background(RigStyle.tolex)
             }.padding(.horizontal, 24).padding(.vertical, 14)
+            RigAudioSetup(state: state).padding(.horizontal, 24).padding(.bottom, 12)
             GeometryReader { geometry in
                 HStack(alignment: .top, spacing: 20) {
-                    notesPanel(stageHeight: min(140, max(105, geometry.size.height * 0.24)))
+                    notesPanel.frame(width: max(0, (geometry.size.width - 42) / 2))
                     Rectangle().fill(RigStyle.raised).frame(width: 2)
-                    rigPanel
+                    rigPanel.frame(width: max(0, (geometry.size.width - 42) / 2))
                 }
             }.padding(.horizontal, 24).padding(.bottom, 12)
             VStack(alignment: .leading, spacing: 10) {
-                Text(state.status).font(RigStyle.body(16)).fixedSize(horizontal: false, vertical: true)
+                Text(state.status).font(RigStyle.body(16)).lineLimit(2)
+                    .frame(height: 36, alignment: .topLeading).help(state.status)
                 HStack(spacing: 16) {
                     Button(busy ? "Stop / release notes" : state.rigEnabled ? "Start rig" : "Start notes") {
                         if busy { state.stop() } else { state.start() }
@@ -199,6 +150,10 @@ struct RigView: View {
 struct AliveRigPreviewApp: App {
     init() {
         RigStyle.registerFonts()
+        if CommandLine.arguments.contains("--display-test") {
+            do { try runRigDisplayTest(); exit(0) }
+            catch { fputs("Display test failed: \(error)\n", stderr); exit(1) }
+        }
         if let index = CommandLine.arguments.firstIndex(of: "--offline-test"), CommandLine.arguments.count > index + 1 {
             do { try runCombinedRigTest(modelPath: CommandLine.arguments[index + 1]); exit(0) }
             catch { fputs("Combined test failed: \(error)\n", stderr); exit(1) }

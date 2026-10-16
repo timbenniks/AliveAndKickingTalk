@@ -10,7 +10,7 @@ xcrun swiftc -target "$(uname -m)-apple-macosx14.0" -O -swift-version 5 -parse-a
     -D RIG_PREVIEW -import-objc-header "$audio/RigAudio.h" \
     -L "$audio/build" -lAliveRigAudio -Xlinker -rpath -Xlinker @executable_path/../Frameworks \
     Detector.swift AudioMIDI.swift GuitarMIDI.swift StageStyle.swift SelfTest.swift \
-    RigApp.swift RigControls.swift RigPresets.swift RigSession.swift RigState.swift RigSelfTest.swift \
+    RigApp.swift RigNotes.swift RigControls.swift RigPresets.swift RigSession.swift RigState.swift RigSelfTest.swift \
     -o "$app/Contents/MacOS/AliveRigPreview"
 cp "$audio/build/libAliveRigAudio.dylib" "$app/Contents/Frameworks/"
 xcrun coremlcompiler compile Models/nmp.mlpackage "$app/Contents/Resources" >/dev/null
