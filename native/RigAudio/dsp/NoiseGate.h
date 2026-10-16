@@ -11,7 +11,8 @@ public:
     void setEnabled(bool e) noexcept { enabled = e; }
     void setThresholdDb(float db) noexcept;
     void setReleaseMs(float ms) noexcept;
-    void process(float* samples, int numSamples) noexcept;
+    // Optional per-sample gain lets the same DI detector gate the amp output.
+    void process(float* samples, int numSamples, float* gains = nullptr) noexcept;
 
 private:
     bool enabled = false;

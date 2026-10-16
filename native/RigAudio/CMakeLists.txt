@@ -13,7 +13,7 @@ endif()
 file(GLOB NAM_SOURCES "${nam_SOURCE_DIR}/NAM/*.cpp" "${nam_SOURCE_DIR}/NAM/*/*.cpp")
 # Compile registrars directly into the dylib, so no static dead-stripping can lose A2.
 add_library(AliveRigAudio SHARED RigAudio.cpp ${NAM_SOURCES}
-    dsp/DcBlocker.cpp dsp/NoiseGate.cpp dsp/SpringReverb.cpp dsp/SafetyLimiter.cpp dsp/RigEffects.cpp)
+    dsp/DcBlocker.cpp dsp/NoiseGate.cpp dsp/SafetyLimiter.cpp dsp/RigEffects.cpp)
 target_include_directories(AliveRigAudio PRIVATE . "${nam_SOURCE_DIR}" "${nam_SOURCE_DIR}/Dependencies/eigen" "${nam_SOURCE_DIR}/Dependencies/nlohmann")
 target_compile_definitions(AliveRigAudio PRIVATE NAM_SAMPLE_FLOAT NAM_ENABLE_A2_FAST JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
 target_link_libraries(AliveRigAudio PRIVATE juce::juce_audio_devices juce::juce_dsp)

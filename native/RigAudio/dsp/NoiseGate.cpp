@@ -31,10 +31,13 @@ void NoiseGate::setReleaseMs(float ms) noexcept
     releaseCoeff = samples > 1.0f ? std::exp(-1.0f / samples) : 0.0f;
 }
 
-void NoiseGate::process(float* samples, int numSamples) noexcept
+void NoiseGate::process(float* samples, int numSamples, float* gains) noexcept
 {
     if (!enabled)
+    {
+        if (gains) for (int i = 0; i < numSamples; ++i) gains[i] = 1.0f;
         return;
+    }
 
     for (int i = 0; i < numSamples; ++i)
     {
@@ -54,6 +57,7 @@ void NoiseGate::process(float* samples, int numSamples) noexcept
         const float target = open ? 1.0f : 0.0f;
         gain += 0.002f * (target - gain);
         samples[i] *= gain;
+        if (gains) gains[i] = gain;
     }
 }
 

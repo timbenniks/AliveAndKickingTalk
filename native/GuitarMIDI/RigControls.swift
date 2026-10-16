@@ -194,7 +194,7 @@ struct RigAmpControls: View {
         HStack(spacing: 4) {
             RigDial(title: "INPUT", label: "Input gain", value: $state.draft.input, range: -24...24, diameter: 56)
             RigDial(title: "GATE", label: "Amp gate", value: $state.draft.gate, range: -85 ... -30, diameter: 56)
-            RigDial(title: "OUTPUT", label: "Output level", value: $state.draft.output, range: -60...6, emphasized: true, diameter: 56)
+            RigDial(title: "OUTPUT", label: "Output level", value: $state.draft.output, range: -60...24, emphasized: true, diameter: 56)
         }.padding(.vertical, 6).padding(.horizontal, 8).background(RigStyle.raised).disabled(state.loading)
             .onChange(of: state.draft.input) { _, _ in state.updateControls() }
             .onChange(of: state.draft.gate) { _, _ in state.updateControls() }

@@ -1,7 +1,6 @@
 #include "RigAudio.h"
 #include "dsp/DcBlocker.h"
 #include "dsp/NoiseGate.h"
-#include "dsp/SpringReverb.h"
 #include "dsp/SafetyLimiter.h"
 #include "dsp/RigEffects.h"
 #include "util/AudioMath.h"
@@ -20,7 +19,7 @@ constexpr double rate = 48000;
 struct Model {
     std::unique_ptr<nam::DSP> dsp;
     uint64_t generation;
-    float match = 1, inputDB, outputDB, gateDB, reverb;
+    float match = 1, inputDB, outputDB, gateDB;
     RigEffectsParameters effects = RigEffects::defaults();
 };
 
@@ -35,22 +34,21 @@ struct Rig final : juce::AudioIODeviceCallback {
     Model* current = nullptr;
     Model* fading = nullptr;
     int fade = fadeSamples;
-    std::atomic<float> inputDB {0}, outputDB {-12}, gateDB {-70}, reverb {2};
+    std::atomic<float> inputDB {0}, outputDB {-12}, gateDB {-70};
     std::atomic<bool> muted {false};
     std::atomic<int> fault {0}, blockSize {128};
     std::atomic<double> callbackMS {0};
     juce::AudioBuffer<float> audio {2, maxBlock};
-    std::array<float, maxBlock> dry {}, previous {};
-    timsamp::DcBlocker dc;
+    std::array<float, maxBlock> dry {}, previous {}, gateGain {};
+    timsamp::DcBlocker dc, ampDC;
     timsamp::NoiseGate gate;
-    timsamp::SpringReverbProcessor spring;
     timsamp::SafetyLimiter limiter;
     RigEffects effects;
     juce::SmoothedValue<float> inputGain, outputGain;
 
     Rig() {
-        dc.prepare(rate); gate.prepare(rate); gate.setEnabled(true); gate.setReleaseMs(100);
-        spring.prepare({rate, maxBlock, 2}); limiter.prepare(rate); limiter.setCeilingDb(-1);
+        dc.prepare(rate); ampDC.prepare(rate); gate.prepare(rate); gate.setEnabled(true); gate.setReleaseMs(100);
+        limiter.prepare(rate); limiter.setCeilingDb(-1);
         effects.prepare(rate, maxBlock);
         inputGain.reset(rate, 0.02); outputGain.reset(rate, 0.02);
         inputGain.setCurrentAndTargetValue(1); outputGain.setCurrentAndTargetValue(0);
@@ -91,7 +89,7 @@ struct Rig final : juce::AudioIODeviceCallback {
                 else {
                     fading = current; current = next; fade = 0;
                     inputDB.store(next->inputDB); outputDB.store(next->outputDB);
-                    gateDB.store(next->gateDB); reverb.store(next->reverb);
+                    gateDB.store(next->gateDB);
                     effects.set(next->effects);
                     active.store(next->generation);
                 }
@@ -115,7 +113,7 @@ struct Rig final : juce::AudioIODeviceCallback {
         dc.process(mono, n);
         inputGain.setTargetValue(timsamp::math::dbToGain(inputDB.load()));
         for (int i = 0; i < n; ++i) mono[i] *= inputGain.getNextValue();
-        gate.setThresholdDb(gateDB.load()); gate.process(mono, n);
+        gate.setThresholdDb(gateDB.load()); gate.process(mono, n, gateGain.data());
         std::copy_n(mono, n, dry.data());
         try {
             float* src = dry.data(); float* dst = mono;
@@ -138,8 +136,11 @@ struct Rig final : juce::AudioIODeviceCallback {
         }
         fade = std::min(fade, fadeSamples);
         if (fading && fade == fadeSamples) { retired.store(fading, std::memory_order_release); fading = nullptr; }
+        // Remove model DC, then reuse the DI gate envelope after the nonlinear amp.
+        // Both sit before the effects so closing the gate leaves their tails intact.
+        ampDC.process(mono, n);
+        for (int i = 0; i < n; ++i) mono[i] *= gateGain[i];
         audio.copyFrom(1, 0, audio, 0, 0, n);
-        spring.setAmount(reverb.load()); spring.process(audio);
         effects.process(audio);
         outputGain.setTargetValue(muted.load() ? 0 : timsamp::math::dbToGain(outputDB.load()));
         for (int i = 0; i < n; ++i) {
@@ -198,7 +199,7 @@ int rig_load_with_effects(void* p, const char* path, uint64_t generation, float 
         m->dsp->SetPrewarmOnReset(false); m->dsp->Reset(rate, maxBlock); m->dsp->prewarm();
         if (m->dsp->HasLoudness()) m->match = timsamp::math::dbToGain(std::clamp(-24.0f - float(m->dsp->GetLoudness()), -24.0f, 24.0f));
         m->generation = generation; m->inputDB = std::clamp(input, -24.0f, 24.0f);
-        m->outputDB = std::clamp(output, -60.0f, 6.0f); m->gateDB = std::clamp(gate, -85.0f, -30.0f); m->reverb = std::clamp(reverb, 0.0f, 10.0f);
+        m->outputDB = std::clamp(output, -60.0f, 24.0f); m->gateDB = std::clamp(gate, -85.0f, -30.0f);
         if (r.wanted.load() != generation) return 2;
         delete r.pending.exchange(m.release(), std::memory_order_acq_rel);
         return 1;
@@ -207,8 +208,8 @@ int rig_load_with_effects(void* p, const char* path, uint64_t generation, float 
 }
 void rig_controls(void* p, float input, float output, float gate, float reverb, int muted) {
     auto& r = *static_cast<Rig*>(p);
-    r.inputDB.store(std::clamp(input, -24.0f, 24.0f)); r.outputDB.store(std::clamp(output, -60.0f, 6.0f));
-    r.gateDB.store(std::clamp(gate, -85.0f, -30.0f)); r.reverb.store(std::clamp(reverb, 0.0f, 10.0f)); r.muted.store(muted != 0);
+    r.inputDB.store(std::clamp(input, -24.0f, 24.0f)); r.outputDB.store(std::clamp(output, -60.0f, 24.0f));
+    r.gateDB.store(std::clamp(gate, -85.0f, -30.0f)); r.muted.store(muted != 0);
 }
 void rig_mute(void* p, int muted) { static_cast<Rig*>(p)->muted.store(muted != 0); }
 void rig_effects_controls(void* p, const RigEffectsParameters* settings) {

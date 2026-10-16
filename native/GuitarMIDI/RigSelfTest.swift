@@ -21,7 +21,7 @@ func runRigSelfTest() throws {
     defer { try? FileManager.default.removeItem(at: folder) }
     let store = RigPresetStore(url: folder.appendingPathComponent("presets.json"))
     let p = RigPreset(name: "Clean", modelFile: "clean.nam", program: 0)
-    var q = RigPreset(name: "Lead", modelFile: "lead.nam", program: 127, input: 3, output: -6, gate: -55, reverb: 5)
+    var q = RigPreset(name: "Lead", modelFile: "lead.nam", program: 127, input: 3, output: 24, gate: -55, reverb: 5)
     q.effects.delayEnabled = true; q.effects.reverbEnabled = true
     q.effects.pingPong = true; q.effects.division = 2; q.effects.tempo = 100
     q.effects.reverbStyle = 0; q.effects.preDelay = 47; q.effects.ducking = 63
@@ -41,6 +41,8 @@ func runRigSelfTest() throws {
     try require(!invalid.valid, "Model path must stay in the selected folder")
     invalid = p; invalid.output = .nan
     try require(!invalid.valid, "Nonfinite gain rejected")
+    invalid = p; invalid.output = 24.5
+    try require(!invalid.valid, "Output above +24 dB rejected")
     invalid = p; invalid.effects.feedback = 86
     try require(!invalid.valid, "Runaway delay feedback rejected")
     invalid = p; invalid.effects.tempo = 0

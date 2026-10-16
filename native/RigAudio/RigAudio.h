@@ -16,6 +16,8 @@ void rig_destroy(void* rig);
 int rig_start(void* rig, const char* input, const char* output, int channel, int block, char* error, int capacity);
 void rig_stop(void* rig);
 void rig_request(void* rig, uint64_t generation);
+// Legacy spring `reverb` arguments are ignored; use the effects rack for reverb.
+// Input gain: -24..24 dB. Output gain: -60..24 dB, followed by the -1 dBFS limiter.
 int rig_load(void* rig, const char* path, uint64_t generation, float inputDB, float outputDB, float gateDB, float reverb, char* error, int capacity);
 int rig_load_with_effects(void* rig, const char* path, uint64_t generation, float inputDB, float outputDB, float gateDB, float reverb, const RigEffectsParameters* effects, char* error, int capacity);
 void rig_controls(void* rig, float inputDB, float outputDB, float gateDB, float reverb, int muted);

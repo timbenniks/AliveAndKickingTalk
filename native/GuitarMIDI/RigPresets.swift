@@ -61,14 +61,14 @@ struct RigPreset: Codable, Identifiable, Equatable {
     var input = 0.0
     var output = -12.0
     var gate = -70.0
-    var reverb = 2.0
+    var reverb = 2.0 // Legacy spring value retained for file compatibility; ignored by DSP.
     var effects = RigEffectSettings()
 
     var valid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= 80 &&
         !modelFile.isEmpty && modelFile == (modelFile as NSString).lastPathComponent && modelFile.hasSuffix(".nam") &&
         (0...127).contains(program) && input.isFinite && (-24...24).contains(input) &&
-        output.isFinite && (-60...6).contains(output) && gate.isFinite && (-85 ... -30).contains(gate) &&
+        output.isFinite && (-60...24).contains(output) && gate.isFinite && (-85 ... -30).contains(gate) &&
         reverb.isFinite && (0...10).contains(reverb) && effects.valid
     }
 }
@@ -80,7 +80,7 @@ extension RigPreset {
         modelFile = try c.decode(String.self, forKey: .modelFile); program = try c.decode(Int.self, forKey: .program)
         input = try c.decode(Double.self, forKey: .input); output = try c.decode(Double.self, forKey: .output)
         gate = try c.decode(Double.self, forKey: .gate); reverb = try c.decode(Double.self, forKey: .reverb)
-        // No migration write: pre-effects presets retain their exact sound until edited and saved.
+        // No migration write: older files keep their values and default the effects rack off.
         effects = try c.decodeIfPresent(RigEffectSettings.self, forKey: .effects) ?? RigEffectSettings()
     }
 }

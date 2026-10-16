@@ -1,6 +1,6 @@
 # Alive Rig Preview
 
-This is the main native macOS app: the Alive voxel stage and guitar-to-MIDI detector, plus a NAM amp, stereo delay, room/hall reverb, saved sound presets and MIDI preset control. Turning the rig off provides notes-only operation alongside Neural DSP. The legacy spring setting remains in preset data for sound compatibility.
+This is the main native macOS app: the Alive voxel stage and guitar-to-MIDI detector, plus a NAM amp, stereo delay, room/hall reverb, saved sound presets and MIDI preset control. Turning the rig off provides notes-only operation alongside Neural DSP. The legacy spring setting remains readable in preset data but no longer processes audio; Space is the reverb.
 
 ## Preserved baseline
 
@@ -62,7 +62,7 @@ If Neural DSP changes the interface's sample rate or the input disconnects, rest
 
 The initial 24 sounds map the catalog to programs 0–23. These assignments are starting points, not a recreation of the existing Neural DSP song mappings. Adjust the program numbers and sounds to match each song.
 
-Saved presets include name, capture filename, MIDI program, input gain, amp gate, spring reverb, output level and the complete effects rack (including tempo and note division). Expand **SAVE / MIDI MAPPING** to edit the name and program. **Save preset** updates the selected sound. **Save as new** creates another sound and requires an unused program number. Files are validated and written atomically to:
+Saved presets include name, capture filename, MIDI program, input gain, amp gate, output level (−60 to +24 dB), legacy spring data and the complete effects rack (including tempo and note division). Expand **SAVE / MIDI MAPPING** to edit the name and program. **Save preset** updates the selected sound. **Save as new** creates another sound and requires an unused program number. Files are validated and written atomically to:
 
 `~/Library/Application Support/Alive Rig Preview/presets.json`
 
@@ -72,13 +72,13 @@ Duplicate programs, invalid ranges and unsafe model filenames are rejected. An u
 
 ```text
 Interface DI (selected channel, 48 kHz)
-  ├─ DC filter → input gain → amp gate → NAM → spring → echo → space → output gain → limiter → interface
+  ├─ DC filter → input gain → amp gate → NAM → output DC filter → shared gate envelope → echo → space → output gain → limiter → interface
   └─ bounded preallocated queue → worker resampling to 22,050 Hz → unchanged Core ML detector
                                                                → Preview Notes MIDI source
 Website → Preview Control MIDI destination → saved preset → background model loader
 ```
 
-The SwiftUI shell is retained. A C bridge calls the JUCE audio-device and NAM engine; no JUCE editor is introduced. The DC filter, gate, spring and limiter sources are copied from `timbenniks-rig` commit `efa73cd`. The original rig's pointer-swap implementation is not used.
+The SwiftUI shell is retained. A C bridge calls the JUCE audio-device and NAM engine; no JUCE editor is introduced. The DC filter, gate and limiter sources originated in `timbenniks-rig` commit `efa73cd`. The original rig's pointer-swap implementation is not used.
 
 Models load and prewarm off the audio thread. The audio thread owns the current and fading models. Atomic pointer mailboxes transfer prepared models and retire old ones; destruction happens off the audio thread. Preset swaps crossfade over 30 ms. The last successfully loaded amp keeps running during loading and on load errors. Before the first model is ready, output is silent. Mute affects amp output while note detection continues.
 
@@ -97,7 +97,7 @@ The Swift checks include the original real Core ML chord/riff tests, note releas
 
 The combined offline test feeds synthetic 48 kHz guitar into the production amp and DI queue while the production resampler and Core ML worker run. It switches the model during processing, checks expected notes and eventual release, and asserts zero queue drops. The first run passed with all expected pitches and one extra A4 (the same octave error seen in the original Balanced detector). This checks integration, not real-guitar accuracy or hardware latency.
 
-Hardware acceptance still requires guitar-to-headphones latency, chord accuracy through the new capture route, rapid preset changes, disconnect/reconnect, and a complete rehearsal with the website running. Inference and callback processing durations are not end-to-end latency measurements. The preview has the Deluxe Reverb captures, spring and the effects rack described below. It does not import Neural DSP presets or reproduce its algorithms.
+Hardware acceptance still requires guitar-to-headphones latency, chord accuracy through the new capture route, rapid preset changes, disconnect/reconnect, and a complete rehearsal with the website running. Inference and callback processing durations are not end-to-end latency measurements. The preview has the Deluxe Reverb captures and the effects rack described below. It does not import Neural DSP presets or reproduce its algorithms.
 
 ## Validation, 2026-10-16
 
@@ -121,7 +121,7 @@ The offline run during UI inspection recorded a 74.6 ms maximum render duration 
 
 The right side now uses a drawn pixel cabinet with a woven grille, Benniks nameplate, gold control strip, and a status light. It keeps the existing colors and fonts; no generated image assets or new dependencies are used. The large preset name and raw MIDI program sit above it, with previous/next buttons and a menu for the full list. Browsing selects a saved preset using the existing loading path and replaces any unsaved draft, just like the previous picker.
 
-Four dials control the same input gain, amp gate, spring reverb and output gain as before. Drag vertically to adjust; keyboard arrows and VoiceOver increment/decrement adjust by 0.5. Values are clamped to the existing ranges. Output has a gold label and readout. There are no cosmetic EQ controls that the capture engine cannot perform. Mute remains separate from turning the rig off.
+Three dials control input gain, amp gate and output gain. Drag vertically to adjust; keyboard arrows and VoiceOver increment/decrement adjust by 0.5. Output spans −60 to +24 dB; input and gate retain their existing ranges. Output has a gold label and readout. There are no cosmetic EQ controls that the capture engine cannot perform. Mute remains separate from turning the rig off.
 
 Expand **SAVE / MIDI MAPPING** to save or rename sounds and assign programs. **AUDIO SETUP** above both panels holds input, channel, output and buffer. **MODEL FOLDER** on the amp side holds the capture-folder chooser and processing time. The notes panel and rig-off behavior are unchanged.
 
@@ -155,7 +155,7 @@ Expand **EFFECTS** below the amp. The blue **ECHO** and purple **SPACE** panels 
 - **Echo:** digital or tape character, optional ping-pong, 20–2000 ms manual time, feedback (maximum 85%), wet mix (maximum 60%) and tone. Tape adds soft saturation and subtle time modulation to repeats. Time changes glide over 50 ms and can audibly bend pitch.
 - **Timing:** milliseconds or quarter, dotted-eighth, eighth and half notes at 40–240 BPM. Tap averages the last four valid intervals and switches manual time to quarter notes. Synced time can reach 3000 ms. Tempo is saved per preset; this version does not receive MIDI Clock or the website's song tempo. Program numbers alone do not communicate tempo.
 - **Space:** algorithmic Room/Hall ranges, length, 0–150 ms pre-delay, tone, stereo width and wet mix. This uses JUCE's FreeVerb-based stereo tank with additional filtering and pre-delay. Length is a relative amount, not a measured decay in seconds. It is not convolution, a physical plate emulation, or a copy of Neural DSP's reverb; licensed plate/hall IRs remain a possible later upgrade.
-- **Ducking:** reduces the wet echo and space while the post-amp guitar is loud, releasing over about 250 ms. Dry guitar stays at unity through the new rack. The existing spring remains a separate amp control.
+- **Ducking:** reduces the wet echo and space while the post-amp guitar is loud, releasing over about 250 ms. Dry guitar stays at unity through the new rack. Space is the only reverb processor; the legacy spring is bypassed.
 - **Tails:** switching either effect off fades its input send, allowing stored repeats/reverb to decay. Preset changes retain the same buffers; the new time, feedback, mix and reverb settings reshape existing tails. This is shared-buffer spillover, not two independently preserved preset engines. Mute silences the complete output; Stop/rig-off discards the session and its tails.
 
 Legacy preset files decode with both new effects off and every existing value unchanged. Loading does not rewrite the file. Malformed effects, nonfinite values and invalid ranges are rejected by preset validation. A backup of the previous signed app, preset file, source diff and Git revision is at `/Users/tim.benniks/Websites/AliveAndKicking/backups/before-effects-20261016-152543/`.
@@ -175,7 +175,7 @@ Live guitar listening, level balancing and a full website-driven rehearsal remai
 
 ## Simplified amp controls, 2026-10-16
 
-Removed the Spring dial from the amp panel. Input, Gate and Output share the control strip; reverb controls are available in the Space effects panel. This is a panel-only change: existing saved spring values and audio processing are retained to preserve preset compatibility and sound.
+Removed the Spring dial from the amp panel. Input, Gate and Output share the control strip; reverb controls are available in the Space effects panel. The initial panel-only change retained spring processing. The noise cleanup below supersedes that behavior: saved spring values remain readable but no longer affect the sound.
 
 ## Effects rack design, 2026-10-16
 
@@ -194,3 +194,15 @@ Preset selection and a quick Save button stay above the rig's scrolling gear. Mu
 Display checks cover stable note geometry at 296/330/360 points, window bounds at 1040×600, 1280×720 and 1600×900, and narrow/wide gear renders. Full-window ImageRenderer exports do not draw native scroll content; the separate gear renders and live app inspection cover those areas.
 
 Validation: signed build and display checks passed. Reviewed narrow/wide controls and the expanded six-note stage render, including sharp-note labels. In the running widescreen app the amp and both racks are visible together, with preset/Save and Mute above them and Start/Stop, rig on/off and Refresh Devices below. Restarted audio on the existing Scarlett route, confirmed On Air with zero input drops, and restored the unsaved −66.5 dB gate setting. No preset files were saved during this layout work.
+
+## Amp noise cleanup and output trim, 2026-10-16
+
+Output now spans −60 to +24 dB in the dial, preset validation, model loading and live controls. Saved levels and input gain are not automatically changed. Use output for capture loudness matching; input changes the amp drive. Gain still ramps over 20 ms and the final −1 dBFS limiter remains active. Extra output gain also raises any noise present while playing, and excessive gain into the limiter compresses peaks.
+
+The existing input gate supplies its per-sample smoothed gain to a second multiplication after NAM. Both use the same Gate knob and detector, including the existing 100 ms envelope release and hysteresis. No second threshold is needed. This also suppresses residual amp output when the DI gate closes, without changing the untouched DI sent to note detection. A separate 5 Hz DC filter after NAM removes learned model offsets. These stages run before Echo and Space, so their tails can decay after a note ends. Gate threshold is still relative to DI after input gain; reducing input may require adjusting Gate for sustained notes.
+
+Spring is removed from the processing chain and build. Its old preset field and C bridge argument are retained for compatibility but ignored by DSP; old presets therefore lose their hidden spring contribution. Echo/Space settings and user preset files are left intact. There are no new audio-thread allocations, locks or file operations.
+
+Native regression checks cover DC removal, gate closure/reopening, real-model loaded and live gain above +6 dB, the legacy spring bypass, limiter protection at +24 dB, dry silence and preserved effects tails. The Swift persistence check round-trips +24 dB and rejects values above it. Hardware listening is still needed to tune Gate against the actual guitar/interface noise and verify sustain.
+
+Validation: signed release build, both CTest targets, real Clean/Bright Crunch capture tests, full Core ML/CoreMIDI self-tests and +24 dB preset round-trip passed. The combined amp/effects/detector test produced 446 reports with zero DI drops. Offline timing showed scheduling spikes (up to 16.3 ms with effects); a separate sequential 64-sample Bright Crunch comparison measured before/after medians of 0.124/0.151 ms and maxima of 0.670/0.820 ms with effects off. These are offline checks, not a guarantee of the 1.333 ms hardware deadline. The previous app and preset file are backed up at `/Users/tim.benniks/Websites/AliveAndKicking/backups/before-noise-cleanup-20261016-180855/`. The running app was left alone so unsaved edits can be saved before restarting into the rebuilt app.
