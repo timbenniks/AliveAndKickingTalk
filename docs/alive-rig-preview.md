@@ -15,7 +15,7 @@ The preview has a different app identifier (`live.aliveandkicking.rig-preview`),
 
 ## Visual contract
 
-`StageStyle.swift`, the voxel stage, icon, and bundled font files are retained. Colors remain night `#100c1c`, tolex `#1e1733`, raised `#2c2348`, bone `#f3ead6`, dust `#a99fbb`, and gold `#ffc531`, with the same six fret colors. Jersey 10, Silkscreen and Barlow Semi Condensed keep their original roles. The new sound panel uses the existing stepped stomp buttons, square panels, typography and colors. The note-response panel is collapsible to make room for sound controls.
+`StageStyle.swift`, the voxel stage, icon, and bundled font files are retained. Colors remain night `#100c1c`, tolex `#1e1733`, raised `#2c2348`, bone `#f3ead6`, dust `#a99fbb`, and gold `#ffc531`, with the same six fret colors. Jersey 10, Silkscreen and Barlow Semi Condensed keep their original roles. The new sound panel uses the existing stepped stomp buttons, square panels, typography and colors. The window opens at 1280 × 720 and can be resized or presented fullscreen. Notes, input and response controls sit on the left; audio output, amp controls and presets sit on the right. Each side scrolls independently for smaller displays and expanded settings. Advanced note settings and preset editing are collapsible; Start/Stop and the rig on/off switch stay visible.
 
 ## Build and launch
 
@@ -40,11 +40,23 @@ The original `build.sh` still builds the note-only app inside this separate chec
 
 The dedicated control destination replaces the IAC route for this preview. It accepts channel 1 Program Changes, with raw program numbers 0–127. It does not subscribe to IAC automatically, avoiding accidental control of both amps. The unchanged website can already select the new output. Incoming unmapped programs are shown without changing sound; MIDI never starts stopped audio.
 
+## Notes only / Neural DSP
+
+Click **Turn rig off** on the right. The button changes to **Turn rig on**, and the main action becomes **Start notes**. This choice is remembered across launches.
+
+- The left side keeps the original input-only `GuitarCapture` path and unchanged detector. It publishes **Alive Rig Preview Notes** in both modes.
+- With the rig off, no NAM engine or model is started and the app produces no audio output. An output device and NAM files are not required. This mode resamples the input's current rate, as the original MIDI app does; the built-in rig's 48 kHz restriction does not apply.
+- Open Neural DSP and select your DI input and headphone/monitor output there. In the website, keep Guitar MIDI input on **Alive Rig Preview Notes**, and select **IAC Driver Alive and Kicking** for amp output. Neural DSP must listen to that IAC port. The preview does not change these website or Neural DSP settings automatically.
+- The preview ignores incoming amp Program Changes while its rig is off. Saved sounds and the current draft are retained. **Mute amp** remains a separate control for silencing the built-in rig while keeping it loaded.
+- Switching modes while running releases held notes, closes the current capture path, then starts the chosen path. Expect a brief interruption and possible MIDI endpoint reconnection. If the required device or capture is unavailable, it stays stopped with an explanation. Mode changes while stopped do not start audio.
+
+If Neural DSP changes the interface's sample rate or the input disconnects, restart notes after checking the route. Simultaneous operation with the actual interface and Neural DSP still needs a hardware rehearsal.
+
 ## Presets
 
 The initial 24 sounds map the catalog to programs 0–23. These assignments are starting points, not a recreation of the existing Neural DSP song mappings. Adjust the program numbers and sounds to match each song.
 
-Saved presets include name, capture filename, MIDI program, input gain, amp gate, spring reverb and output level. **Save preset** updates the selected sound. **Save as new** creates another sound and requires an unused program number. Files are validated and written atomically to:
+Saved presets include name, capture filename, MIDI program, input gain, amp gate, spring reverb and output level. Expand **SAVE / MIDI MAPPING** to edit the name and program. **Save preset** updates the selected sound. **Save as new** creates another sound and requires an unused program number. Files are validated and written atomically to:
 
 `~/Library/Application Support/Alive Rig Preview/presets.json`
 
@@ -89,3 +101,12 @@ Hardware acceptance still requires guitar-to-headphones latency, chord accuracy 
 - Detector source, `StageStyle.swift`, icon and all three font files match the preserved source byte-for-byte. The archived original executable matches the original app.
 - Inspected the running preview at both ends of its scroll view. Start/Stop stays visible; startup with no selected audio route stays stopped and gives an actionable message. No microphone or speaker playback was started.
 - No JavaScript, TypeScript or website files changed; website build tasks were not needed for this native-only change.
+
+## Widescreen and rig-off validation, 2026-10-16
+
+- Built and signed the landscape preview; original Core ML / CoreMIDI tests, mode-specific startup checks, the native NAM audio test and the combined offline test passed (447 reports, expected pitches present, zero DI drops).
+- Notes-only startup accepts an input without output selection or NAM files; both modes reject a missing input. Built-in rig startup still requires output and capture.
+- Inspected both sides and the rig-off instructions in the running app. Starting without an input gives an actionable message and stays stopped. The off choice survives relaunch.
+- Live mode switching, guitar-to-MIDI delivery alongside Neural DSP and interface output still need the hardware acceptance checks above. No microphone capture or speaker playback was started during these checks.
+
+The offline run during UI inspection recorded a 74.6 ms maximum render duration on the ordinary test thread. A repeat with the preview closed and no UI inspection passed with 448 reports, zero drops and a 2.9 ms maximum. These ordinary-thread timings are not a real-time device callback benchmark or evidence of stage-ready latency; measure on the actual interface before the conference.

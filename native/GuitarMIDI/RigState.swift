@@ -14,6 +14,7 @@ final class RigState: ObservableObject {
     @Published var compute = DetectorCompute.automatic
     @Published var running = false
     @Published var starting = false
+    @Published private(set) var rigEnabled = true
     @Published var status = "Choose your guitar input and headphone output."
     @Published var notes = "—"
     @Published var pitches: [Int] = []
@@ -35,6 +36,7 @@ final class RigState: ObservableObject {
     let store = RigPresetStore()
     var storeReadable = true
     var session: RigSession?
+    var noteCapture: GuitarCapture?
     var ampMIDI: AmpMIDIPort?
     var generation = 0
     var soundGeneration: UInt64 = 0
@@ -57,6 +59,7 @@ final class RigState: ObservableObject {
             }
         } catch { storeReadable = false; presetStatus = "Could not read presets: \(error.localizedDescription). Your file has been preserved." }
         let settings = UserDefaults.standard
+        if let enabled = settings.object(forKey: "rigEnabled") as? Bool { rigEnabled = enabled }
         device = devices.first(where: { $0.name == settings.string(forKey: "input") })?.id ?? 0
         output = outputs.first(where: { $0.name == settings.string(forKey: "output") })?.id ?? 0
         channel = max(0, min(settings.integer(forKey: "channel"), channelCount - 1))
@@ -74,18 +77,37 @@ final class RigState: ObservableObject {
             ampMIDI = try AmpMIDIPort()
             ampMIDI?.received = { [weak self] program in
                 guard let self else { return }
+                guard self.rigEnabled else { self.midiStatus = "Rig off · send amp changes to Neural DSP through IAC."; return }
                 guard let preset = self.presets.first(where: { $0.program == program }) else {
                     self.midiStatus = "Program \(program) has no saved preset."; return
                 }
                 self.midiStatus = "Channel 1 · Program \(program) → \(preset.name)"
                 self.selectPreset(preset.id)
             }
-            midiStatus = "Listening: Alive Rig Preview Control · channel 1"
+            midiStatus = rigEnabled ? "Listening: Alive Rig Preview Control · channel 1" : "Rig off · send amp changes to Neural DSP through IAC."
         } catch { midiStatus = error.localizedDescription }
+        if !rigEnabled { status = "Notes only. Use Neural DSP for your amp sound." }
         termination = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in self?.stop() }
     }
     var channelCount: Int { devices.first(where: { $0.id == device })?.channels ?? 1 }
     var dirty: Bool { presets.first(where: { $0.id == selected }) != draft }
+    func setRigEnabled(_ enabled: Bool) {
+        guard enabled != rigEnabled else { return }
+        let resume = running || starting
+        stop()
+        rigEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: "rigEnabled")
+        midiStatus = enabled ? "Listening: Alive Rig Preview Control · channel 1" : "Rig off · send amp changes to Neural DSP through IAC."
+        status = enabled ? "Built-in rig ready. Select your audio output." : "Notes only. Use Neural DSP for your amp sound."
+        if resume { start() }
+    }
+    static func startupIssue(rigEnabled: Bool, inputAvailable: Bool, outputAvailable: Bool, modelAvailable: Bool) -> String? {
+        guard inputAvailable else { return "Select an available guitar input and channel, then start again." }
+        guard rigEnabled else { return nil }
+        guard outputAvailable else { return "Select an available audio output, then start again." }
+        guard modelAvailable else { return "The selected capture is missing. Choose your NAM model folder." }
+        return nil
+    }
     func rememberSettings() {
         let s = UserDefaults.standard
         s.set(devices.first(where: { $0.id == device })?.name, forKey: "input")
@@ -118,19 +140,20 @@ final class RigState: ObservableObject {
     }
     func updateControls() { if !loading { session?.controls(draft, muted: muted) } }
     func loadSound() {
-        guard let session else { return }
+        guard rigEnabled, let session else { return }
         soundGeneration += 1; pendingSound = draft; loading = true
         presetStatus = "Loading \(draft.name)…"
         session.load(draft, directory: modelsDirectory, generation: soundGeneration)
     }
     func start() {
         stop()
-        guard let input = devices.first(where: { $0.id == device }),
-              let output = outputs.first(where: { $0.id == output }), channel < input.channels else {
-            status = "Select an available input and output, then start again."; return
-        }
-        guard draft.valid, FileManager.default.fileExists(atPath: modelsDirectory.appendingPathComponent(draft.modelFile).path) else {
-            status = "The selected capture is missing. Choose your NAM model folder below."; return
+        let input = devices.first(where: { $0.id == device })
+        let output = outputs.first(where: { $0.id == output })
+        if let issue = Self.startupIssue(rigEnabled: rigEnabled,
+            inputAvailable: input != nil && channel >= 0 && channel < (input?.channels ?? 0),
+            outputAvailable: output != nil,
+            modelAvailable: draft.valid && FileManager.default.fileExists(atPath: modelsDirectory.appendingPathComponent(draft.modelFile).path)) {
+            status = issue; return
         }
         rememberSettings(); starting = true; status = "Requesting microphone access…"
         let request = generation
@@ -140,6 +163,11 @@ final class RigState: ObservableObject {
                 guard allowed else { self.starting = false; self.status = "Allow Alive Rig Preview in System Settings → Privacy & Security → Microphone."; return }
                 do {
                     guard let url = Bundle.main.url(forResource: "nmp", withExtension: "mlmodelc") else { throw NSError(domain: "Rig", code: 1, userInfo: [NSLocalizedDescriptionKey: "The note model is missing. Rebuild the preview."]) }
+                    if !self.rigEnabled {
+                        try self.startNotesOnly(modelURL: url, request: request)
+                        return
+                    }
+                    guard let input, let output else { return }
                     let session = RigSession(); self.session = session
                     rig_mute(session.pointer, self.muted ? 1 : 0)
                     session.report = { [weak self] notes, ms, db, drops, _, audioMS in
@@ -174,7 +202,40 @@ final class RigState: ObservableObject {
             }
         }
     }
+    private func startNotesOnly(modelURL: URL, request: Int) throws {
+        let capture = GuitarCapture(); noteCapture = capture
+        capture.report = { [weak self] notes, ms, db, drops in
+            DispatchQueue.main.async {
+                guard let self, self.generation == request else { return }
+                self.pitches = notes; self.notes = notes.isEmpty ? "—" : notes.map(noteName).joined(separator: " · ")
+                self.inference = ms; self.inputDB = db; self.dropped = drops; self.lastAudio = Date()
+            }
+        }
+        capture.failed = { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self, self.generation == request else { return }
+                self.stop(); self.status = error
+            }
+        }
+        capture.configurationChanged = { [weak self, weak capture] in
+            DispatchQueue.main.async {
+                guard let self, self.generation == request, capture?.requiresReconnect == true else { return }
+                self.stop(); self.status = "Guitar input changed. Check the interface and restart notes."
+            }
+        }
+        try capture.start(device: device, channel: channel, modelURL: modelURL, gate: Float(gate),
+                          threshold: Float(threshold), timing: timing, compute: compute, midiName: "Alive Rig Preview Notes")
+        running = true; starting = false; lastAudio = Date()
+        status = "Notes → Alive Rig Preview Notes · amp audio stays with Neural DSP"
+        monitor = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in self?.checkAudio() }
+    }
     func checkAudio() {
+        if let noteCapture {
+            if !noteCapture.engine.isRunning || Date().timeIntervalSince(lastAudio) > 2 {
+                stop(); status = "Guitar input stopped. Check the interface and restart notes."
+            }
+            return
+        }
         guard let session else { return }
         let callbacks = rig_callbacks(session.pointer)
         if callbacks != lastCallbacks { lastCallbacks = callbacks; lastAudio = Date() }
@@ -189,7 +250,9 @@ final class RigState: ObservableObject {
     func stop() {
         generation += 1; monitor?.invalidate(); monitor = nil
         session?.stop(); session = nil
+        noteCapture?.stop(); noteCapture = nil
         running = false; starting = false; loading = false; pitches = []; notes = "—"; inputDB = -120
+        pendingSound = nil; audioMS = 0; actualBuffer = 0; inference = 0; dropped = 0
         activeName = "No amp loaded"; status = "Stopped. Audio muted and notes released."
     }
     func refreshDevices() {

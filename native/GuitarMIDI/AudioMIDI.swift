@@ -95,11 +95,11 @@ final class GuitarCapture {
         return !node.inputFormat(forBus: 0).isEqual(captureFormat) || !node.outputFormat(forBus: 0).isEqual(captureFormat)
     }
 
-    func start(device: AudioDeviceID, channel: Int, modelURL: URL, gate: Float, threshold: Float, timing: DetectorTiming, compute: DetectorCompute) throws {
+    func start(device: AudioDeviceID, channel: Int, modelURL: URL, gate: Float, threshold: Float, timing: DetectorTiming, compute: DetectorCompute, midiName: String = "Alive Guitar MIDI") throws {
         let detector = try GuitarDetector(url: modelURL, timing: timing, compute: compute)
         detector.gateDB = gate
         detector.threshold = threshold
-        let midi = try GuitarMIDIPort()
+        let midi = try GuitarMIDIPort(name: midiName)
         detector.send = { [weak self, weak midi] note, velocity in
             guard let midi else { return }
             let result = midi.send(note, velocity)

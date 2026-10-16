@@ -18,7 +18,7 @@ struct RigRouteControls: View {
                     ForEach([64, 128, 256], id: \.self) { Text("\($0) samples").tag($0) }
                 }.labelsHidden().frame(width: 150)
             }
-        }.pickerStyle(.menu).padding(16).background(RigStyle.tolex)
+        }.pickerStyle(.menu).padding(12).background(RigStyle.tolex)
     }
 }
 
@@ -32,7 +32,7 @@ struct RigAmpControls: View {
         }
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("YOUR SOUND").font(RigStyle.pixel(30)).foregroundStyle(RigStyle.gold)
@@ -64,25 +64,33 @@ struct RigAmpControls: View {
                 knob("Spring reverb", value: $state.draft.reverb, range: 0...10, suffix: "")
             }.disabled(state.loading)
             Rectangle().fill(RigStyle.raised).frame(height: 2)
-            HStack(alignment: .bottom, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    RigCaption(text: "PRESET NAME")
-                    TextField("Name your sound", text: $state.draft.name).textFieldStyle(.plain)
-                        .padding(8).background(RigStyle.night).overlay(Rectangle().stroke(RigStyle.raised, lineWidth: 2))
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    RigCaption(text: "MIDI PROGRAM")
-                    Picker("MIDI program number, zero based", selection: $state.draft.program) {
-                        ForEach(0..<128, id: \.self) { Text("\($0)").tag($0) }
-                    }.labelsHidden().frame(width: 90)
-                }
+            DisclosureGroup("SAVE / MIDI MAPPING") {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .bottom, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            RigCaption(text: "PRESET NAME")
+                            TextField("Name your sound", text: $state.draft.name).textFieldStyle(.plain)
+                                .padding(8).background(RigStyle.night).overlay(Rectangle().stroke(RigStyle.raised, lineWidth: 2))
+                        }
+                        VStack(alignment: .leading, spacing: 6) {
+                            RigCaption(text: "MIDI PROGRAM")
+                            Picker("MIDI program number, zero based", selection: $state.draft.program) {
+                                ForEach(0..<128, id: \.self) { Text("\($0)").tag($0) }
+                            }.labelsHidden().frame(width: 90)
+                        }
+                    }
+                    HStack(spacing: 12) {
+                        Button("Save preset") { state.save(asNew: false) }.buttonStyle(StompButton())
+                        Button("Save as new") { state.save(asNew: true) }.buttonStyle(StompButton())
+                    }.disabled(!state.storeReadable)
+                    Text("Programs run from 0–127. Give a new sound an unused program before saving.")
+                        .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust).fixedSize(horizontal: false, vertical: true)
+                }.padding(.top, 10)
             }
-            HStack(spacing: 12) {
-                Button("Save preset") { state.save(asNew: false) }.buttonStyle(StompButton())
-                Button("Save as new") { state.save(asNew: true) }.buttonStyle(StompButton())
-            }.disabled(!state.storeReadable)
-            Text(state.presetStatus.isEmpty ? "Programs run from 0–127. Give a new sound an unused program before saving." : state.presetStatus)
-                .font(RigStyle.body(14)).foregroundStyle(RigStyle.dust).fixedSize(horizontal: false, vertical: true)
+            if !state.presetStatus.isEmpty {
+                Text(state.presetStatus).font(RigStyle.body(14)).foregroundStyle(RigStyle.dust)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text(state.midiStatus).font(RigStyle.body(14)).foregroundStyle(RigStyle.gold)
             DisclosureGroup("MODEL FOLDER") {
                 VStack(alignment: .leading, spacing: 10) {
@@ -92,7 +100,7 @@ struct RigAmpControls: View {
                     Button("Choose folder") { state.chooseModels() }.buttonStyle(StompButton()).disabled(state.running || state.starting)
                 }.padding(.top, 8)
             }.font(RigStyle.body(14))
-        }.tint(RigStyle.gold).pickerStyle(.menu).padding(18)
+        }.tint(RigStyle.gold).pickerStyle(.menu).padding(14)
             .background(RigStyle.tolex).overlay(Rectangle().stroke(RigStyle.raised, lineWidth: 2))
     }
 }

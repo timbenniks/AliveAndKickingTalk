@@ -2,6 +2,19 @@ import Foundation
 import CoreMIDI
 
 func runRigSelfTest() throws {
+    try require(RigState.startupIssue(rigEnabled: false, inputAvailable: true, outputAvailable: false, modelAvailable: false) == nil,
+                "Notes-only mode needs neither audio output nor a NAM capture")
+    for enabled in [false, true] {
+        try require(RigState.startupIssue(rigEnabled: enabled, inputAvailable: false, outputAvailable: true, modelAvailable: true) != nil,
+                    "Both modes require a guitar input")
+    }
+    try require(RigState.startupIssue(rigEnabled: true, inputAvailable: true, outputAvailable: false, modelAvailable: true) != nil,
+                "Built-in rig requires an output")
+    try require(RigState.startupIssue(rigEnabled: true, inputAvailable: true, outputAvailable: true, modelAvailable: false) != nil,
+                "Built-in rig requires a capture")
+    try require(RigState.startupIssue(rigEnabled: true, inputAvailable: true, outputAvailable: true, modelAvailable: true) == nil,
+                "Built-in rig accepts a complete route")
+    print("PASS: rig and notes-only startup requirements")
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: folder) }
     let store = RigPresetStore(url: folder.appendingPathComponent("presets.json"))
