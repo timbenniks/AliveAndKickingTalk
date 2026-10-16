@@ -41,7 +41,7 @@ Object.assign(globalThis, {
     return id;
   },
   clearInterval: id => timers.delete(id),
-  localStorage: { getItem: key => key === 'alive-lane-source' ? 'midi' : null, setItem: () => {} },
+  localStorage: { getItem: key => key === 'alive-lane-source' ? 'retired-source' : null, setItem: () => {} },
 });
 
 const requests = [];
@@ -99,7 +99,7 @@ otherAudio.guitarGateDb.value = -30;
 assert.equal(audio.guitarGateDb.value, -65, 'audio state is isolated between Nuxt app instances');
 otherAudio.dispose();
 audio.acquire();
-assert.equal(audio.laneSource.value, 'song', 'retired MIDI source falls back to track');
+assert.equal(audio.laneSource.value, 'song', 'unknown source falls back to track');
 assert.equal(requests.length, 0, 'retired source does not open a microphone');
 
 // Exercise the real audio tick at different rates, with no sound or devices.
@@ -294,3 +294,40 @@ assert.equal(audio.guitarStatus.value, 'Guitar input is off');
 assert.deepEqual(connected, [current, latest]);
 assert.equal(timers.size, 0, 'teardown stops the analysis timer');
 console.log('Guitar quiet notes, chords, re-strums, source changes, device races and teardown checks passed');
+
+// The MIDI route drives the same lanes/notes while the backing track is paused.
+const midiAccess = new EventTarget();
+const midiPort = new EventTarget();
+Object.assign(midiPort, { id: 'native', name: 'Alive Guitar MIDI', state: 'connected', open: async () => midiPort, close: async () => midiPort });
+midiAccess.inputs = new Map([['native', midiPort]]);
+navigator.requestMIDIAccess = async () => midiAccess;
+const nativeAudio = createStageAudio();
+nativeAudio.acquire();
+nativeAudio.setLaneSource('midi');
+await new Promise(resolve => setImmediate(resolve));
+function midiMessage(data) { const event = new Event('midimessage'); event.data = new Uint8Array(data); midiPort.dispatchEvent(event); }
+for (const note of [40, 47, 52, 56, 59, 64]) midiMessage([0x90, note, 96]);
+assert.equal(nativeAudio.midiNotes.value, 'E2 · B2 · E3 · G♯3 · B3 · E4');
+assert.deepEqual(stageClock.events.map(hit => hit.lane), [0, 1, 2, 3, 4, 5]);
+const flowBefore = stageClock.flow;
+advance(20); advance(20);
+assert.equal(stageClock.pulsing, true);
+assert.ok(stageClock.flow > flowBefore);
+assert.equal(stageClock.playing, false, 'MIDI does not start the backing track');
+assert.ok(stageClock.lanes.every(level => level === 96 / 127), 'held notes survive animation frames');
+midiMessage([0x80, 40, 0]);
+assert.equal(stageClock.lanes[0], 0);
+assert.equal(stageClock.events.length, 6, 'short note-off must not erase an undrawn attack');
+for (let i = 0; i < 100; i++) midiMessage([0x90, 45, 96]);
+assert.equal(stageClock.events.length, 64);
+midiPort.state = 'disconnected'; midiAccess.dispatchEvent(new Event('statechange'));
+advance(20);
+assert.equal(stageClock.analysis, 'idle');
+assert.equal(stageClock.pulsing, false);
+assert.equal(stageClock.events.length, 0);
+assert.ok(stageClock.lanes.every(level => level === 0));
+nativeAudio.setLaneSource('song');
+midiMessage([0x90, 45, 96]);
+assert.equal(stageClock.events.length, 0, 'inactive MIDI cannot drive track mode');
+nativeAudio.dispose();
+console.log('Native MIDI stage routing, paused-track flow, short notes, bounded queue and disconnect checks passed');

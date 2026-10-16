@@ -15,6 +15,7 @@ const reducedNow = computed(() => props.reduced ?? forceReduced.value);
 const sources: Array<{ id: LaneSource; label: string }> = [
   { id: "song", label: "Track" },
   { id: "guitar", label: "Guitar" },
+  { id: "midi", label: "Guitar MIDI" },
 ];
 
 function chooseSource(id: LaneSource) {
@@ -73,6 +74,20 @@ function chooseSource(id: LaneSource) {
     </template>
     <p v-else class="rig-status">Lanes follow low-to-high audio energy, including chords and harmonics.</p>
     <PixelButton variant="secondary" @click="stage.startGuitar()">Listen to guitar</PixelButton>
+  </template>
+  <template v-if="stage.laneSource.value === 'midi'">
+    <label class="rig-field">
+      <span>Note input</span>
+      <select :value="stage.midiInput.inputId.value" @change="stage.midiInput.selectInput(($event.target as HTMLSelectElement).value)">
+        <option value="">Select a MIDI input</option>
+        <option v-for="input in stage.midiInput.inputs.value" :key="input.id" :value="input.id">{{ input.name }}</option>
+      </select>
+    </label>
+    <p role="status" class="rig-status">{{ stage.midiInput.status.value }}</p>
+    <p class="rig-status">Start Alive Guitar MIDI with your clean guitar input, then select its port here. Lanes follow pitch ranges, not physical strings.</p>
+    <p role="status" class="rig-status">Detected: {{ stage.midiNotes.value || '—' }}</p>
+    <PixelButton variant="secondary" @click="stage.midiInput.connect()">Reconnect MIDI</PixelButton>
+    <PixelButton variant="secondary" :aria-pressed="showGuitarNotes" @click="showGuitarNotes = !showGuitarNotes">{{ showGuitarNotes ? 'Hide notes' : 'Show notes' }}</PixelButton>
   </template>
   <label class="rig-field">
     <span>Visual offset {{ stage.offsetMs.value }} ms</span>

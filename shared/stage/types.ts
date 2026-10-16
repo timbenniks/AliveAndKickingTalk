@@ -23,7 +23,7 @@ export interface StageSection {
 
 export type AnalysisState = 'idle' | 'live' | 'unavailable'
 
-export type LaneSource = 'song' | 'guitar'
+export type LaneSource = 'song' | 'guitar' | 'midi'
 
 export interface StagePulse {
   lane: number

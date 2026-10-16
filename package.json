@@ -11,7 +11,7 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types tests/contentstack.mjs && node --experimental-strip-types tests/performance.mjs && node --experimental-strip-types tests/images.mjs && node --experimental-strip-types tests/stage.mjs && node --experimental-strip-types tests/guitar-poly.mjs && node --experimental-strip-types tests/stage-audio.mjs && node --experimental-strip-types tests/midi-output.mjs && node --experimental-strip-types tests/rig-settings.mjs && node --experimental-strip-types tests/vote-store.mjs && node --experimental-strip-types tests/database-changes.mjs && node --experimental-strip-types tests/avatars.mjs && node --experimental-strip-types tests/show.mjs"
+    "test": "node --experimental-strip-types tests/contentstack.mjs && node --experimental-strip-types tests/performance.mjs && node --experimental-strip-types tests/images.mjs && node --experimental-strip-types tests/stage.mjs && node --experimental-strip-types tests/guitar-poly.mjs && node --experimental-strip-types tests/stage-audio.mjs && node --experimental-strip-types tests/midi-output.mjs && node --experimental-strip-types tests/midi-input.mjs && node --experimental-strip-types tests/rig-settings.mjs && node --experimental-strip-types tests/vote-store.mjs && node --experimental-strip-types tests/database-changes.mjs && node --experimental-strip-types tests/avatars.mjs && node --experimental-strip-types tests/show.mjs"
   },
   "devDependencies": {
     "@nuxt/eslint": "1.17.0",

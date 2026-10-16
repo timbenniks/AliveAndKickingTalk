@@ -1,7 +1,8 @@
 import { ref, shallowRef, watch } from 'vue';
 import { readPreference as read, writePreference as write } from './preferences.ts';
 import { GuitarPolyDetector } from '#shared/stage/guitar-poly';
-import { guitarNoteName } from '#shared/stage/guitar-notes';
+import { createMidiInput } from './midi-input.ts';
+import { guitarNoteName, guitarPitchLane } from '#shared/stage/guitar-notes';
 import { frameDecay, stageClock } from '#shared/stage/clock';
 import { bandLevels, guitarLaneBins, peakLevels, risingLanes, type LaneBins } from '#shared/stage/pulses';
 import type { AnalysisState, LaneSource } from '#shared/stage/types';
@@ -16,6 +17,22 @@ export function createStageAudio() {
 
   const laneSource = ref<LaneSource>('song');
   const offsetMs = ref(0);
+  const midiNotes = ref('');
+  const midiInput = createMidiInput((notes, attack, reset) => {
+    midiNotes.value = [...new Set(notes.map(n => n.note))].sort((a, b) => a - b).map(guitarNoteName).join(' · ');
+    if (laneSource.value !== 'midi') return;
+    stageClock.lanes.fill(0);
+    for (const { note, strength } of notes) {
+      const lane = guitarPitchLane(note);
+      stageClock.lanes[lane] = Math.max(stageClock.lanes[lane] ?? 0, strength);
+    }
+    if (attack !== undefined) {
+      const lane = guitarPitchLane(attack);
+      stageClock.events.push({ lane, strength: stageClock.lanes[lane] ?? 0 });
+      if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
+    }
+    if (reset) stageClock.events.length = 0;
+  });
   const guitarDevices = shallowRef<MediaDeviceInfo[]>([]);
   const guitarDeviceId = ref('');
   const guitarStatus = ref('Guitar input is off');
@@ -244,6 +261,8 @@ export function createStageAudio() {
     baseline.fill(0);
     lastHit.fill(-10);
     if (source !== 'guitar') stopGuitar();
+    if (source !== 'midi') midiInput.stop();
+    else void midiInput.connect();
     setAnalysis('idle');
   }
 
@@ -261,7 +280,8 @@ export function createStageAudio() {
     const audioTime = element && Number.isFinite(element.currentTime) ? element.currentTime : 0;
     const guitarLive = laneSource.value === 'guitar' && !!guitarAnalyser;
     // The rule: lanes follow the chosen source; everything else follows the music.
-    const pulsing = laneSource.value === 'song' ? songPlaying : guitarLive;
+    const midiLive = laneSource.value === 'midi' && midiInput.connected.value;
+    const pulsing = laneSource.value === 'song' ? songPlaying : guitarLive || midiLive;
 
     // Two clocks. `time` is the song position: cues, gates, the amp board and
     // light sweeps stop when the song stops. `flow` only moves the highway
@@ -310,7 +330,10 @@ export function createStageAudio() {
         pushAudioHits(peakLevels(guitarFreq, guitarBins), now, delta);
       }
       setAnalysis('live');
+    } else if (midiLive) {
+      setAnalysis('live');
     } else {
+      if (laneSource.value === 'midi') setAnalysis('idle');
       const keep = frameDecay(0.8, delta);
       for (let i = 0; i < stageClock.lanes.length; i++) stageClock.lanes[i] = (stageClock.lanes[i] ?? 0) * keep;
     }
@@ -325,6 +348,7 @@ export function createStageAudio() {
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     stopGuitar();
+    midiInput.stop();
     songSource?.disconnect();
     songAnalyser?.disconnect();
     songPulses?.disconnect();
@@ -374,7 +398,7 @@ export function createStageAudio() {
 
   function acquire() {
     if (users++ > 0) return;
-    laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar']) || 'song';
+    laneSource.value = read<LaneSource>(SOURCE_KEY, ['song', 'guitar', 'midi']) || 'song';
     guitarDeviceId.value = read(DEVICE_KEY);
     guitarMode.value = read('alive-guitar-mode', ['spectrum', 'polyphonic']) || 'spectrum';
     guitarOctaveRatio.value = Number(read('alive-guitar-octave-filter', ['0', '0.65', '0.85']) || '0.65');
@@ -385,6 +409,7 @@ export function createStageAudio() {
     offsetMs.value = Number(read(OFFSET_KEY)) || 0;
     // Songs load as new pages: pick the guitar back up where it was.
     if (laneSource.value === 'guitar') void startGuitar();
+    if (laneSource.value === 'midi') void midiInput.connect();
     void listGuitarDevices();
     raf = requestAnimationFrame(tick);
   }
@@ -404,7 +429,7 @@ export function createStageAudio() {
   }
 
   return {
-    laneSource, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
+    midiInput, midiNotes, laneSource, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
     guitarMode, guitarGateDb, guitarTuningCents, guitarOctaveRatio, guitarNotes, guitarInputDb, guitarDetectionMs,
     registerSong, connectSong, setLaneSource, setGuitarMode, startGuitar, stopGuitar, onTick, seek,
     acquire, release, dispose,

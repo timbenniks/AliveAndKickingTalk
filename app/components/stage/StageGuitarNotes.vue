@@ -2,11 +2,12 @@
 // Reuse the detector's throttled readout; this adds no audio analysis or loop.
 const stage = useStageAudio();
 const { showGuitarNotes } = useRigDisplay();
-const notes = computed(() => stage.guitarNotes.value ? stage.guitarNotes.value.split(' · ') : []);
+const noteText = computed(() => stage.laneSource.value === 'midi' ? stage.midiNotes.value : stage.guitarNotes.value);
+const notes = computed(() => noteText.value ? noteText.value.split(' · ') : []);
 </script>
 
 <template>
-  <aside v-if="showGuitarNotes && stage.laneSource.value === 'guitar' && stage.guitarMode.value === 'polyphonic'" class="guitar-notes" aria-label="Guitar notes">
+  <aside v-if="showGuitarNotes && (stage.laneSource.value === 'midi' || (stage.laneSource.value === 'guitar' && stage.guitarMode.value === 'polyphonic'))" class="guitar-notes" aria-label="Guitar notes">
     <header>
       <h2>Guitar notes</h2>
       <button type="button" aria-label="Hide guitar notes" @click="showGuitarNotes = false">×</button>
@@ -15,7 +16,7 @@ const notes = computed(() => stage.guitarNotes.value ? stage.guitarNotes.value.s
       <span v-for="note in notes" :key="note" class="guitar-notes-note">{{ note }}</span>
       <span v-if="!notes.length" class="guitar-notes-empty">Play a note…</span>
     </div>
-    <p>{{ stage.guitarStatus.value }}</p>
+    <p>{{ stage.laneSource.value === 'midi' ? stage.midiInput.status.value : stage.guitarStatus.value }}</p>
   </aside>
 </template>
 
