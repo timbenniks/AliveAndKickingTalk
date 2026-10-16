@@ -5,6 +5,35 @@ import { themeForPreset } from '../shared/stage/themes.ts';
 import { styleById } from '../shared/stage/styles.ts';
 import { advanceSolo, frameDecay, LANE_COLORS, LANE_X, stageClock } from '../shared/stage/clock.ts';
 import { emitMoment, onMoment } from '../shared/stage/moments.ts';
+import { SoloBurst } from '../shared/stage/solo-burst.ts';
+
+// Performance bursts use received attack timing, never simultaneous chord voices.
+for (const hz of [30, 60, 144]) {
+  const burst = new SoloBurst();
+  let next = 0;
+  let peak = 0;
+  for (let frame = 0; frame < hz * 2; frame++) {
+    const now = frame / hz;
+    while (next <= now) { burst.attack(64 + Math.round(next * 8) % 5, next); next += 0.125; }
+    peak = Math.max(peak, burst.sample(now).level);
+  }
+  assert.ok(peak > 0.8, `fast run builds at ${hz} Hz`);
+  assert.equal(burst.sample(10).level, 0, 'silence / background-tab gaps extinguish the effect');
+  burst.reset();
+  for (let chord = 0; chord < 15; chord++) {
+    for (const [i, note] of [40,47,52,56,59,64].entries()) burst.attack(note, chord * 0.125 + i * 0.006);
+    assert.equal(burst.sample(chord * 0.125 + 0.08).level, 0, 'rapid chord strums do not masquerade as a solo');
+  }
+  burst.reset();
+  for (let i = 0; i < 12; i++) {
+    burst.attack(64 + i % 4, i * 0.4);
+    assert.equal(burst.sample(i * 0.4 + 0.06).level, 0, 'slow melody stays calm');
+  }
+  for (let i = 0; i < 18; i++) { burst.attack(67, 10 + i * 0.1); burst.sample(10 + i * 0.1 + 0.06); }
+  assert.ok(burst.sample(11.8).level > 0.8, 'repeated picking on one pitch still counts');
+  burst.reset();
+  assert.deepEqual(burst.sample(12), { level: 0, rate: 0 }, 'source resets remove the run');
+}
 
 const backInBlack = { songId: 'back_in_black', presets: [
   { name: 'Stadium Rock', at: 0, pc: 2 }, { name: 'Face Bleeding Solo', at: 65, pc: 3 }, { name: 'Stadium Rock', at: 106, pc: 2 },

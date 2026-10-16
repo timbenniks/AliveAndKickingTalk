@@ -51,6 +51,8 @@ export const stageClock = {
   // Actual held pitches, independent of the song clock and of lane aggregation.
   notes: [] as PlayedNote[],
   noteReset: 0,
+  // Fast runs from the selected note input, independent of authored solo cues.
+  soloBurst: 0,
   // New votes waiting to drop into the mosh pit. The crowd drains this.
   arrivals: [] as Fan[],
 }

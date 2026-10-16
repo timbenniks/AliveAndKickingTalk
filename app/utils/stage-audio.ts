@@ -1,6 +1,7 @@
 import { ref, shallowRef, watch } from 'vue';
 import { readPreference as read, writePreference as write } from './preferences.ts';
 import { GuitarPolyDetector } from '#shared/stage/guitar-poly';
+import { SoloBurst } from '#shared/stage/solo-burst';
 import { createMidiInput } from './midi-input.ts';
 import { guitarNoteName, guitarPitchLane, updatePlayedNotes } from '#shared/stage/guitar-notes';
 import { frameDecay, stageClock } from '#shared/stage/clock';
@@ -17,6 +18,15 @@ export function createStageAudio() {
 
   const laneSource = ref<LaneSource>('song');
   const offsetMs = ref(0);
+  const burstDetector = new SoloBurst();
+  const soloBurst = shallowRef({ level: 0, rate: 0 });
+  let lastBurstReadout = -10;
+  function resetBurst() {
+    burstDetector.reset();
+    stageClock.soloBurst = 0;
+    soloBurst.value = { level: 0, rate: 0 };
+    lastBurstReadout = -10;
+  }
   const midiNotes = ref('');
   const midiInput = createMidiInput((notes, attack, reset) => {
     midiNotes.value = [...new Set(notes.map(n => n.note))].sort((a, b) => a - b).map(guitarNoteName).join(' · ');
@@ -28,12 +38,13 @@ export function createStageAudio() {
       stageClock.lanes[lane] = Math.max(stageClock.lanes[lane] ?? 0, strength);
     }
     if (attack !== undefined) {
+      burstDetector.attack(attack, performance.now() / 1000);
       const lane = guitarPitchLane(attack);
       const strength = Math.max(...notes.filter(n => n.note === attack).map(n => n.strength));
       stageClock.events.push({ lane, strength, note: attack });
       if (stageClock.events.length > 64) stageClock.events.splice(0, stageClock.events.length - 64);
     }
-    if (reset) { stageClock.events.length = 0; stageClock.noteReset++; }
+    if (reset) { stageClock.events.length = 0; stageClock.noteReset++; resetBurst(); }
   });
   const guitarDevices = shallowRef<MediaDeviceInfo[]>([]);
   const guitarDeviceId = ref('');
@@ -95,6 +106,7 @@ export function createStageAudio() {
     baseline.fill(0);
     lastHit.fill(-10);
     if (laneSource.value === 'guitar') {
+      resetBurst();
       stageClock.notes = [];
       stageClock.noteReset++;
       stageClock.lanes.fill(0);
@@ -113,6 +125,7 @@ export function createStageAudio() {
     guitarAnalyser.getFloatFrequencyData(polyFreq);
     const started = performance.now();
     const detected = polyDetector.process(polyFreq, now, guitarGateDb.value, guitarOctaveRatio.value);
+    for (const hit of detected.hits) burstDetector.attack(hit.note, performance.now() / 1000);
     const elapsed = performance.now() - started;
     stageClock.notes = updatePlayedNotes(stageClock.notes, detected.notes.map(note => ({ note, strength: detected.levels[guitarPitchLane(note)] ?? 0 })), performance.now() / 1000, detected.hits.map(hit => hit.note));
     for (let lane = 0; lane < 6; lane++) stageClock.lanes[lane] = detected.levels[lane] ?? 0;
@@ -258,6 +271,7 @@ export function createStageAudio() {
   }
 
   function setLaneSource(source: LaneSource) {
+    resetBurst();
     laneSource.value = source;
     write(SOURCE_KEY, source);
     heardSignal = false;
@@ -295,6 +309,12 @@ export function createStageAudio() {
     // pulses, and runs while the lane source is live, so a guitar still flows
     // over a paused track. Wall-clock deltas, capped so a hidden tab cannot jump.
     const wall = performance.now() / 1000;
+    const burst = burstDetector.sample(wall);
+    stageClock.soloBurst = burst.level;
+    if (wall - lastBurstReadout >= 0.1) {
+      soloBurst.value = burst;
+      lastBurstReadout = wall;
+    }
     const delta = lastWall ? Math.min(0.1, Math.max(0, wall - lastWall)) : 1 / 60;
     if (pulsing && lastWall) stageClock.flow += delta;
     lastWall = wall;
@@ -352,6 +372,7 @@ export function createStageAudio() {
   }
 
   function teardown() {
+    resetBurst();
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     stopGuitar();
@@ -438,7 +459,7 @@ export function createStageAudio() {
   }
 
   return {
-    midiInput, midiNotes, laneSource, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
+    midiInput, midiNotes, soloBurst, laneSource, offsetMs, guitarDevices, guitarDeviceId, guitarStatus,
     guitarMode, guitarGateDb, guitarTuningCents, guitarOctaveRatio, guitarNotes, guitarInputDb, guitarDetectionMs,
     registerSong, connectSong, setLaneSource, setGuitarMode, startGuitar, stopGuitar, onTick, seek,
     acquire, release, dispose,

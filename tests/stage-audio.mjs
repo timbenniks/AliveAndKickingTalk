@@ -334,8 +334,19 @@ stageClock.events.splice(-2);
 assert.equal(stageClock.events.length, 6, 'short note-off must not erase an undrawn attack');
 for (let i = 0; i < 100; i++) midiMessage([0x90, 45, 96]);
 assert.equal(stageClock.events.length, 64);
+nativeAudio.midiInput.clear();
+for (let i = 0; i < 12; i++) {
+  midiMessage([0x90, 64 + i % 5, 96]);
+  advance(65);
+  midiMessage([0x80, 64 + i % 5, 0]);
+  advance(60);
+}
+assert.ok(stageClock.soloBurst > 0.7, 'fast MIDI notes build the fretboard effect over a paused track');
+assert.ok(nativeAudio.soloBurst.value.rate >= 7, 'the throttled badge reports detected attack rate');
 midiPort.state = 'disconnected'; midiAccess.dispatchEvent(new Event('statechange'));
 advance(20);
+assert.equal(stageClock.soloBurst, 0, 'disconnect immediately resets performance effects');
+assert.equal(nativeAudio.soloBurst.value.level, 0);
 assert.equal(stageClock.analysis, 'idle');
 assert.equal(stageClock.pulsing, false);
 assert.deepEqual(stageClock.notes, [], 'disconnection clears all fretboard notes');

@@ -268,6 +268,21 @@ function commitHighway() {
 
 const flashLevel = Array.from({ length: LANE_X.length }, () => 0)
 const pickWhite = new Color('#fff3d2')
+// Stepped gold runway lights share one geometry/material, with no new render loop.
+const railBlocks: BoxGeometry[] = []
+for (const x of [-1.92, 1.92]) {
+  for (let z = 1.3; z < 18; z += 0.7) {
+    const block = new BoxGeometry(0.08, 0.04, 0.4)
+    block.translate(x, 0.08, z)
+    railBlocks.push(block)
+  }
+}
+const soloRailGeo = shadeMerged(railBlocks)
+const soloRailMaterial = new MeshBasicMaterial({ color: '#ffc531', transparent: true, opacity: 0, depthWrite: false })
+materials.push(soloRailMaterial)
+const soloRails = new Mesh(soloRailGeo, soloRailMaterial)
+soloRails.visible = false
+group.add(soloRails)
 // A short-lived glint over each existing string; only struck lanes are drawn.
 const stringGlints = LANE_X.map((x) => {
   const geometry = new BufferGeometry()
@@ -488,17 +503,18 @@ function emitSmoke(x: number, y: number, z: number, lane: number) {
 function emitSparks(lane: number) {
   if (stageClock.reducedMotion) return
   sparkColor.set(laneColor(lane)).lerp(pickWhite, 0.3)
-  let left = 4
+  const burst = stageClock.soloBurst
+  let left = 4 + Math.floor(burst * 8)
   for (const spark of sparks) {
     if (spark.alive) continue
     spark.alive = true
     spark.age = 0
-    spark.life = 0.18 + Math.random() * 0.12
+    spark.life = 0.18 + Math.random() * 0.12 + burst * 0.18
     spark.x = (LANE_X[lane] ?? 0) + (Math.random() - 0.5) * 0.22
     spark.y = 0.28
     spark.z = 1.2
     spark.vx = (Math.random() - 0.5) * 1.6
-    spark.vy = 0.9 + Math.random() * 1.2
+    spark.vy = 0.9 + Math.random() * 1.2 + burst * 1.2
     spark.vz = 1.5 + Math.random() * 2.5
     spark.r = sparkColor.r
     spark.g = sparkColor.g
@@ -550,6 +566,11 @@ onBeforeRender(({ delta: renderDelta }) => {
   const delta = time - previous
   const continuous = delta >= 0 && delta < 0.25
   const wall = performance.now() / 1000
+  const burst = stageClock.reducedMotion ? 0 : stageClock.soloBurst
+  soloRails.visible = burst > 0.01
+  soloRailMaterial.opacity = burst * 0.8
+  for (const material of gemMaterials) material.emissiveIntensity = 0.75 + burst * 0.65
+  for (const material of trailMaterials) material.emissiveIntensity = 0.4 + burst * 0.65
   if (noteReset !== stageClock.noteReset) {
     noteReset = stageClock.noteReset
     clearPulses(false)
@@ -592,7 +613,7 @@ onBeforeRender(({ delta: renderDelta }) => {
     item.label.scale.set(0.48 * compact, 0.24 * compact, 1)
     item.label.material.opacity = fade
     if (item.held && !stageClock.reducedMotion) {
-      const length = Math.min(3.5, Math.max(0.1, wall - item.at) * 1.7)
+      const length = Math.min(3.5, Math.max(0.1, wall - item.at) * 1.7) + burst * 1.5
       placeTrail(lane, LANE_X[lane]!, 0.08, 1.15 + length / 2, 0.65, 0.65, length)
     }
   }
@@ -630,13 +651,13 @@ onBeforeRender(({ delta: renderDelta }) => {
       const z = (time - pulse.at) * HIGHWAY_SPEED
       if (z < 0.55 || z > 16) continue
       const x = LANE_X[pulse.lane] ?? 0
-      const scale = 0.62 + Math.min(0.4, pulse.strength)
+      const scale = (0.62 + Math.min(0.4, pulse.strength)) * (1 + burst * 0.18)
       if (placeGem(pulse.lane, x, 0.22, z, scale)) {
         gemSpots.push({ x, y: 0.22, z, lane: pulse.lane })
         placeHalo(x, z, scale, scale)
       }
       if (!stageClock.reducedMotion) {
-        let length = Math.min(3.6, 0.35 + pulse.span * 8)
+        let length = Math.min(5, 0.35 + pulse.span * 8 + burst * 2)
         if (z - length < 0.4) length = Math.max(0.28, z - 0.4)
         placeTrail(pulse.lane, x, 0.065, z - length / 2, 0.55, 0.7, length)
       }
@@ -650,7 +671,7 @@ onBeforeRender(({ delta: renderDelta }) => {
     const center = cap.material as MeshStandardMaterial
     cap.visible = !heldLanes[lane]
     const sustain = heldLanes[lane] ? 0.5 : 0
-    ring.emissiveIntensity = 0.22 + sustain + level * 0.9 + attack * 1.5
+    ring.emissiveIntensity = 0.22 + sustain + level * 0.9 + attack * 1.5 + burst * 0.6
     center.emissive.set(laneColor(lane)).lerp(pickWhite, attack * 0.55)
     center.emissiveIntensity = 0.28 + level * 1.2 + attack * 2.4
     const scale = 1 + level * 0.08 + attack * 0.08
@@ -743,6 +764,7 @@ function clearPulses(clearEvents = true) {
 watch(() => props.resetKey, () => clearPulses())
 
 onBeforeUnmount(() => {
+  soloRailGeo.dispose()
   for (const { label } of noteGems.values()) {
     label.material.map?.dispose()
     label.material.dispose()
