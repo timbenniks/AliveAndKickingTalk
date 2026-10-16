@@ -38,7 +38,7 @@ open 'native/GuitarMIDI/dist/Alive Guitar MIDI.app'
 2. Click **Start listening** and allow microphone access. The app does not play captured audio through speakers.
 3. In the website's Rig controls choose **Neck follows → Guitar MIDI**. Allow MIDI access, then select **Alive Guitar MIDI**. That port exists while the companion is listening.
 4. Enable the note display if hidden. Chords produce multiple notes; highway lanes still represent low-to-high pitch ranges, not identified physical strings.
-5. Stop before adjusting the native gate/confidence or input. Lower the gate for quiet notes. Raise confidence to reduce extra notes, lower it for missed notes. These controls trade recall against false positives.
+5. Start with **Balanced + Automatic**. Stop before adjusting timing, acceleration, gate/confidence or input. Lower the gate for quiet notes. Raise confidence to reduce extra notes, lower it for missed notes. These controls trade recall against false positives.
 
 Stopping, closing the companion window, changing its audio configuration, losing audio callbacks for two seconds, or a reported processing failure releases its notes. A dropped capture buffer resets the decoder before processing resumes. The website clears held notes on port disconnection, switching sources, and channel all-notes-off/all-sound-off messages. Reconnect by port name is supported.
 
@@ -48,11 +48,13 @@ The website also accepts other MIDI note sources, including an existing guitar-t
 
 The unchanged model takes `[1, 43844, 1]` mono samples at 22,050 Hz and returns 172 frames of 88 note probabilities, 88 onset probabilities and 264 contour values. Its source is designed for file transcription, so this is our experimental streaming adaptation, not an upstream real-time feature.
 
-We retain a rolling 43,844-sample window, initially padded with silence, and run inference every 1,024 new samples (~46.4 ms). Each prediction contributes frames 153–156; the last 15 frames remain right-hand context (~174 ms). This follows the size of the default half-overlap in upstream file inference, but does not establish a guarantee about the model's complete receptive field or equivalent offline accuracy. Predictions from adjacent overlapping windows can disagree.
+We retain a rolling 43,844-sample window, initially padded with silence. The default Balanced preset runs inference every 1,024 new samples (~46.4 ms), emitting frames 160–163 and retaining eight frames of right-hand context (~92.9 ms). Timing is adjustable in whole model frames (256 samples, ~11.6 ms). Each prediction contributes exactly as many frames as the window advances, so successive predictions neither replay nor skip decoded audio. Settings are fixed for each listening session; stop before changing them.
+
+The Accurate preset preserves the original frames 153–156 and 15-frame context (~174.1 ms), which followed the default half-overlap size in upstream file inference. That does not guarantee full receptive-field coverage or equivalent offline accuracy. Predictions from adjacent overlapping windows can disagree. Automatic acceleration permits Core ML to choose among supported processors; CPU only is available for comparison or troubleshooting. We do not claim that a particular physical accelerator is selected.
 
 Our live decoder uses onset probability, two frames of strong note evidence as an alternate start, three weak frames for release, and a minimum 10-frame interval between onset retriggers. It supports multiple active notes. Gate decisions are aligned to the decoded audio frames. Input audio is converted to mono/22,050 Hz using AVAudioConverter. Inference runs on a serial worker, with bounded capture work instead of an ever-growing queue. A visible dropped-buffer counter exposes overruns. The audio tap still allocates/copies a mono buffer; this is a prototype, not a hard-real-time audio driver.
 
-MIDI output uses channel 1 and fixed velocity 96. Model confidence is not musical velocity. Pitch bends, MPE, physical-string assignment and calibrated dynamics are not implemented. The UI's **inference ms** is CPU processing duration, not input-to-MIDI latency. The existing website Visual offset changes the song clock; it cannot erase this detector's delay.
+MIDI output uses channel 1 and fixed velocity 96. Model confidence is not musical velocity. Pitch bends, MPE, physical-string assignment and calibrated dynamics are not implemented. The UI's **inference ms** is model prediction duration, not input-to-MIDI latency. The existing website Visual offset changes the song clock; it cannot erase this detector's delay.
 
 ## Measurements and checks, 2026-10-16
 
@@ -64,7 +66,7 @@ Run the native checks with:
 
 This exercises the actual bundled model, synthetic harmonic riffs/chords, our note lifecycle, and a real CoreMIDI source-to-input loopback. It does not open a microphone. The model tests assert that expected pitches occur and that notes release after silence; they deliberately report extra pitches rather than claiming perfect accuracy.
 
-One optimized run on this Mac measured **7.39 ms median / 8.56 ms p95 inference** across 112 windows. A second run with the browser stage open measured **9.39 ms median / 10.46 ms p95**, with the same note results and audio-time delays. First expected notes appeared as follows:
+With the original 15-frame context, 46.4 ms interval and CPU-only settings, one optimized run on this Mac measured **7.39 ms median / 8.56 ms p95 inference** across 112 windows. A second run with the browser stage open measured **9.39 ms median / 10.46 ms p95**, with the same note results and audio-time delays. First expected notes appeared as follows:
 
 | Input | Expected pitches | Emitted pitches during phrase | First expected note delay |
 | --- | --- | --- | --- |
@@ -73,7 +75,7 @@ One optimized run on this Mac measured **7.39 ms median / 8.56 ms p95 inference*
 | A2–E3–A3 power chord | 45, 52, 57 | 45, 52, 57, **81 extra** | 168 ms |
 | Open E major | 40, 47, 52, 56, 59, 64 | all six, no extras | 168 ms |
 
-These delays are computed from processed audio sample times, excluding CPU execution, capture/converter buffering, OS scheduling, MIDI delivery and browser rendering. An approximate **200–300 ms** live budget is shown in the UI, but actual guitar-to-screen latency has not been measured. The test signals have controlled envelopes and eight harmonic partials; they do not reproduce pickups, fret noise, palm muting, clipping, detuning or realistic overlapping decay.
+These delays are computed from processed audio sample times, excluding CPU execution, capture/converter buffering, OS scheduling, MIDI delivery and browser rendering. The original UI showed an approximate **200–300 ms** live budget for those settings. The adjustable version removes that fixed estimate; actual guitar-to-screen latency has not been measured. The test signals have controlled envelopes and eight harmonic partials; they do not reproduce pickups, fret noise, palm muting, clipping, detuning or realistic overlapping decay.
 
 Website validation covers chords, same-note retriggers, channel-specific release, velocity-zero release, panic, hotplug/reconnect, permission races, bounded queues, inactive sources and held-note visuals while the track is paused. The existing amp program-change regression still passes. `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` pass.
 
@@ -97,7 +99,7 @@ Validation: rebuilt and verified the signed app bundle, inspected the native win
 
 ## Comparison with Fretwire, 2026-10-16
 
-Inspected `/Users/tim.benniks/Websites/fretwire`, commit `af9fd09`, including its current source files. Its Xcode project/workspace had local changes; these were not modified. This comparison did not start audio capture or change either detector's runtime settings.
+Inspected `/Users/tim.benniks/Websites/fretwire`, commit `af9fd09`, including its current source files. The table and comparison results below describe Alive before the adjustable-controls update. Its Xcode project/workspace had local changes; these were not modified. This comparison did not start audio capture or change either detector's runtime settings.
 
 **The model is identical.** SHA-256 hashes match for both the Core ML model definition (`af7bf7d4…`) and the weights (`691a6b63…`). Neither app uses MG3 weights. Differences come from capture, streaming context, note decoding and MIDI features.
 
@@ -123,7 +125,7 @@ A temporary Swift harness fed both engines the same 22,050 Hz synthetic audio in
 
 | Engine/configuration | First correct note delay across four phrases | Median inference |
 | --- | --- | --- |
-| Alive, current defaults | 178–207 ms | 7.48 ms |
+| Alive, original defaults | 178–207 ms | 7.48 ms |
 | Fretwire, 8-frame default | 86–114 ms | 2.76 ms |
 | Fretwire, 4-frame context | 39–68 ms | 2.72 ms |
 | Fretwire, 15-frame context | 143–190 ms | 2.73 ms |
@@ -143,3 +145,44 @@ At default settings, both engines found all expected pitches across these phrase
 Fretwire already implements the adjustable context and net interval discussed in this chat. Those are concrete improvements worth bringing into our companion, together with a tested Core ML compute option. Its AUHAL capture path is worth measuring on the real interface. Retain our tested note lifecycle and failure handling while comparing both decoders on the same DI recordings; do not transplant the extra MIDI features without validating them.
 
 The website can already select **Fretwire** in **Rig → Guitar MIDI → Note input**. Its note-on/off messages work with our all-channel listener. The website currently ignores pitch bend and pressure, so those features do not improve our displayed pitch accuracy. Notes outside D2–E6 are also filtered by the website, even though Fretwire's native range is wider. Plain MIDI is sufficient for the stage comparison; string/fret positions in Fretwire are guesses, not measured physical-string identity.
+
+
+## Adjustable response controls, 2026-10-16
+
+Version 0.2.0 adds the controls informed by the Fretwire comparison, retaining our capture queue, onset-edge retriggering, release handling and unchanged pretrained weights. The voxel interface now has a Response panel; it scrolls on smaller screens.
+
+| Preset | Lookahead | Analysis interval | Intended comparison |
+| --- | --- | --- | --- |
+| Fast | 4 frames / 46.4 ms | 2 frames / 23.2 ms | Earlier decisions with less future context |
+| Balanced (default) | 8 frames / 92.9 ms | 4 frames / 46.4 ms | Starting point for the guitar test |
+| Accurate | 15 frames / 174.1 ms | 4 frames / 46.4 ms | Original context; compare missed and extra notes |
+
+“Accurate” names the longer-context option, not a proven accuracy ranking. The synthetic Fast result below happens to have fewer extras; real DI recordings are needed to judge these presets.
+
+The sliders allow **2–20 lookahead frames (23.2–232.2 ms)** and **1–8 interval frames (11.6–92.9 ms)**. Moving a slider labels the combination Custom unless it matches a preset. Shorter intervals run the model more often; they do not reduce the hardware capture buffer. Presets change timing only, preserving gate, confidence and acceleration. Settings remain for subsequent starts in the current app session and reset on app relaunch.
+
+**Automatic** allows all Core ML compute units and is the default. **CPU only** restores the previous compute policy. Changing this option reloads the model on the next Start. A model load or inference failure still stops capture and releases notes; there is no silent switch to another compute mode. All settings are disabled while starting/listening. Every new start resets the displayed inference and dropped-buffer counters.
+
+### Checks after the update
+
+The optimized native build and self-test passed. Tests cover all 152 supported timing combinations for consecutive frame coverage, actual inference at custom boundary settings, split capture chunks, multiple predictions per append, pending remainders, reset/release, broad onset rejection, all presets, CPU fallback and actual CoreMIDI delivery. Native UI checks verified preset values, custom sliders, acceleration selection and layout. No microphone was opened for these checks.
+
+One sequential run of the four synthetic phrases measured:
+
+| Configuration | First expected note delay | Median / p95 prediction time | Extra pitches |
+| --- | --- | --- | --- |
+| Fast + Automatic | 46–64 ms | 2.66 / 3.14 ms | None in these four phrases |
+| Balanced + Automatic | 93–122 ms | 2.67 / 3.28 ms | A4 during A2; A5 during power chord |
+| Accurate + Automatic | 168–203 ms | 3.02 / 3.50 ms | Same extras as Balanced |
+| Accurate + CPU only | 168–203 ms | 7.88 / 8.12 ms | Same extras as Balanced |
+
+All expected pitches appeared and all held notes released in every configuration. Delay is measured on the processed audio timeline, excluding capture, conversion, processing, MIDI and screen overhead; it is the first expected note, not the completion of a chord. These four generated signals are regression checks, not a real-guitar accuracy benchmark.
+
+### Real-guitar test
+
+1. Select the clean interface channel, keep gate at −60 dB and confidence at 0.50 initially, and start with **Balanced + Automatic**. In the website select **Guitar MIDI → Alive Guitar MIDI**.
+2. Play single-note riffs, repeated strums, open/barre chords, quiet notes and muted stops. Watch for missed notes, extra octave notes, delayed attacks and lingering notes.
+3. Stop, choose **Fast**, and repeat the same material at the same input level. Compare feel and note errors separately. Try Accurate if more context helps a troublesome phrase.
+4. If the dropped-buffer counter increases, try a longer analysis interval. Compare CPU only if Automatic fails or behaves poorly. Record the preset/custom timing, compute option, gate/confidence and input device with each result.
+
+The website's existing MIDI listener needs no change for these controls. Audio monitoring stays with the interface/amp; only detected notes travel to the website.

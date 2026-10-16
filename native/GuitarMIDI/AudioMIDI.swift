@@ -81,8 +81,8 @@ final class GuitarCapture {
     var report: (([Int], Double, Float, Int) -> Void)?
     var failed: ((String) -> Void)?
 
-    func start(device: AudioDeviceID, channel: Int, modelURL: URL, gate: Float, threshold: Float) throws {
-        let detector = try GuitarDetector(url: modelURL)
+    func start(device: AudioDeviceID, channel: Int, modelURL: URL, gate: Float, threshold: Float, timing: DetectorTiming, compute: DetectorCompute) throws {
+        let detector = try GuitarDetector(url: modelURL, timing: timing, compute: compute)
         detector.gateDB = gate
         detector.threshold = threshold
         let midi = try GuitarMIDIPort()

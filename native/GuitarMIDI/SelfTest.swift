@@ -18,6 +18,8 @@ func runSelfTest() throws {
     try require(events.count == 6, "Sustained chord retriggered")
     tracker.process(notes: notes, onsets: onsets, audible: true, threshold: 0.5, send: send)
     try require(events.count == 18, "Repeated strum must release and retrigger each note")
+    for _ in 0..<25 { tracker.process(notes: notes, onsets: onsets, audible: true, threshold: 0.5, send: send) }
+    try require(events.count == 18, "One broad onset must not retrigger held notes")
     for _ in 0..<3 { tracker.process(notes: notes, onsets: onsets, audible: false, threshold: 0.5, send: send) }
     try require(tracker.active.isEmpty && events.count == 24, "Gate must release all notes")
     tracker.reset(send: send)
@@ -54,39 +56,76 @@ func runSelfTest() throws {
     print("PASS: chord state, repeated strums, release, and actual CoreMIDI loopback")
 
     guard let url = Bundle.main.url(forResource: "nmp", withExtension: "mlmodelc") else { throw NSError(domain: "test", code: 2) }
-    let detector = try GuitarDetector(url: url)
-    var currentTime = 0.0
-    var detected: [(Double, Int, Int)] = []
-    var timings: [Double] = []
-    detector.send = { detected.append((currentTime, $0, $1)) }
-    // Deterministic plucked harmonic signals; not a substitute for DI recordings.
-    let phrases: [(Double, Double, [Int])] = [(0.4,0.9,[45]), (1.3,1.8,[52]), (2.2,3.0,[45,52,57]), (3.5,4.2,[40,47,52,56,59,64])]
-    for block in 0..<112 {
-        let samples: [Float] = (0..<GuitarDetector.hop).map { offset in
-            let time = Double(block * GuitarDetector.hop + offset) / GuitarDetector.sampleRate
-            var sample = 0.0
-            for (start,end,chord) in phrases where time >= start && time < end {
-                let age = time - start
-                for note in chord {
-                    let freq = 440 * pow(2, Double(note - 69) / 12)
-                    for h in 1...8 { sample += sin(2 * .pi * freq * Double(h) * age) / pow(Double(h), 1.3) * 0.06 * min(1, age / 0.008) * exp(-age * 1.2) }
-                }
-            }
-            return Float(sample)
+    // Every supported interval advances by exactly the frames it emits, including
+    // the shortest/longest custom settings. Settings are immutable during capture.
+    for lookahead in 2...20 {
+        for interval in 1...8 {
+            let timing = DetectorTiming(lookaheadFrames: lookahead, intervalFrames: interval)
+            try require(timing.frames.count * 256 == timing.hop, "Frame count differs from window advance")
+            let previousEnd = timing.frames.upperBound * 256
+            let nextStart = timing.hop + timing.frames.lowerBound * 256
+            try require(previousEnd == nextStart && timing.frames.lowerBound >= 0 && previousEnd <= GuitarDetector.window, "Decoded frames overlap or skip audio")
         }
-        currentTime = Double((block + 1) * GuitarDetector.hop) / GuitarDetector.sampleRate
-        try detector.append(samples)
-        timings.append(detector.inferenceMS)
     }
-    for (time,note,velocity) in detected { print(String(format: "%.3f %@ %d", time, velocity > 0 ? "on" : "off", note)) }
-    let ordered = timings.sorted()
-    print(String(format: "CoreML median %.2f ms, p95 %.2f ms", ordered[ordered.count / 2], ordered[Int(Double(ordered.count) * 0.95)]))
-    for (start,end,chord) in phrases {
-        let heard = Set(detected.filter { $0.0 >= start && $0.0 < end + 0.35 && $0.2 > 0 }.map { $0.1 })
-        let first = detected.first { $0.0 >= start && $0.0 < end + 0.35 && chord.contains($0.1) && $0.2 > 0 }
-        print("Phrase \(chord): found \(heard.sorted()), first note delay \(first.map { Int(($0.0 - start) * 1000) } ?? -1) ms (audio time, excludes CPU/device/browser)")
-        try require(Set(chord).isSubset(of: heard), "Model missed expected pitches in the synthetic phrase \(chord)")
+    try require(TimingPreset.accurate.timing.frames == 153..<157, "Accurate must preserve original context")
+    try require(DetectorTiming(lookaheadFrames: 2, intervalFrames: 8).presetName == "Custom", "Custom settings mislabeled")
+    let configurations: [(String, DetectorTiming, DetectorCompute)] = TimingPreset.allCases.map {
+        ($0.rawValue, $0.timing, .automatic)
+    } + [("Original CPU baseline", TimingPreset.accurate.timing, .cpu)]
+    for (name, timing, compute) in configurations {
+        print("Testing \(name), \(compute.rawValue)")
+        let detector = try GuitarDetector(url: url, timing: timing, compute: compute)
+        var currentTime = 0.0
+        var detected: [(Double, Int, Int)] = []
+        var timings: [Double] = []
+        detector.send = { detected.append((currentTime, $0, $1)) }
+        // Deterministic plucked harmonic signals; not a substitute for DI recordings.
+        let phrases: [(Double, Double, [Int])] = [(0.4,0.9,[45]), (1.3,1.8,[52]), (2.2,3.0,[45,52,57]), (3.5,4.2,[40,47,52,56,59,64])]
+        for block in 0..<Int(ceil(5.2 * GuitarDetector.sampleRate / Double(timing.hop))) {
+            let samples: [Float] = (0..<timing.hop).map { offset in
+                let time = Double(block * timing.hop + offset) / GuitarDetector.sampleRate
+                var sample = 0.0
+                for (start,end,chord) in phrases where time >= start && time < end {
+                    let age = time - start
+                    for note in chord {
+                        let freq = 440 * pow(2, Double(note - 69) / 12)
+                        for h in 1...8 { sample += sin(2 * .pi * freq * Double(h) * age) / pow(Double(h), 1.3) * 0.06 * min(1, age / 0.008) * exp(-age * 1.2) }
+                    }
+                }
+                return Float(sample)
+            }
+            currentTime = Double((block + 1) * timing.hop) / GuitarDetector.sampleRate
+            // Deliberately split capture chunks off the model frame boundary.
+            try detector.append(Array(samples.prefix(17)))
+            try require(detector.samplesProcessed == block * timing.hop, "Partial hop inferred too soon")
+            try detector.append(Array(samples.dropFirst(17)))
+            try require(detector.pending.isEmpty && detector.samplesProcessed == (block + 1) * timing.hop, "Capture chunk remainder lost")
+            try require(detector.tracker.frame == (block + 1) * timing.intervalFrames, "Frames replayed or skipped")
+            timings.append(detector.inferenceMS)
+        }
+        let ordered = timings.sorted()
+        print(String(format: "CoreML median %.2f ms, p95 %.2f ms", ordered[ordered.count / 2], ordered[Int(Double(ordered.count) * 0.95)]))
+        for (start,end,chord) in phrases {
+            let heard = Set(detected.filter { $0.0 >= start && $0.0 < end + 0.35 && $0.2 > 0 }.map { $0.1 })
+            let first = detected.first { $0.0 >= start && $0.0 < end + 0.35 && chord.contains($0.1) && $0.2 > 0 }
+            print("Phrase \(chord): found \(heard.sorted()), first note delay \(first.map { Int(($0.0 - start) * 1000) } ?? -1) ms (audio time, excludes CPU/device/browser)")
+            try require(Set(chord).isSubset(of: heard), "Model missed expected pitches in the synthetic phrase \(chord)")
+        }
+        try require(detector.tracker.active.isEmpty, "Silence must release actual model notes")
+        try detector.append([0.1, 0.2, 0.3])
+        detector.tracker.process(notes: notes, onsets: onsets, audible: true, threshold: 0.5, send: detector.send)
+        let beforeReset = detected.count
+        detector.reset()
+        try require(detected.count == beforeReset + 6 && detected.suffix(6).allSatisfy { $0.2 == 0 }, "Reset failed to release held chord")
+        try require(detector.pending.isEmpty && detector.samplesProcessed == 0 && detector.tracker.frame == 0 && detector.audio.allSatisfy { $0 == 0 }, "Reset retained audio or tracking state")
+        print("PASS: \(name) model riffs/chords, silence, split capture chunks and reset")
     }
-    try require(detector.tracker.active.isEmpty, "Silence must release actual model notes")
-    print("PASS: bundled weights detect synthetic riffs/chords and return to silence")
+    // Exercise custom boundary settings with actual inference, including several
+    // predictions in one append and a final partial hop.
+    for timing in [DetectorTiming(lookaheadFrames: 2, intervalFrames: 1), DetectorTiming(lookaheadFrames: 20, intervalFrames: 8)] {
+        let detector = try GuitarDetector(url: url, timing: timing)
+        try detector.append(Array(repeating: 0, count: timing.hop * 3 + 17))
+        try require(detector.tracker.frame == timing.intervalFrames * 3 && detector.pending.count == 17 && detector.tracker.active.isEmpty, "Custom boundary scheduling failed")
+    }
+    print("PASS: all timing ranges, custom boundaries and CPU fallback")
 }

@@ -1,13 +1,44 @@
 import Foundation
 import CoreML
 
+struct DetectorTiming: Equatable {
+    let lookaheadFrames: Int
+    let intervalFrames: Int
+
+    init(lookaheadFrames: Int = 8, intervalFrames: Int = 4) {
+        precondition((2...20).contains(lookaheadFrames) && (1...8).contains(intervalFrames))
+        self.lookaheadFrames = lookaheadFrames
+        self.intervalFrames = intervalFrames
+    }
+    var hop: Int { intervalFrames * 256 }
+    var frames: Range<Int> { (172 - lookaheadFrames - intervalFrames)..<(172 - lookaheadFrames) }
+    var lookaheadMS: Double { Double(lookaheadFrames * 256) / GuitarDetector.sampleRate * 1000 }
+    var intervalMS: Double { Double(hop) / GuitarDetector.sampleRate * 1000 }
+    var presetName: String { TimingPreset.allCases.first { $0.timing == self }?.rawValue ?? "Custom" }
+}
+
+enum TimingPreset: String, CaseIterable {
+    case fast = "Fast", balanced = "Balanced", accurate = "Accurate"
+    var timing: DetectorTiming {
+        switch self {
+        case .fast: return DetectorTiming(lookaheadFrames: 4, intervalFrames: 2)
+        case .balanced: return DetectorTiming()
+        case .accurate: return DetectorTiming(lookaheadFrames: 15, intervalFrames: 4)
+        }
+    }
+}
+
+enum DetectorCompute: String, CaseIterable {
+    case automatic = "Automatic", cpu = "CPU only"
+    var units: MLComputeUnits { self == .automatic ? .all : .cpuOnly }
+}
+
 // Spotify Basic Pitch ICASSP 2022, unchanged Core ML weights. Our rolling-window
 // adapter and live MIDI decoder are independent of the offline Python decoder.
 final class GuitarDetector {
     static let sampleRate = 22050.0
     static let window = 43844
-    static let hop = 1024 // four model frames, ~46.4 ms
-    static let firstFrame = 153 // retain 15 frames of right context
+    let timing: DetectorTiming
     let model: MLModel
     let input: MLMultiArray
     var audio = [Float](repeating: 0, count: window)
@@ -19,9 +50,10 @@ final class GuitarDetector {
     var threshold: Float = 0.5
     var send: (Int, Int) -> Void = { _, _ in } // velocity zero = note off
 
-    init(url: URL) throws {
+    init(url: URL, timing: DetectorTiming = DetectorTiming(), compute: DetectorCompute = .automatic) throws {
+        self.timing = timing
         let config = MLModelConfiguration()
-        config.computeUnits = .cpuOnly // Initial baseline; the Fretwire comparison found .all faster on this Mac.
+        config.computeUnits = compute.units
         let compiled = url.pathExtension == "mlmodelc" ? url : try MLModel.compileModel(at: url)
         model = try MLModel(contentsOf: compiled, configuration: config)
         input = try MLMultiArray(shape: [1, 43844, 1], dataType: .float32)
@@ -36,11 +68,11 @@ final class GuitarDetector {
 
     func append(_ samples: [Float]) throws {
         pending.append(contentsOf: samples)
-        while pending.count >= Self.hop {
-            audio.removeFirst(Self.hop)
-            audio.append(contentsOf: pending.prefix(Self.hop))
-            pending.removeFirst(Self.hop)
-            samplesProcessed += Self.hop
+        while pending.count >= timing.hop {
+            audio.removeFirst(timing.hop)
+            audio.append(contentsOf: pending.prefix(timing.hop))
+            pending.removeFirst(timing.hop)
+            samplesProcessed += timing.hop
             let pointer = input.dataPointer.assumingMemoryBound(to: Float.self)
             audio.withUnsafeBufferPointer { pointer.update(from: $0.baseAddress!, count: Self.window) }
             let start = CFAbsoluteTimeGetCurrent()
@@ -50,7 +82,9 @@ final class GuitarDetector {
                   let onsets = result.featureValue(for: "Identity_2")?.multiArrayValue else {
                 throw NSError(domain: "GuitarMIDI", code: 1, userInfo: [NSLocalizedDescriptionKey: "Basic Pitch returned an unexpected output"])
             }
-            for frame in Self.firstFrame..<(Self.firstFrame + 4) {
+            // The window advances by exactly the decoded frame count. Adjacent
+            // predictions therefore contribute consecutive, non-replayed audio.
+            for frame in timing.frames {
                 let begin = frame * 256
                 let rms = sqrt(audio[begin..<(begin + 256)].reduce(Float(0)) { $0 + $1 * $1 } / 256)
                 let audible = 20 * log10(max(rms, 1e-9)) >= gateDB
